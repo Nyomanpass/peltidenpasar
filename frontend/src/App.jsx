@@ -1,15 +1,23 @@
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import LandingPageLayout from "./layouts/LandingPageLayout";
 import Home from "./pages/Home";
 
-
-import "@fontsource/poppins";
-
-
-export default function App() {
+function App() {
   return (
-    <div>
-       <Home /> 
-    </div>
+    <Router>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <LandingPageLayout>
+              <Home />
+            </LandingPageLayout>
+          }
+        />
+        
+      </Routes>
+    </Router>
   );
 }
+
+export default App;
