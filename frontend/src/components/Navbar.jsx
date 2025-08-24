@@ -1,104 +1,74 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { FaFacebook, FaInstagram } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaBars, FaTimes } from "react-icons/fa";
+import logo from "../assets/logo.png";
 
 export default function Navbar() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="w-full fixed top-0 z-50 shadow-sm">
-      {/* Top Bar Hitam */}
-      <div className="bg-black text-white text-sm flex justify-between items-center px-4 md:px-20 py-1">
-        <p>Jalan Gunung Agung, Desa Pemecutan Kaja, Kota Denpasar, Bali</p>
-        <div className="flex space-x-3">
-          <a href="#" className="hover:text-yellow-400">
-            <FaFacebook size={18} />
+    <header className="w-full shadow-md">
+      {/* Topbar */}
+      <div className="bg-black text-white text-xs sm:text-sm flex justify-between items-center px-4 sm:px-10 lg:px-40 py-2">
+        <p className="hidden sm:block">
+          Jalan Gunung Agung Desa Pemecutan Kaja Kota Denpasar, Bali
+        </p>
+        <div className="flex gap-3 ml-auto sm:ml-0">
+          <a>
+            <FaFacebook className="hover:text-yellow-400 cursor-pointer" />
           </a>
-          <a href="#" className="hover:text-yellow-400">
-            <FaInstagram size={18} />
+          <a>
+            <FaInstagram className="hover:text-yellow-400 cursor-pointer" />
           </a>
         </div>
       </div>
 
-      {/* Navbar Putih */}
-      <nav className="bg-white py-3 px-4 md:px-20 flex items-center justify-between">
-        {/* Logo + Teks */}
-        <div className="flex items-center gap-3">
+      {/* Mainbar */}
+      <div className="bg-white h-25 flex justify-between items-center px-4 sm:px-10 lg:px-40">
+        {/* Logo + Text */}
+        <div className="flex items-center space-x-3">
           <img
-            src="/logo.png" // ganti sesuai logo PELTI
-            alt="Logo PELTI"
-            className="w-12 h-12"
+            src={logo}
+            alt="Logo Pelti"
+            className="w-10 h-10 sm:w-12 sm:h-12"
           />
-          <div>
-            <h1 className="font-bold text-lg text-black">PELTI DENPASAR</h1>
-            <p className="text-sm text-gray-600 -mt-1">
+          <div className="flex flex-col text-black leading-none">
+            <h1 className="text-xl sm:text-2xl font-bold">PELTI DENPASAR</h1>
+            <h2 className="text-xs sm:text-sm font-medium -mt-1">
               Persatuan Lawn Tenis Indonesia
-            </p>
+            </h2>
           </div>
         </div>
 
-        {/* Desktop Menu */}
-        <div className="hidden md:flex items-center space-x-6 font-medium text-black">
-          <Link to="/" className="hover:text-yellow-500">
-            Beranda
-          </Link>
-          <Link to="/profil" className="hover:text-yellow-500">
-            Profil
-          </Link>
-          <Link to="/pengumuman" className="hover:text-yellow-500">
-            Pengumuman
-          </Link>
-          <Link to="/berita" className="hover:text-yellow-500">
-            Berita
-          </Link>
-          <Link
-            to="/login"
-            className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium px-4 py-2 rounded-md flex items-center gap-1"
-          >
-            Login
-            <span className="text-lg">→</span>
-          </Link>
-        </div>
+        {/* Navigation Menu (Desktop/Tablet) */}
+        <nav className="hidden md:flex items-center space-x-6 lg:space-x-8 text-sm font-medium">
+          <span className="hover:text-yellow-500 cursor-pointer">Beranda</span>
+          <span className="hover:text-yellow-500 cursor-pointer">Profil</span>
+          <span className="hover:text-yellow-500 cursor-pointer">Pengumuman</span>
+          <span className="hover:text-yellow-500 cursor-pointer">Berita</span>
+          <button className="bg-yellow-400 text-black px-3 py-2 rounded-md hover:bg-yellow-500 transition">
+            Login →
+          </button>
+        </nav>
 
-        {/* Mobile Toggle */}
+        {/* Hamburger Button (Mobile) */}
         <button
-          className="md:hidden text-black"
-          onClick={() => setMenuOpen(!menuOpen)}
+          className="md:hidden text-2xl"
+          onClick={() => setIsOpen(!isOpen)}
         >
-          <svg
-            className="w-7 h-7"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
+          {isOpen ? <FaTimes /> : <FaBars />}
         </button>
-      </nav>
+      </div>
 
       {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="bg-white shadow-md md:hidden flex flex-col px-6 py-4 space-y-4 font-medium text-black">
-          <Link to="/" onClick={() => setMenuOpen(false)}>
-            Beranda
-          </Link>
-          <Link to="/profil" onClick={() => setMenuOpen(false)}>
-            Profil
-          </Link>
-          <Link to="/pengumuman" onClick={() => setMenuOpen(false)}>
-            Pengumuman
-          </Link>
-          <Link to="/berita" onClick={() => setMenuOpen(false)}>
-            Berita
-          </Link>
-          <Link
-            to="/login"
-            onClick={() => setMenuOpen(false)}
-            className="bg-yellow-400 hover:bg-yellow-500 text-black font-medium px-4 py-2 rounded-md flex items-center gap-1"
-          >
-            Login <span className="text-lg">→</span>
-          </Link>
+      {isOpen && (
+        <div className="md:hidden bg-white shadow-md flex flex-col items-start px-6 py-4 space-y-3 text-sm font-medium">
+          <span className="hover:text-yellow-500 cursor-pointer">Beranda</span>
+          <span className="hover:text-yellow-500 cursor-pointer">Profil</span>
+          <span className="hover:text-yellow-500 cursor-pointer">Pengumuman</span>
+          <span className="hover:text-yellow-500 cursor-pointer">Berita</span>
+          <button className="bg-yellow-400 text-black px-3 py-2 rounded-md hover:bg-yellow-500 transition">
+            Login →
+          </button>
         </div>
       )}
     </header>

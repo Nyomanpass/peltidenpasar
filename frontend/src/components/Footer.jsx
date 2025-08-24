@@ -1,70 +1,82 @@
-import { FaFacebook, FaInstagram, FaYoutube } from "react-icons/fa";
+import { FaFacebook, FaInstagram } from "react-icons/fa";
+import logo from "../assets/logo.png";
+import bg from "../assets/background.jpg";
 
-function Footer() {
+export default function Footer() {
   return (
-    <footer className="relative bg-cover bg-center text-white" style={{ backgroundImage: "url('hero.jpg')" }}>
+    <footer
+      className="relative text-gray-300 "
+      style={{
+        backgroundImage: `url(${bg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
       {/* Overlay hitam transparan */}
-      <div className="absolute inset-0 bg-black/70"></div>
+      <div className="absolute inset-0 bg-black opacity-70 pointer-events-none"></div>
 
-      <div className="relative z-10 container mx-auto px-4 md:px-20 py-16 grid grid-cols-1 md:grid-cols-4 gap-10">
-        {/* Kolom 1 - Logo & Deskripsi */}
-        <div>
-          <img src="logo.png" alt="Logo PELTI" className="h-14 mb-4" />
-          <h2 className="text-xl font-bold">PELTI DENPASAR</h2>
-          <p className="text-sm mt-3 text-gray-300">
-            Persatuan Tenis Lapangan Indonesia (PELTI) Denpasar adalah organisasi
-            olahraga tenis yang berkomitmen untuk mengembangkan prestasi dan
-            membina generasi muda.
+      {/* Content */}
+      <div className="relative z-10 px-6 sm:px-12 lg:px-40 py-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+        {/* Logo + Deskripsi */}
+        <div className="text-grey">
+          <div className="flex items-center space-x-3 mb-4">
+            <img src={logo} alt="Logo Pelti" className="w-15 h-15" />
+            <div className="leading-none">
+              <h1 className="text-xl font-bold">PELTI DENPASAR</h1>
+              <p className="text-sm font-medium">
+                Persatuan Lawn Tenis Indonesia
+              </p>
+            </div>
+          </div>
+          <p className="text-sm leading-relaxed">
+            PELTI Denpasar (Persatuan Lawn Tenis Indonesia) Denpasar adalah
+            organisasi olahraga yang fokus pada pengembangan tenis lapangan di
+            Kota Denpasar, Bali. PELTI Denpasar berkomitmen untuk meningkatkan
+            kualitas atlet, memfasilitasi turnamen, dan mendorong partisipasi
+            masyarakat dalam olahraga tenis.
           </p>
         </div>
 
-        {/* Kolom 2 - Navigasi Cepat */}
+        {/* Navigasi Cepat */}
         <div>
-          <h3 className="font-bold text-lg mb-4">Navigasi Cepat</h3>
-          <ul className="space-y-2 text-sm text-gray-300">
-            <li><a href="#home" className="hover:text-yellow-400">Beranda</a></li>
-            <li><a href="#struktur" className="hover:text-yellow-400">Struktur</a></li>
-            <li><a href="#pengumuman" className="hover:text-yellow-400">Pengumuman</a></li>
-            <li><a href="#berita" className="hover:text-yellow-400">Berita</a></li>
-            <li><a href="#kontak" className="hover:text-yellow-400">Kontak</a></li>
+          <h2 className="text-lg font-semibold mb-4">Navigasi Cepat</h2>
+          <ul className="space-y-2 text-sm">
+            <li className="hover:text-yellow-400 cursor-pointer">About</li>
+            <li className="hover:text-yellow-400 cursor-pointer">Growers</li>
+            <li className="hover:text-yellow-400 cursor-pointer">Merchants</li>
+            <li className="hover:text-yellow-400 cursor-pointer">Partners</li>
+            <li className="hover:text-yellow-400 cursor-pointer">Contact</li>
           </ul>
         </div>
 
-        {/* Kolom 3 - Sosial Media */}
+        {/* Social */}
         <div>
-          <h3 className="font-bold text-lg mb-4">Social</h3>
-          <div className="flex space-x-4">
-            <a href="#" className="text-gray-300 hover:text-yellow-400 text-2xl">
-              <FaFacebook />
+          <h2 className="text-lg font-semibold mb-4">Social</h2>
+          <div className="flex gap-3">
+            <a>
+              <FaFacebook className="hover:text-yellow-400 cursor-pointer" size={20} />
             </a>
-            <a href="#" className="text-gray-300 hover:text-yellow-400 text-2xl">
-              <FaInstagram />
-            </a>
-            <a href="#" className="text-gray-300 hover:text-yellow-400 text-2xl">
-              <FaYoutube />
+            <a>
+              <FaInstagram className="hover:text-yellow-400 cursor-pointer" size={20} />
             </a>
           </div>
         </div>
 
-        {/* Kolom 4 - Alamat */}
+        {/* Kontak */}
         <div>
-          <h3 className="font-bold text-lg mb-4">Alamat</h3>
-          <p className="text-sm text-gray-300">
-            Jalan Gunung Agung <br />
-            Desa Pemecutan Kaja, <br />
-            Kota Denpasar, Bali
+          <h2 className="text-lg font-semibold mb-4">Kontak</h2>
+          <p className="text-sm leading-relaxed">
+            Jalan Gunung Agung, Desa Pemecutan Kaja, Kota Denpasar, Bali
           </p>
-          <p className="text-sm text-gray-300 mt-3">📞 0812-3456-7890</p>
-          <p className="text-sm text-gray-300">✉️ info@pelti-denpasar.org</p>
+          <p className="mt-2 text-sm">(+62) 123-456-789</p>
+          <p className="mt-2 text-sm">peltidenpasar@gmail.co.id</p>
         </div>
       </div>
 
       {/* Copyright */}
-      <div className="relative z-10 bg-yellow-400 text-black text-center py-4 text-sm font-medium">
-        © 2025 PELTI Denpasar. All rights reserved.
+      <div className="relative z-10 bg-yellow-400 text-black text-center py-1 text-sm font-medium">
+        © 2025 PELTI Denpasar. All Rights Reserved.
       </div>
     </footer>
   );
 }
-
-export default Footer;

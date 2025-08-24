@@ -1,17 +1,10 @@
-import Navbar from "../components/Navbar";
-import Hero from "../components/Hero";
-import Section from "../components/Section";
-import Footer from "../components/Footer";
 
-function Home(){
-    return(
-        <>
-            <Navbar/>
-            <Hero/>
-            <Section/>
-            <Footer/>
-        </>
-    )
+import LandingPageLayout from "../layouts/LandingPageLayout";
+
+export default function Home() {
+  return (
+    <LandingPageLayout>
+    
+    </LandingPageLayout>
+  );
 }
-
-export default Home;
