@@ -4,7 +4,7 @@ import { User } from "../models/UserModel.js";
 
 export const register = async (req, res) => {
   try {
-    const { name, email, password, confirmPassword, role = "peserta" } = req.body;
+    const { name, email, password, confirmPassword, role = "wasit" } = req.body;
 
     // Cek konfirmasi password
     if (password !== confirmPassword) {

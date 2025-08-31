@@ -16,7 +16,7 @@ export default function Login() {
     try {
       const user = await login(email, password);
       if (user.role === "admin") nav("/admin");
-      else nav("/peserta");
+      else nav("/wasit");
     } catch (err) {
       if (err.response?.data?.message) {
         setError(err.response.data.message);

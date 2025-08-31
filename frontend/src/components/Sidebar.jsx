@@ -1,92 +1,52 @@
-import { Users, Calendar, Trophy, List, ClipboardList, CheckSquare } from "lucide-react";
+
+import { Users, Calendar, Trophy, List, ClipboardList, CheckSquare, Settings } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
+
 
 function Sidebar({ isOpen }) {
   const location = useLocation();
-  const role = localStorage.getItem("role"); // ambil role user
+  const role = localStorage.getItem("role");
 
-  // menu khusus admin
   const adminMenu = [
-    {
-      label: "Verifikasi Admin",
-      path: "/admin/verify",
-      icon: <CheckSquare size={18} />,
-    },
-    {
-      label: "Peserta",
-      path: "/peserta/list",
-      icon: <Users size={18} />,
-    },
-    {
-      label: "Jadwal Pertandingan",
-      path: "/jadwal",
-      icon: <Calendar size={18} />,
-    },
-    {
-      label: "Bagan",
-      path: "/bagan",
-      icon: <List size={18} />,
-    },
-    {
-      label: "Skor",
-      path: "/skor",
-      icon: <ClipboardList size={18} />,
-    },
-    {
-      label: "Hasil Pertandingan",
-      path: "/hasil",
-      icon: <Trophy size={18} />,
-    },
+    { label: "Verifikasi Admin", path: "/admin/verify", icon: <CheckSquare size={18} /> },
+    { label: "Peserta", path: "/admin/peserta/", icon: <Users size={18} /> },
+    { label: "Jadwal Pertandingan", path: "/admin/jadwal-pertandingan", icon: <Calendar size={18} /> },
+    { label: "Bagan", path: "/admin/bagan-peserta", icon: <List size={18} /> },
+    { label: "Skor", path: "/admin/skor", icon: <ClipboardList size={18} /> },
+    { label: "Hasil Pertandingan", path: "/admin/hasil-pertandingan", icon: <Trophy size={18} /> },
+    { label: "Settings", path: "/admin/settings", icon: <Settings size={18} /> },
   ];
 
-  // menu khusus peserta
-  const pesertaMenu = [
-    {
-      label: "Jadwal Pertandingan",
-      path: "/jadwal",
-      icon: <Calendar size={18} />,
-    },
-    {
-      label: "Peserta",
-      path: "/peserta/list",
-      icon: <Users size={18} />,
-    },
-    {
-      label: "Skor",
-      path: "/skor",
-      icon: <ClipboardList size={18} />,
-    },
+  const wasitMenu = [
+    { label: "Peserta", path: "/wasit/peserta/", icon: <Users size={18} /> },
+    { label: "Jadwal Pertandingan", path: "/wasit/jadwal-pertandingan", icon: <Calendar size={18} /> },
+    { label: "Bagan", path: "/wasit/bagan-peserta", icon: <List size={18} /> },
+    { label: "Skor", path: "/wasit/skor", icon: <ClipboardList size={18} /> },
   ];
 
-  const menuItems = role === "admin" ? adminMenu : pesertaMenu;
+  const menuItems = role === "admin" ? adminMenu : wasitMenu;
 
   return (
     <aside
-      className={`bg-white shadow-md w-64 h-screen p-5 fixed top-0 left-0 z-50 md:block 
-        ${isOpen ? "block" : "hidden"} md:w-64 md:h-screen`}
+      className={`
+        fixed top-0 left-0 h-screen w-64 bg-white shadow-md z-40
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? "translate-x-0" : "-translate-x-full"} 
+        md:translate-x-0
+      `}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-2 mb-6">
-        <div className="bg-yellow-500 text-white w-10 h-10 flex items-center justify-center rounded-lg">
-          P
-        </div>
-        <span className="text-xl font-bold">PELTI Denpasar</span>
-      </div>
-      <p className="mb-5">{role}</p>
 
       {/* Menu */}
-      <nav>
+      <nav className="px-2 mt-22">
         <ul className="space-y-2">
           {menuItems.map((item) => (
             <li key={item.path}>
               <Link
                 to={item.path}
                 className={`flex items-center gap-3 p-2 rounded-lg 
-                  ${
-                    location.pathname === item.path
-                      ? "bg-blue-100 text-blue-600"
-                      : "hover:bg-gray-100"
-                  }`}
+                  ${location.pathname === item.path
+                    ? "bg-yellow-200 text-yellow-600"
+                    : "hover:bg-gray-100"}`}
               >
                 {item.icon} {item.label}
               </Link>

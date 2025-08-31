@@ -10,13 +10,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@g-loot/react-tournament-brackets": "^1.0.31-rc",
     "@tailwindcss/vite": "^4.1.12",
     "axios": "^1.11.0",
+    "framer-motion": "^12.23.12",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.540.0",
     "react": "^19.1.1",
+    "react-brackets": "^0.4.7",
     "react-dom": "^19.1.1",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.8.0",
+    "react-svg-pan-zoom": "^3.13.1",
+    "styled-components": "^6.1.19",
     "tailwindcss": "^4.1.12"
   },
   "devDependencies": {

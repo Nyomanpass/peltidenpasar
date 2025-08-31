@@ -1,11 +1,26 @@
-// routes/pesertaRoutes.js
-import { Router } from "express";
-import { requireAuth, requireRole } from "../middleware/Auth.js";
+// routes/PesertaRoutes.js
+import express from "express";
+import {
+  getPesertaByStatus,
+  getPesertaById,
+  createPeserta,
+  updatePeserta,
+  deletePeserta,
+  upload,
+  verifyPeserta,
+  getPesertaByKelompokUmur,
+  getPesertaFiltered
+} from "../controllers/PesertaController.js";
 
-const router = Router();
+const router = express.Router();
 
-router.get("/peserta/profile", requireAuth, requireRole("peserta"), (req, res) => {
-  res.json({ message: "Peserta profile data", who: req.user });
-});
+router.get("/peserta", getPesertaByStatus);
+router.get('/peserta/kelompok-umur', getPesertaByKelompokUmur);
+router.get('/pesertafilter', getPesertaFiltered),
+router.get("/peserta/:id", getPesertaById);
+router.post("/peserta", upload.single("fotoKartu"), createPeserta);
+router.put("/peserta/:id", upload.single("fotoKartu"), updatePeserta);
+router.delete("/peserta/:id", deletePeserta);
+router.put('/peserta/:id/verify', verifyPeserta);
 
 export default router;

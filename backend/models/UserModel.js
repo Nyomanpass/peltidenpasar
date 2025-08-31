@@ -6,7 +6,7 @@ export const User = sequelize.define("User", {
   name: { type: DataTypes.STRING(100), allowNull: false },
   email: { type: DataTypes.STRING(120), allowNull: false, unique: true },
   password: { type: DataTypes.STRING(200), allowNull: false },
-  role: { type: DataTypes.ENUM("admin", "peserta"), allowNull: false, defaultValue: "peserta" },
+  role: { type: DataTypes.ENUM("admin", "wasit"), allowNull: false, defaultValue: "wasit" },
   status: { 
   type: DataTypes.ENUM("pending", "verified", "rejected"), 
   allowNull: false, 

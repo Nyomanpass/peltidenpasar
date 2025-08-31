@@ -1,25 +1,18 @@
 import { useState } from "react";
 import Sidebar from "../components/Sidebar";
-import Navbar from "../components/Navbar";
+import NavbarDashboard from "../components/NavbarDashboard";
 import { Outlet } from "react-router-dom";
+
 
 export default function DashboardLayout() {
   const [isOpen, setIsOpen] = useState(false);
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
-
   return (
-    <div className="flex">
-      {/* Sidebar */}
+    <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={isOpen} />
-
-      {/* Konten utama */}
       <div className="flex-1 md:ml-64">
-        {/* Navbar */}
-        <Navbar toggleSidebar={toggleSidebar} />
-
-        {/* Isi halaman */}
-        <main className="p-6">
+        <NavbarDashboard toggleSidebar={() => setIsOpen(!isOpen)}/>
+        <main className="p-6 pt-28 md:pt-32">
           <Outlet />
         </main>
       </div>

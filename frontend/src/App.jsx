@@ -9,9 +9,19 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DashboardLayout from "./pages/DashboardLayout";
 
+import PesertaForm from "./pages/PesertaForm";
 
 //admin
-import VerifyAdmin from "./components/admin/VerifyAdmin";
+import PesertaList from "./components/admin/PesertaList";
+import DetailPeserta from "./components/admin/DetailPeserta";
+import Peserta from "./components/admin/Peserta";
+import BaganPage from "./pages/BaganPage";
+import MatchPage from "./pages/MatchPage";
+import Settings from "./pages/Settings";
+import JadwalPage from "./pages/JadwalPage";
+import BaganView from "./pages/BaganView";
+import JuaraPage from "./pages/JuaraPage";
+import SkorPage from "./pages/SkorPage";
 
 export default function App() {
   return (
@@ -21,6 +31,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="/register" element={<Register/>}/>
           <Route path="/login" element={<Login />} />
+          <Route path="/daftar-peserta" element={<PesertaForm/>}/>
 
 
           <Route
@@ -33,19 +44,35 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="verify" element={<VerifyAdmin/>}/>
+            <Route path="verify" element={<PesertaList/>}/>
+            <Route path="detail-peserta/:id" element={<DetailPeserta/>}/>
+            <Route path="peserta" element={<Peserta/>}/>
+            <Route path="bagan-peserta" element={<BaganPage/>}/>
+            <Route path="match" element={<MatchPage/>}/>
+            <Route path="bagan-view/:id" element={<BaganView/>}/>
+            <Route path="settings" element={<Settings/>}/>
+            <Route path="jadwal-pertandingan" element={<JadwalPage/>}/>
+            <Route path="hasil-pertandingan" element={<JuaraPage/>}/>
+            <Route path="skor" element={<SkorPage/>}/>
           </Route>
 
           <Route
-            path="/peserta"
+            path="/wasit"
             element={
               <ProtectedRoute>
-                <RoleRoute allow={["peserta"]}>
+                <RoleRoute allow={["wasit"]}>
                   <DashboardLayout />
                 </RoleRoute>
               </ProtectedRoute>
             }
-          />
+          >
+            <Route path="peserta" element={<Peserta/>}/>
+            <Route path="jadwal-pertandingan" element={<JadwalPage/>}/>
+            <Route path="skor" element={<SkorPage/>}/>
+            <Route path="bagan-peserta" element={<BaganPage/>}/>
+            <Route path="bagan-view/:id" element={<BaganView/>}/>
+          </Route>
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>
