@@ -195,10 +195,15 @@ export const generateUndian = async (req, res) => {
 
     const bagan = await Bagan.findByPk(id);
     if (!bagan) return res.status(404).json({ msg: "Bagan tidak ditemukan" });
-
+    const tournamentId = bagan.tournamentId;
     const allPeserta = await Peserta.findAll({
-      where: { kelompokUmurId: bagan.kelompokUmurId, status: "verified" },
+      where: { 
+        kelompokUmurId: bagan.kelompokUmurId,
+        tournamentId: bagan.tournamentId,      // ← TAMBAHKAN INI
+        status: "verified"
+      },
     });
+
 
     const seededIds = new Set(seededPeserta.map((p) => p.id));
     const nonSeededPeserta = allPeserta.filter((p) => !seededIds.has(p.id));
@@ -264,6 +269,7 @@ export const generateUndian = async (req, res) => {
           peserta1Id: peserta1Id,
           peserta2Id: peserta2Id,
           nextMatchId: null,
+          tournamentId: tournamentId
         });
       }
       matchCount /= 2;
@@ -331,8 +337,8 @@ export const getUnscheduledMatches = async (req, res) => {
 
 export const getMatches = async (req, res) => {
   try {
-    const { baganId } = req.query;
-    
+    const { baganId, tournamentId } = req.query;
+
     const whereCondition = {
       status: "belum",
     };
@@ -341,8 +347,12 @@ export const getMatches = async (req, res) => {
       whereCondition.baganId = baganId;
     }
 
+    if (tournamentId) {
+      whereCondition.tournamentId = tournamentId;
+    }
+
     const matches = await Match.findAll({
-      where: whereCondition, 
+      where: whereCondition,
       include: [
         { model: Peserta, as: "peserta1", attributes: ["id", "namaLengkap"] },
         { model: Peserta, as: "peserta2", attributes: ["id", "namaLengkap"] },
@@ -351,10 +361,12 @@ export const getMatches = async (req, res) => {
     });
 
     res.status(200).json(matches);
+
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 export const getJuara = async (req, res) => {

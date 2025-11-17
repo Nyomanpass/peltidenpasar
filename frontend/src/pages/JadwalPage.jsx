@@ -7,6 +7,7 @@ const JadwalPage = () => {
   const [matches, setMatches] = useState([]);
   const [lapangan, setLapangan] = useState([]);
   const role = localStorage.getItem('role');
+  const selectedTournamentName = localStorage.getItem("selectedTournamentName");
   
   // --- STATE BARU UNTUK PILIH BAGAN ---
   const [baganList, setBaganList] = useState([]);
@@ -28,11 +29,29 @@ const JadwalPage = () => {
   const [selectedMatchToScore, setSelectedMatchToScore] = useState(null);
   const [selectedJadwalIdToUpdate, setSelectedJadwalIdToUpdate] = useState(null);
 
+  //filter jadwal dnegna tanggal
+  const [selectedTanggalFilter, setSelectedTanggalFilter] = useState('');
+
+  const uniqueTanggal = [...new Set(jadwal.map(j => j.tanggal))].sort(
+  (a, b) => new Date(a) - new Date(b)
+  );
+
+  // Set tanggal filter otomatis hanya jika belum ada yang dipilih
+  useEffect(() => {
+    if (uniqueTanggal.length > 0 && !selectedTanggalFilter) {
+      setSelectedTanggalFilter(uniqueTanggal[0]); // pilih tanggal paling kecil
+    }
+  }, [uniqueTanggal, selectedTanggalFilter]);
+
+
+
   useEffect(() => {
     fetchJadwal();
     fetchBagan();
     fetchLapangan();
   }, []);
+
+
 
   // --- Gunakan useEffect ini untuk memuat matches saat bagan dipilih ---
   useEffect(() => {
@@ -45,9 +64,27 @@ const JadwalPage = () => {
     }
   }, [selectedBaganId]);
 
+  useEffect(() => {
+    const reloadAll = () => {
+      fetchBagan();          // ← ambil bagan baru sesuai tournament baru
+      setSelectedBaganId(""); // ← reset bagan yg dipilih
+      setMatches([]);         // ← kosongkan match dulu
+      fetchJadwal();
+    };
+
+    window.addEventListener("tournament-changed", reloadAll);
+
+    return () => window.removeEventListener("tournament-changed", reloadAll);
+  }, []);
+
+
+
   const fetchJadwal = async () => {
     try {
-      const response = await api.get('/jadwal');
+      const tournamentId = localStorage.getItem("selectedTournament");
+      const response = await api.get('/jadwal', {
+        params: { tournamentId }
+      });
       setJadwal(response.data);
     } catch (err) {
       console.error('Error:', err);
@@ -56,24 +93,38 @@ const JadwalPage = () => {
   };
 
   // --- FUNGSI BARU UNTUK MENGAMBIL DAFTAR BAGAN ---
-  const fetchBagan = async () => {
-    try {
-      const response = await api.get('/bagan');
-      setBaganList(response.data);
-    } catch (err) {
-      console.error('Error:', err);
-    }
-  };
+const fetchBagan = async () => {
+  try {
+    const newTournamentId = localStorage.getItem("selectedTournament"); // ← ambil ulang setiap kali fetch
+    const res = await api.get("/bagan", {
+      params: { tournamentId: newTournamentId }
+    });
+
+    setBaganList(res.data);
+  } catch (err) {
+    console.error("Gagal fetch bagan:", err);
+  }
+};
+
+
 
   // --- MODIFIKASI FUNGSI FETCH MATCHES UNTUK MENERIMA BAGAN ID ---
   const fetchMatches = async (baganId) => {
     try {
       // Mengirim baganId sebagai query parameter
+      const newTournamentId = localStorage.getItem("selectedTournament");
       const response = await api.get('/matches', {
-        params: { baganId: baganId }
+        params: { baganId: baganId, tournamentId: newTournamentId }
       });
-      const belumSelesai = response.data.filter(m => m.status === 'belum' || m.status === 'aktif');
-      setMatches(belumSelesai);
+       let matchesBelumSelesai = response.data.filter(
+      m => m.status === 'belum' || m.status === 'aktif'
+    );
+
+    // Filter match yang sudah ada di jadwal lain (kecuali jadwal yang sedang diedit, jika edit)
+    matchesBelumSelesai = matchesBelumSelesai.filter(
+      m => !jadwal.some(j => j.matchId === m.id && j.id !== editingJadwalId)
+    );
+      setMatches(matchesBelumSelesai);
     } catch (err) {
       console.error('Error:', err);
     }
@@ -93,7 +144,8 @@ const JadwalPage = () => {
     setSelectedMatch(jadwal.matchId);
     setSelectedLapangan(jadwal.lapanganId);
     setTanggal(jadwal.tanggal);
-    
+    setSelectedBaganId(jadwal.match.baganId); 
+
     const waktuMulaiFormatted = jadwal.waktuMulai.slice(11, 16);
     setWaktuMulai(waktuMulaiFormatted);
     
@@ -127,11 +179,14 @@ const JadwalPage = () => {
 
     const waktuMulaiFull = `${tanggal}T${waktuMulai}:00.000Z`;
 
+    const tournamentId = localStorage.getItem("selectedTournament");
+
     const jadwalData = {
       matchId: selectedMatch,
       lapanganId: selectedLapangan,
       tanggal,
       waktuMulai: waktuMulaiFull,
+      tournamentId
     };
 
     try {
@@ -219,7 +274,7 @@ const JadwalPage = () => {
   return (
     <div className="p-8 font-sans bg-gray-100 min-h-screen">
   <h1 className="text-4xl font-extrabold text-center mb-10 text-gray-900">
-    Manajemen Jadwal Pertandingan
+    Manajemen Jadwal Pertandingan {selectedTournamentName}
   </h1>
 
   {error && (
@@ -233,8 +288,10 @@ const JadwalPage = () => {
     </div>
   )}
 
+  
   {/* BAGIAN FORM: Menggunakan padding lebih besar, sudut lebih bulat, dan shadow lebih kuat */}
    {role === "admin" && (
+    
   <div className="bg-white p-8 rounded-xl shadow-lg mb-10">
     <h2 className="text-2xl font-bold mb-6 text-gray-800">
       {editingJadwalId ? 'Update Jadwal' : 'Buat Jadwal Baru'}
@@ -250,7 +307,7 @@ const JadwalPage = () => {
                 key={bagan.id}
                 onClick={() => setSelectedBaganId(bagan.id)}
                 className={`py-2 px-4 rounded-full transition-all duration-200 text-sm font-semibold cursor-pointer select-none
-                  ${selectedBaganId === bagan.id
+                  ${selectedBaganId === Number(bagan.id)
                     ? 'bg-blue-600 text-white shadow-md'
                     : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                   }
@@ -344,12 +401,32 @@ const JadwalPage = () => {
 
   {/* BAGIAN JADWAL PERTANDINGAN: Tampilan kartu diubah */}
   <h2 className="text-3xl font-bold mb-6 text-gray-800">Jadwal Pertandingan</h2>
+
+      {/* ffilter */}
+    <div className="mb-6 flex flex-wrap gap-2">
+        {uniqueTanggal.map(tgl => (
+          <button
+            key={tgl}
+            onClick={() => setSelectedTanggalFilter(tgl)}
+            className={`py-2 px-4 rounded-full font-semibold text-sm transition-all duration-200
+              ${selectedTanggalFilter === tgl ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
+            `}
+          >
+            {tgl}
+          </button>
+        ))}
+        {/* Tambahkan tombol reset filter */}
+       
+      </div>
+
   {lapanganList.length > 0 ? (
     lapanganList.map((lapanganName) => (
       <div key={lapanganName} className="mb-8">
         <h3 className="text-xl font-bold mb-4 text-gray-800">{lapanganName}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {groupedJadwal[lapanganName].map((j) => (
+          {groupedJadwal[lapanganName]
+          .filter(j => !selectedTanggalFilter || j.tanggal === selectedTanggalFilter)
+          .map((j) => (
             <div key={j.id} className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col justify-between relative">
               <div className="absolute top-3 right-3 flex space-x-2">
                 <button

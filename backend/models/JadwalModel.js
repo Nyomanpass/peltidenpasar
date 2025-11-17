@@ -1,5 +1,6 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/Database.js";
+import { Tournament } from "./TournamentModel.js";
 
 export const Jadwal = sequelize.define("Jadwal", {
   id: {
@@ -36,3 +37,6 @@ export const Jadwal = sequelize.define("Jadwal", {
   tableName: "jadwals",
   timestamps: true,
 });
+
+Tournament.hasMany(Jadwal, { foreignKey: "tournamentId", onDelete: "CASCADE" });
+Jadwal.belongsTo(Tournament, { foreignKey: "tournamentId" });

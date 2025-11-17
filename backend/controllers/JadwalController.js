@@ -7,19 +7,27 @@ import { Lapangan } from '../models/LapanganModel.js';
 import { Bagan } from '../models/BaganModel.js';
 import { Op } from 'sequelize'; // Import operator Sequelize
 
+
 export const getJadwal = async (req, res) => {
   try {
+    const { tournamentId } = req.query; // ← ambil dari query
+
+    const whereCondition = {};
+    if (tournamentId) {
+      whereCondition.tournamentId = tournamentId; // ← filter di backend
+    }
+
     const jadwal = await Jadwal.findAll({
+      where: whereCondition, // ← pasang filter di sini
       include: [
         { 
           model: Match, 
           as: 'match',
-          // Perlu include model Bagan di dalam model Match
           include: [
             { model: Peserta, as: 'peserta1', attributes: ['id', 'namaLengkap'] },
             { model: Peserta, as: 'peserta2', attributes: ['id', 'namaLengkap'] },
             { 
-              model: Bagan, // Tambahkan include ini
+              model: Bagan,
               as: 'bagan',
               attributes: ['id', 'nama'] 
             }
@@ -42,6 +50,7 @@ export const getJadwal = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 export const getJadwalByTanggal = async (req, res) => {
@@ -75,7 +84,7 @@ export const getJadwalByTanggal = async (req, res) => {
 // --- Fungsi createJadwal yang Ditingkatkan ---
 export const createJadwal = async (req, res) => {
   try {
-    const { matchId, lapanganId, waktuMulai, tanggal } = req.body;
+    const { matchId, lapanganId, waktuMulai, tanggal, tournamentId} = req.body;
 
     // Hitung waktuSelesai secara otomatis (durasi 1 jam)
     const waktuMulaiDate = new Date(waktuMulai);
@@ -103,18 +112,17 @@ export const createJadwal = async (req, res) => {
     }
 
     // 3. Validasi Ketersediaan Lapangan (Logika yang diperbarui)
-    const overlappingJadwal = await Jadwal.findOne({
-      where: {
-        lapanganId: lapanganId,
-        tanggal: tanggal,
-        [Op.and]: [
-          // Periksa apakah jadwal baru dimulai sebelum jadwal yang sudah ada selesai
-          { waktuMulai: { [Op.lt]: waktuSelesaiDate.toISOString() } },
-          // DAN apakah jadwal baru selesai setelah jadwal yang sudah ada dimulai
-          { waktuSelesai: { [Op.gt]: waktuMulaiDate.toISOString() } },
-        ]
-      }
-    });
+      const overlappingJadwal = await Jadwal.findOne({
+        where: {
+          lapanganId,
+          tanggal,
+          tournamentId, // ← tambahkan ini supaya bentrok hanya dicek dalam tournament yang sama
+          [Op.and]: [
+            { waktuMulai: { [Op.lt]: waktuSelesaiDate.toISOString() } },
+            { waktuSelesai: { [Op.gt]: waktuMulaiDate.toISOString() } },
+          ]
+        }
+      });
 
     if (overlappingJadwal) {
       return res.status(400).json({ error: "Lapangan sudah terpakai pada waktu yang Anda pilih." });
@@ -127,6 +135,7 @@ export const createJadwal = async (req, res) => {
       waktuMulai: waktuMulaiDate,
       waktuSelesai: waktuSelesaiDate,
       tanggal,
+      tournamentId, 
       status: "aktif"
     });
 

@@ -20,6 +20,7 @@ export default function BaganView() {
   const [isSeedingLoading, setIsSeedingLoading] = useState(false); // State baru untuk loading pengundian
   const [byeSlotsCount, setByeSlotsCount] = useState(0);
   const role = localStorage.getItem('role')
+  const tournamentId = localStorage.getItem("selectedTournament");
 
   // Load data bagan menggunakan axios
   const loadBagan = async () => {
@@ -42,10 +43,12 @@ export default function BaganView() {
       const res = await api.get('/pesertafilter', {
         params: {
           kelompokUmurId: kelompokUmurId,
-          status: 'verified'
+          status: 'verified',
+          tournamentId
         }
       });
       const data = res.data; // Mengakses data dari properti .data
+      console.log("Peserta setelah filter:", res.data);
       setAllPeserta(data);
       const totalPeserta = data.length;
       let bracketSize = 2;

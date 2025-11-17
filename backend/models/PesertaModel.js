@@ -1,6 +1,7 @@
 // models/PesertaModel.js
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/Database.js";
+import { Tournament } from "./TournamentModel.js";
 
 export const Peserta = sequelize.define("Peserta", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -22,3 +23,6 @@ export const Peserta = sequelize.define("Peserta", {
   tableName: "peserta",
   timestamps: true,
 });
+
+Tournament.hasMany(Peserta, { foreignKey: "tournamentId", onDelete: "CASCADE" });
+Peserta.belongsTo(Tournament, { foreignKey: "tournamentId" });

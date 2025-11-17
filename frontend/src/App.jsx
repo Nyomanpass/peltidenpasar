@@ -22,6 +22,11 @@ import JadwalPage from "./pages/JadwalPage";
 import BaganView from "./pages/BaganView";
 import JuaraPage from "./pages/JuaraPage";
 import SkorPage from "./pages/SkorPage";
+import Tournament from "./pages/admin/Tournament";
+
+//landing page
+import TournamentUser from "./pages/user/TournamentUser";
+import AboutPage from "./pages/user/AboutPage";
 
 export default function App() {
   return (
@@ -32,7 +37,8 @@ export default function App() {
           <Route path="/register" element={<Register/>}/>
           <Route path="/login" element={<Login />} />
           <Route path="/daftar-peserta" element={<PesertaForm/>}/>
-
+          <Route path="/tournament" element={<TournamentUser/>}/>
+          <Route path="/about" element={<AboutPage/>}/>
 
           <Route
             path="/admin"
@@ -45,6 +51,7 @@ export default function App() {
             }
           >
             <Route path="verify" element={<PesertaList/>}/>
+            <Route path="tournament" element={<Tournament/>}/>
             <Route path="detail-peserta/:id" element={<DetailPeserta/>}/>
             <Route path="peserta" element={<Peserta/>}/>
             <Route path="bagan-peserta" element={<BaganPage/>}/>

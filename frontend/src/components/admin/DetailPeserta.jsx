@@ -40,7 +40,7 @@ function DetailPeserta() {
         <div className="flex gap-6">
           {/* Foto */}
           <img
-            src={`http://localhost:5000/${peserta.fotoKartu}`}
+            src={`http://localhost:5004/${peserta.fotoKartu}`}
             alt={peserta.namaLengkap}
             className="w-48 h-48 object-cover rounded-lg border"
           />

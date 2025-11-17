@@ -1,6 +1,8 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/Database.js";
 import { KelompokUmur } from "./KelompokUmurModel.js";
+import { Tournament } from "./TournamentModel.js";
+
 
 export const Bagan = sequelize.define("Bagan", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -12,3 +14,6 @@ export const Bagan = sequelize.define("Bagan", {
 
 KelompokUmur.hasOne(Bagan, { foreignKey: "kelompokUmurId" });
 Bagan.belongsTo(KelompokUmur, { foreignKey: "kelompokUmurId" });
+
+Tournament.hasMany(Bagan, { foreignKey: "tournamentId", onDelete: "CASCADE" });
+Bagan.belongsTo(Tournament, { foreignKey: "tournamentId" });

@@ -3,17 +3,31 @@ import api from "../../api";
 import { Link } from "react-router-dom";
 import { Trash2, Eye } from "lucide-react";
 
-
 function Peserta() {
   const [kelompokUmur, setKelompokUmur] = useState([]);
   const [loading, setLoading] = useState(true);
-  const role = localStorage.getItem('role');
+
+  const role = localStorage.getItem("role");
+  const selectedTournament = localStorage.getItem("selectedTournament"); 
+  const selectedTournamentName = localStorage.getItem("selectedTournamentName");
 
   // Ambil data peserta per kelompok umur
   const fetchPeserta = async () => {
     try {
-      const res = await api.get("/peserta/kelompok-umur");
+      if (!selectedTournament) {
+        console.warn("⚠ Tidak ada tournament yang dipilih!");
+        return;
+      }
+
+      console.log("➡ Fetch peserta untuk tournament:", selectedTournament);
+
+      const res = await api.get(
+        `/peserta/kelompok-umur?tournamentId=${selectedTournament}`
+      );
+
+      console.log("➡ Data peserta masuk:", res.data);
       setKelompokUmur(res.data);
+
     } catch (err) {
       console.error("Error fetch peserta:", err);
     } finally {
@@ -21,16 +35,28 @@ function Peserta() {
     }
   };
 
-  useEffect(() => {
-    fetchPeserta();
-  }, []);
+    useEffect(() => {
+      fetchPeserta();
+    }, [selectedTournament]); 
+
+    useEffect(() => {
+      const reloadPeserta = () => {
+        fetchPeserta(); 
+      };
+
+      window.addEventListener("tournament-changed", reloadPeserta);
+
+      return () => {
+        window.removeEventListener("tournament-changed", reloadPeserta);
+      };
+    }, []);
 
   // Hapus peserta
   const handleDelete = async (id) => {
     if (!window.confirm("Yakin mau hapus peserta ini?")) return;
     try {
       await api.delete(`/peserta/${id}`);
-      fetchPeserta(); // refresh data setelah hapus
+      fetchPeserta(); // refresh
     } catch (err) {
       console.error("Error delete:", err);
     }
@@ -41,7 +67,7 @@ function Peserta() {
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       <h1 className="text-3xl font-extrabold mb-6 text-yellow-600 text-center">
-        👥 Daftar Peserta per Kelompok Umur
+        👥 Peserta Tournament {selectedTournamentName}
       </h1>
 
       {kelompokUmur.length === 0 ? (
@@ -96,7 +122,6 @@ function Peserta() {
                           <Eye size={16} /> Detail
                         </Link>
 
-                        {/* ✅ Tombol hapus hanya muncul kalau role = admin */}
                         {role === "admin" && (
                           <button
                             onClick={() => handleDelete(p.id)}

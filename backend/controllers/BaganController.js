@@ -5,33 +5,38 @@ import { Peserta } from "../models/PesertaModel.js";
 
 export const createBagan = async (req, res) => {
   try {
-    const { kelompokUmurId } = req.body;
+    const { kelompokUmurId, tournamentId } = req.body;
 
-    const kelompokumur = await KelompokUmur.findByPk(kelompokUmurId)
-
+    const kelompokumur = await KelompokUmur.findByPk(kelompokUmurId);
     if (!kelompokumur) {
       return res.status(404).json({ msg: "Kelompok umur tidak ditemukan." });
     }
 
-    // Ambil peserta
-    const peserta = await Peserta.findAll({ where: { kelompokUmurId } });
+    // Ambil peserta berdasarkan tournament
+    const peserta = await Peserta.findAll({
+      where: { 
+        kelompokUmurId, 
+        tournamentId,
+        status: "verified"
+      }
+    });
+
     const jumlah = peserta.length;
 
     let tipe = "roundrobin";
-    if (jumlah > 4) tipe = "knockout"; // >4 → knockout
+    if (jumlah > 4) tipe = "knockout";
 
-    const namaBaganBaru = `Bagan ${kelompokumur.nama}`;
-    // Buat bagan
     const bagan = await Bagan.create({
-      nama: namaBaganBaru,
+      nama: `Bagan ${kelompokumur.nama}`,
       tipe,
       jumlahPeserta: jumlah,
       kelompokUmurId,
+      tournamentId,
       status: "draft",
     });
 
+    // --- Round Robin ---
     if (tipe === "roundrobin") {
-      // round robin langsung generate semua
       for (let i = 0; i < jumlah; i++) {
         for (let j = i + 1; j < jumlah; j++) {
           await Match.create({
@@ -40,18 +45,20 @@ export const createBagan = async (req, res) => {
             slot: i + 1,
             peserta1Id: peserta[i].id,
             peserta2Id: peserta[j].id,
+            tournamentId
           });
         }
       }
-    } else {
-      // knockout → HANYA generate struktur kosong, peserta bisa diinput manual
+    }
+
+    // --- Knockout ---
+    else {
       let size = 2;
-      while (size < jumlah) size *= 2; // contoh 6 → 8
+      while (size < jumlah) size *= 2;
 
       const totalRounds = Math.log2(size);
       const allMatches = [];
 
-      // bikin semua match kosong
       for (let round = 1; round <= totalRounds; round++) {
         const numMatches = size / Math.pow(2, round);
         for (let slot = 1; slot <= numMatches; slot++) {
@@ -61,12 +68,12 @@ export const createBagan = async (req, res) => {
             slot,
             peserta1Id: null,
             peserta2Id: null,
+            tournamentId
           });
           allMatches.push(match);
         }
       }
 
-      // link nextMatchId (biar otomatis winner naik babak)
       for (let m of allMatches) {
         if (m.round < totalRounds) {
           const nextSlot = Math.ceil(m.slot / 2);
@@ -82,10 +89,12 @@ export const createBagan = async (req, res) => {
     }
 
     res.status(201).json({ msg: "Bagan berhasil dibuat", bagan });
+
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
 };
+
 
 
 export const getBaganWithMatches = async (req, res) => {
@@ -113,17 +122,28 @@ export const getBaganWithMatches = async (req, res) => {
   }
 };
 
+
 export const getAllBagan = async (req, res) => {
   try {
-    // Ambil semua bagan tanpa filter
-    const bagans = await Bagan.findAll();
-    
-    // Kirim data bagan ke frontend
-    res.json(bagans); 
+    const { tournamentId } = req.query; 
+
+    let filter = {};
+
+    // Jika ada tournamenId → tambahkan filter
+    if (tournamentId) {
+      filter.tournamentId = tournamentId;
+    }
+
+    const bagans = await Bagan.findAll({
+      where: filter
+    });
+
+    res.json(bagans);
   } catch (err) {
     res.status(500).json({ msg: err.message });
   }
 };
+
 
 
 

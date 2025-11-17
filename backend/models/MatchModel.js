@@ -2,6 +2,7 @@ import { DataTypes } from "sequelize";
 import { sequelize } from "../config/Database.js";
 import { Bagan } from "./BaganModel.js";
 import { Peserta } from "./PesertaModel.js";
+import { Tournament } from "./TournamentModel.js";
 
 export const Match = sequelize.define("Match", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
@@ -27,3 +28,6 @@ Match.belongsTo(Bagan, { foreignKey: "baganId", as: "bagan" });
 Match.belongsTo(Peserta, { as: "peserta1", foreignKey: "peserta1Id" });
 Match.belongsTo(Peserta, { as: "peserta2", foreignKey: "peserta2Id" });
 Match.belongsTo(Peserta, { as: "winner", foreignKey: "winnerId" });
+
+Tournament.hasMany(Match, { foreignKey: "tournamentId", onDelete: "CASCADE" });
+Match.belongsTo(Tournament, { foreignKey: "tournamentId" });

@@ -50,7 +50,7 @@ export const getPesertaById = async (req, res) => {
 // Create peserta
 export const createPeserta = async (req, res) => {
   try {
-    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId } = req.body;
+    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId,tournamentId } = req.body;
     const fotoKartu = req.file ? req.file.path : null;
 
     const newData = await Peserta.create({
@@ -58,6 +58,7 @@ export const createPeserta = async (req, res) => {
       nomorWhatsapp,
       tanggalLahir,
       kelompokUmurId,
+      tournamentId,
       fotoKartu,
     });
 
@@ -73,7 +74,7 @@ export const updatePeserta = async (req, res) => {
     const peserta = await Peserta.findByPk(req.params.id);
     if (!peserta) return res.status(404).json({ message: "Peserta tidak ditemukan" });
 
-    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId } = req.body;
+    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId } = req.body;
 
     if (req.file) {
       if (peserta.fotoKartu && fs.existsSync(peserta.fotoKartu)) {
@@ -86,6 +87,7 @@ export const updatePeserta = async (req, res) => {
     peserta.nomorWhatsapp = nomorWhatsapp || peserta.nomorWhatsapp;
     peserta.tanggalLahir = tanggalLahir || peserta.tanggalLahir;
     peserta.kelompokUmurId = kelompokUmurId || peserta.kelompokUmurId;
+    peserta.tournamentId = tournamentId || peserta.tournamentId; 
 
     await peserta.save();
 
@@ -132,28 +134,40 @@ export const verifyPeserta = async (req, res) => {
 // Get peserta per kelompok umur
 export const getPesertaByKelompokUmur = async (req, res) => {
   try {
+    const { tournamentId } = req.query;
+
+    const pesertaFilter = { status: "verified" };
+
+    // Kalau tournamentId dikirim dari frontend → tambahkan filter
+    if (tournamentId) {
+      pesertaFilter.tournamentId = tournamentId;
+    }
+
     const result = await KelompokUmur.findAll({
       attributes: ["id", "nama"],
       include: [
         {
           model: Peserta,
           as: "peserta",
-          attributes: ["id", "namaLengkap", "status", "kelompokUmurId"],
-          where: { status: "verified" }, // hanya tampilkan yang status verified
-          required: false, // biar kelompok umur tetap muncul meskipun tidak ada peserta verified
+          attributes: ["id", "namaLengkap", "status", "kelompokUmurId", "tournamentId"],
+          where: pesertaFilter,
+          required: false, // supaya kelompok umur tetap muncul meskipun tidak ada peserta
         },
       ],
     });
+
     res.json(result);
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Terjadi kesalahan server" });
   }
 };
 
+
 export const getPesertaFiltered = async (req, res) => {
   try {
-    const { kelompokUmurId, status } = req.query;
+    const { kelompokUmurId, status, tournamentId } = req.query; // tambahkan tournamentId
     let whereClause = {};
 
     if (kelompokUmurId) {
@@ -162,13 +176,16 @@ export const getPesertaFiltered = async (req, res) => {
     if (status) {
       whereClause.status = status;
     }
+    if (tournamentId) {
+      whereClause.tournamentId = tournamentId; // filter berdasarkan tournament
+    }
 
     const peserta = await Peserta.findAll({
       where: whereClause,
       include: [
         { 
           model: KelompokUmur,
-          as: "kelompokUmur" // Tambahkan alias di sini
+          as: "kelompokUmur"
         } 
       ]
     });
@@ -178,5 +195,7 @@ export const getPesertaFiltered = async (req, res) => {
     res.status(500).json({ msg: err.message });
   }
 };
+
+
 
 

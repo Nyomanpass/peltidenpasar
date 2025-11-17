@@ -6,6 +6,8 @@ import "./models/UserModel.js";
 import './models/KelompokUmurModel.js';
 import './models/PesertaModel.js';
 import './models/JadwalModel.js'
+import "./models/index.js";
+
 
 // autentication
 import authRoutes from "./routes/AuthRoutes.js";
@@ -25,6 +27,8 @@ import matchRoutes from './routes/MatchRoutes.js';
 import jadwalRoutes from './routes/JadwalRoutes.js'
 //lapangan
 import lapanganRoutes from './routes/LapanganRoutes.js'
+//tournament
+import tournamentRoutes from './routes/TournamentRoutes.js'
 
 
 
@@ -58,6 +62,9 @@ app.use('/api', jadwalRoutes);
 //lapangan
 app.use('/api', lapanganRoutes);
 
+//tournament
+app.use('/api', tournamentRoutes);
+
 
 
 app.get("/", (req, res) => res.send("API OK"));
@@ -65,11 +72,11 @@ app.get("/", (req, res) => res.send("API OK"));
 const start = async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync();
-    app.listen(5000, () => console.log("server up and running on :5000"));
-  } catch (e) {
-    console.error(e);
-    process.exit(1);
+    console.log("✅ Database connected");
+    await sequelize.sync(); // PAKAI force untuk bikin ulang tabel dari nol
+    app.listen(5004, () => console.log("Server berjalan di port 5004"));
+  } catch (error) {
+    console.error("❌ Error saat menjalankan server:", error);
   }
 };
 
