@@ -31,7 +31,7 @@ function WinnerModal({ match, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/50 p-4 sm:p-0">
+    <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-60 p-4 sm:p-0">
   <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-lg mx-auto transform transition-all duration-300 scale-100 opacity-100">
     <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
       Input Skor Match

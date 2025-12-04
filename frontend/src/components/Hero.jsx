@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// Data untuk setiap slide, dengan penambahan field 'description'
 const slides = [
   {
     title: "Walikota Cup 2025",
@@ -9,7 +8,7 @@ const slides = [
     description: "Ikuti turnamen tenis bergengsi tahunan. Ajang sempurna bagi atlet junior hingga senior untuk menguji kemampuan, meraih gelar, dan mengukir sejarah di kancah Denpasar.",
     ctaText: "Daftar Sekarang",
     ctaLink: "/tournament/walikotacup",
-    image: "hero.jpg"
+    image: "juara.png"
   },
   {
     title: "Mencetak Generasi Unggul",
@@ -18,7 +17,7 @@ const slides = [
     description: "Kami fokus pada pengembangan bibit muda melalui kurikulum latihan tenis terbaik. Menyiapkan atlet Denpasar dari tingkat SD hingga SMA untuk kompetisi nasional dan internasional.",
     ctaText: "Program Pembinaan",
     ctaLink: "/program/pembinaan",
-     image: "hero.jpg"
+     image: "juara.png"
   },
   {
     title: "Tenis Untuk Semua",
@@ -27,11 +26,11 @@ const slides = [
     description: "Gabung dengan komunitas kami! Selain turnamen, kami menyediakan Fun Match dan program 'Ayo Tenis' untuk masyarakat umum. Sehatkan raga, jalin silaturahmi.",
     ctaText: "Gabung Komunitas",
     ctaLink: "/komunitas",
-     image: "hero.jpg"
+     image: "juara.png"
   },
 ];
 
-const AUTO_SLIDE_INTERVAL = 8000; // 5 detik
+const AUTO_SLIDE_INTERVAL = 8000; 
 
 function Hero() {
   const [currentSlide, setCurrentSlide] = useState(0);

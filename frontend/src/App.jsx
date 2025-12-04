@@ -10,9 +10,9 @@ import Register from "./pages/Register";
 import DashboardLayout from "./pages/DashboardLayout";
 
 import PesertaForm from "./pages/PesertaForm";
+import ScrollToTop from "./components/ScrollToTop";
 
 //admin
-import PesertaList from "./components/admin/PesertaList";
 import DetailPeserta from "./components/admin/DetailPeserta";
 import Peserta from "./components/admin/Peserta";
 import BaganPage from "./pages/BaganPage";
@@ -27,11 +27,15 @@ import Tournament from "./pages/admin/Tournament";
 //landing page
 import TournamentUser from "./pages/user/TournamentUser";
 import AboutPage from "./pages/user/AboutPage";
+import ContactPage from "./pages/user/ContactPage";
+import TournamentDetailPage from "./components/TournamentDetailPage";
+
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+      <ScrollToTop/>
         <Routes>
           <Route index element={<Home />} />
           <Route path="/register" element={<Register/>}/>
@@ -39,6 +43,8 @@ export default function App() {
           <Route path="/daftar-peserta" element={<PesertaForm/>}/>
           <Route path="/tournament" element={<TournamentUser/>}/>
           <Route path="/about" element={<AboutPage/>}/>
+          <Route path="/contact" element={<ContactPage/>}/>
+          <Route path="/tournament-detail" element={<TournamentDetailPage/>}/>
 
           <Route
             path="/admin"
@@ -50,7 +56,7 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="verify" element={<PesertaList/>}/>
+            {/* <Route path="verify" element={<PesertaList/>}/> */}
             <Route path="tournament" element={<Tournament/>}/>
             <Route path="detail-peserta/:id" element={<DetailPeserta/>}/>
             <Route path="peserta" element={<Peserta/>}/>

@@ -12,7 +12,7 @@ export default function DashboardLayout() {
       <Sidebar isOpen={isOpen} />
       <div className="flex-1 md:ml-64">
         <NavbarDashboard toggleSidebar={() => setIsOpen(!isOpen)}/>
-        <main className="p-6 pt-28 md:pt-32">
+        <main className="p-6 pt-28 md:pt-28">
           <Outlet />
         </main>
       </div>

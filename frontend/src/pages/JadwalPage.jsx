@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import WinnerModal from "../components/modalbox/WinnerModal";
+import { Edit, Trash2, Calendar, Clock, PlusCircle, CheckCircle, XCircle, Layout, Filter } from "lucide-react";
 
 const JadwalPage = () => {
   const [jadwal, setJadwal] = useState([]);
@@ -272,59 +273,66 @@ const fetchBagan = async () => {
   const lapanganList = Object.keys(groupedJadwal);
 
   return (
-    <div className="p-8 font-sans bg-gray-100 min-h-screen">
-  <h1 className="text-4xl font-extrabold text-center mb-10 text-gray-900">
-    Manajemen Jadwal Pertandingan {selectedTournamentName}
-  </h1>
+<div className="font-sans min-h-screen">
 
+  {/* Notifikasi */}
   {error && (
-    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4">
+    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 shadow-md">
       {error}
     </div>
   )}
   {success && (
-    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4">
+    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4 shadow-md">
       {success}
     </div>
   )}
 
   
-  {/* BAGIAN FORM: Menggunakan padding lebih besar, sudut lebih bulat, dan shadow lebih kuat */}
+  {/* --- BAGIAN FORM: ADMIN --- */}
    {role === "admin" && (
     
-  <div className="bg-white p-8 rounded-xl shadow-lg mb-10">
-    <h2 className="text-2xl font-bold mb-6 text-gray-800">
-      {editingJadwalId ? 'Update Jadwal' : 'Buat Jadwal Baru'}
+  <div className="bg-white p-8 rounded-2xl shadow-2xl mb-10 border border-gray-100">
+    <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3">
+      {editingJadwalId ? '✏️ Update Jadwal Pertandingan' : '➕ Buat Jadwal Baru'}
     </h2>
+    
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Input diatur dalam layout grid agar lebih ringkas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div>
-          <label className="block text-gray-700 font-semibold mb-2">Pilih Bagan:</label>
-          <div className="flex flex-wrap gap-2">
-            {baganList.map((bagan) => (
+      
+      {/* Pilihan Bagan (Custom Chip/Tag Selection) */}
+      <div>
+        <label className="block text-sm font-bold text-gray-700 mb-2">Pilih Bagan Pertandingan:</label>
+        <div className="flex flex-wrap gap-3">
+          {baganList.length === 0 ? (
+              <p className="text-sm text-gray-500 italic">Tidak ada bagan yang tersedia untuk dipilih.</p>
+          ) : (
+            baganList.map((bagan) => (
               <span
                 key={bagan.id}
                 onClick={() => setSelectedBaganId(bagan.id)}
-                className={`py-2 px-4 rounded-full transition-all duration-200 text-sm font-semibold cursor-pointer select-none
+                className={`py-2 px-4 rounded-full transition-all duration-200 text-sm font-semibold cursor-pointer select-none border shadow-sm
                   ${selectedBaganId === Number(bagan.id)
-                    ? 'bg-blue-600 text-white shadow-md'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-blue-600 text-white border-blue-700'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300'
                   }
                 `}
               >
-                {bagan.nama}
+                <Layout size={16} className="inline mr-1"/> {bagan.nama}
               </span>
-            ))}
-          </div>
+            ))
+          )}
         </div>
-
+      </div>
+      
+      {/* Grid Input Utama */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        {/* Match Selection */}
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Match:</label>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Match:</label>
           <select
             value={selectedMatch}
             onChange={(e) => setSelectedMatch(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200 bg-white"
             disabled={!selectedBaganId}
           >
             <option value="">-- Pilih Match --</option>
@@ -335,16 +343,17 @@ const fetchBagan = async () => {
             ))}
           </select>
           {!selectedBaganId && (
-            <p className="text-sm text-gray-500 mt-1">Pilih bagan terlebih dahulu.</p>
+            <p className="text-xs text-red-500 mt-1">Pilih bagan terlebih dahulu.</p>
           )}
         </div>
 
+        {/* Lapangan Selection */}
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Lapangan:</label>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Lapangan:</label>
           <select
             value={selectedLapangan}
             onChange={(e) => setSelectedLapangan(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200 bg-white"
           >
             <option value="">-- Pilih Lapangan --</option>
             {lapangan.map((l) => (
@@ -355,163 +364,197 @@ const fetchBagan = async () => {
           </select>
         </div>
 
+        {/* Tanggal Input */}
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Tanggal:</label>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Tanggal:</label>
           <input
             type="date"
             value={tanggal}
             onChange={(e) => setTanggal(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200"
           />
         </div>
+        
+        {/* Waktu Mulai Input */}
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Waktu Mulai:</label>
+          <label className="block text-sm font-bold text-gray-700 mb-2">Waktu Mulai:</label>
           <input
             type="time"
             value={waktuMulai}
             onChange={(e) => setWaktuMulai(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+            className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200"
           />
         </div>
       </div>
       
-      <div className="flex space-x-2 pt-4">
-        <button
-          type="submit"
-          className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300 font-semibold"
-        >
-          {editingJadwalId ? 'Update Jadwal' : 'Buat Jadwal'}
-        </button>
+      {/* Tombol Aksi Form */}
+      <div className="flex space-x-3 pt-4 justify-end">
         {editingJadwalId && (
           <button
             type="button"
             onClick={handleCancelEdit}
-            className="bg-gray-400 text-white py-2 px-4 rounded-md hover:bg-gray-500 transition duration-300 font-semibold"
+            className="flex items-center gap-2 bg-gray-500 text-white py-3 px-6 rounded-xl shadow-md hover:bg-gray-600 transition duration-300 font-semibold"
           >
-            Batal Edit
+            <XCircle size={20}/> Batal Edit
           </button>
         )}
+        <button
+          type="submit"
+          className="flex items-center gap-2 bg-blue-600 text-white py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300 font-bold transform hover:scale-[1.01]"
+        >
+          {editingJadwalId ? <Edit size={20}/> : <PlusCircle size={20}/>}
+          {editingJadwalId ? 'Update Jadwal' : 'Buat Jadwal'}
+        </button>
       </div>
     </form>
   </div>
    )}
 
-  {/* GARIS PEMISAH */}
-  <hr className="my-10 border-gray-300" />
+  {/* --- BAGIAN FILTER TANGGAL --- */}
 
-  {/* BAGIAN JADWAL PERTANDINGAN: Tampilan kartu diubah */}
-  <h2 className="text-3xl font-bold mb-6 text-gray-800">Jadwal Pertandingan</h2>
-
-      {/* ffilter */}
-    <div className="mb-6 flex flex-wrap gap-2">
-        {uniqueTanggal.map(tgl => (
-          <button
-            key={tgl}
-            onClick={() => setSelectedTanggalFilter(tgl)}
-            className={`py-2 px-4 rounded-full font-semibold text-sm transition-all duration-200
-              ${selectedTanggalFilter === tgl ? 'bg-blue-600 text-white shadow-md' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}
-            `}
+  
+  <div className="mb-8 flex flex-wrap gap-3 p-4 bg-white rounded-xl shadow-md border border-gray-100 items-center">
+    <p className="text-lg font-bold text-gray-700 flex items-center gap-2"><Filter size={20} className="text-yellow-500"/> Filter Tanggal:</p>
+    
+    {uniqueTanggal.map(tgl => (
+      <button
+        key={tgl}
+        onClick={() => setSelectedTanggalFilter(tgl)}
+        className={`py-2 px-4 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm
+          ${selectedTanggalFilter === tgl 
+            ? 'bg-yellow-500 text-gray-900 border border-yellow-600' 
+            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'}
+        `}
+      >
+        {tgl}
+      </button>
+    ))}
+    
+    {/* Tombol Reset Filter */}
+    {selectedTanggalFilter && (
+         <button
+            onClick={() => setSelectedTanggalFilter('')}
+            className="py-2 px-4 rounded-xl font-semibold text-sm bg-red-500 text-white hover:bg-red-600 transition shadow-md"
           >
-            {tgl}
+            Reset Filter
           </button>
-        ))}
-        {/* Tambahkan tombol reset filter */}
-       
-      </div>
+    )}
+  </div>
 
+  {/* --- BAGIAN LIST JADWAL PER LAPANGAN --- */}
   {lapanganList.length > 0 ? (
     lapanganList.map((lapanganName) => (
-      <div key={lapanganName} className="mb-8">
-        <h3 className="text-xl font-bold mb-4 text-gray-800">{lapanganName}</h3>
+      <div key={lapanganName} className="mb-10">
+        <h3 className="text-2xl font-bold mb-5 text-gray-900 border-l-4 border-yellow-500 pl-3 bg-white p-3 rounded-lg shadow-sm">
+          📍 {lapanganName}
+        </h3>
+        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groupedJadwal[lapanganName]
           .filter(j => !selectedTanggalFilter || j.tanggal === selectedTanggalFilter)
           .map((j) => (
-            <div key={j.id} className="bg-white p-6 rounded-xl shadow-lg border border-gray-200 flex flex-col justify-between relative">
-              <div className="absolute top-3 right-3 flex space-x-2">
-                <button
-                  onClick={() => handleEditClick(j)}
-                  className="p-2 rounded-full bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition duration-300"
-                  aria-label="Edit Jadwal"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L15.232 5.232z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => handleDeleteJadwal(j.id)}
-                  className="p-2 rounded-full bg-red-100 text-red-500 hover:bg-red-200 transition duration-300"
-                  aria-label="Hapus Jadwal"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+            <div 
+              key={j.id} 
+              className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 flex flex-col justify-between relative transform hover:scale-[1.01] transition duration-300"
+            >
+              {/* Tombol Aksi Edit/Hapus (di sudut) */}
+              {role === "admin" && (
+                <div className="absolute top-3 right-3 flex space-x-2">
+                  <button
+                    onClick={() => handleEditClick(j)}
+                    className="p-2 rounded-full bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20 transition duration-300"
+                    aria-label="Edit Jadwal"
+                    title="Edit Jadwal"
+                  >
+                    <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteJadwal(j.id)}
+                    className="p-2 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 transition duration-300"
+                    aria-label="Hapus Jadwal"
+                    title="Hapus Jadwal"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              )}
 
-              <div>
+              <div className="pr-10"> {/* Padding agar tidak tertutup tombol aksi */}
                 {j.match?.bagan?.nama && (
-                  <p className="text-sm font-bold text-gray-500 mb-2">
+                  <p className="text-xs font-semibold text-blue-600 mb-2 uppercase tracking-wider">
                     {j.match.bagan.nama}
                   </p>
                 )}
 
-                <h4 className="text-xl font-bold text-gray-900 leading-tight mb-2">
+                <h4 className="text-lg font-extrabold text-gray-900 leading-snug mb-3">
                   {j.match?.peserta1?.namaLengkap || 'Peserta Belum Ditentukan'} vs{' '}
                   {j.match?.peserta2?.namaLengkap || 'Peserta Belum Ditentukan'}
                 </h4>
 
                 {j.status === 'selesai' ? (
-                  <div className="border-t border-b border-gray-200 py-3 my-3">
-                    <p className="text-sm font-bold text-gray-700">Skor: {j.match.score1} - {j.match.score2}</p>
-                    <p className="text-sm font-bold text-green-600 mt-1">
-                      <span role="img" aria-label="trophy">🏆</span> Pemenang:
+                  /* Tampilan Skor dan Pemenang */
+                  <div className="border-y border-gray-200 py-3 my-3 bg-green-50/50 rounded-lg p-2">
+                    <p className="text-lg font-bold text-gray-700">Skor: {j.match.score1} - {j.match.score2}</p>
+                    <p className="text-sm font-bold text-green-700 mt-1 flex items-center gap-1">
+                      <CheckCircle size={16}/> Pemenang:
                       {j.match.winnerId === j.match.peserta1Id ? ` ${j.match.peserta1?.namaLengkap}` : ` ${j.match.peserta2?.namaLengkap}`}
                     </p>
                   </div>
                 ) : (
-                  <div className="border-t border-b border-gray-200 py-3 my-3">
-                    <p className="text-sm text-gray-500 italic">Pertandingan belum selesai</p>
+                  /* Tampilan Belum Selesai */
+                  <div className="border-y border-gray-200 py-3 my-3">
+                    <p className="text-sm text-gray-500 italic flex items-center gap-1"><XCircle size={16} className="text-red-500"/> Pertandingan belum selesai</p>
                   </div>
                 )}
 
-                <div className="space-y-1">
-                  <p className="text-gray-600 text-sm">
+                <div className="space-y-2 mt-4">
+                  <p className="text-gray-700 text-sm font-medium flex items-center gap-2">
+                    <Calendar size={16} className="text-yellow-600"/> 
                     <strong>Tanggal:</strong> {j.tanggal}
                   </p>
-                  <p className="text-gray-600 text-sm">
+                  <p className="text-gray-700 text-sm font-medium flex items-center gap-2">
+                    <Clock size={16} className="text-yellow-600"/> 
                     <strong>Waktu:</strong>{' '}
-                    {new Date(j.waktuMulai.slice(0, -1)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} -{' '}
-                    {new Date(j.waktuSelesai.slice(0, -1)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(j.waktuMulai.slice(0, -1)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                   </p>
+                  {/* Waktu Selesai jika tersedia */}
+                  {/* <p className="text-gray-700 text-sm font-medium flex items-center gap-2">
+                    <Clock size={16} className="text-yellow-600"/> 
+                    <strong>Selesai:</strong> {new Date(j.waktuSelesai.slice(0, -1)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                  </p> */}
                 </div>
               </div>
               
-              <div className="mt-4 pt-4 border-t border-gray-200">
-                <p className="text-xs font-semibold uppercase tracking-wide">
-                  Status:{' '}
+              {/* Footer Status dan Aksi */}
+              <div className="mt-5 pt-4 border-t border-gray-100">
+                <p className="text-sm font-semibold uppercase tracking-wide flex justify-between items-center">
+                  Status Pertandingan:
                   <span
-                    className={`font-bold ${j.status === 'selesai' ? 'text-green-600' : j.status === 'berlangsung' ? 'text-yellow-500' : 'text-blue-600'}`}
+                    className={`font-bold inline-block px-3 py-1 rounded-full text-xs shadow-sm ${
+                        j.status === 'selesai' ? 'bg-green-500 text-white' : 
+                        j.status === 'berlangsung' ? 'bg-yellow-500 text-gray-900' : 
+                        'bg-blue-500 text-white'
+                    }`}
                   >
-                    {j.status}
+                    {j.status.toUpperCase()}
                   </span>
                 </p>
 
-                <div className="mt-4 flex space-x-2">
+                <div className="mt-4 flex space-x-3">
                   {j.status !== 'berlangsung' && j.status !== 'selesai' && (
                     <button
                       onClick={() => handleUpdateStatus(j.id, 'berlangsung')}
-                      className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition duration-300 font-semibold text-sm"
+                      className="flex-1 bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition duration-300 font-semibold text-sm"
                     >
-                      Tandai Berlangsung
+                      Mulai Sekarang
                     </button>
                   )}
-                  {j.status !== 'selesai' && (
+                  {(j.status === 'berlangsung' || j.status === 'terjadwal') && (
                     <button
                       onClick={() => handleCompleteJadwal(j)}
-                      className="flex-1 bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition duration-300 font-semibold text-sm"
+                      className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300 font-semibold text-sm"
                     >
-                      Tandai Selesai
+                      Input Skor & Selesaikan
                     </button>
                   )}
                 </div>
@@ -522,7 +565,10 @@ const fetchBagan = async () => {
       </div>
     ))
   ) : (
-    <p className="text-center text-gray-500">Tidak ada jadwal yang tersedia.</p>
+    <div className="p-10 text-center bg-gray-100 rounded-xl shadow-inner border border-gray-200">
+        <Calendar size={32} className="text-gray-400 mx-auto mb-3"/>
+        <p className="text-lg text-gray-600">Tidak ada jadwal pertandingan yang tersedia.</p>
+    </div>
   )}
 
   {showWinnerModal && selectedMatchToScore && (

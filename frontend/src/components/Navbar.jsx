@@ -64,7 +64,7 @@ export default function Navbar() {
     { name: "Home", path: "/" },
     { name: "Tentang Kami", path: "/about" },
     { name: "Turnamen", path: "/tournament" },
-    { name: "Berita", path: "/berita" },
+
     { name: "Contact", path: "/contact" },
   ];
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, Upload } from "lucide-react";
 
 function Tournament() {
   const [tournaments, setTournaments] = useState([]);
@@ -111,205 +111,220 @@ function Tournament() {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
-        Manajemen Turnamen
-      </h1>
+  <div className="max-w-6xl mx-auto"> {/* Max width sedikit diperluas */}
 
-      {/* FORM */}
-      <div className="bg-gray-50 p-6 rounded-xl shadow mb-8">
-        <h2 className="text-xl font-semibold mb-4 text-gray-700 border-b pb-2">
-          {editingId ? "Edit Turnamen" : "Tambah Turnamen Baru"}
+    {/* --- FORM SECTION --- */}
+    <div className="bg-white p-8 rounded-2xl shadow-2xl mb-10 border border-gray-100">
+        <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3">
+            {editingId ? "✏️ Edit Detail Turnamen" : "➕ Tambah Turnamen Baru"}
         </h2>
 
-        <form onSubmit={handleSubmit} className="grid md:grid-cols-2 gap-4">
-          {/* Nama */}
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-600 mb-1">
-              Nama Turnamen
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              required
-              className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            {/* Input Nama */}
+            <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-700 mb-1">
+                    Nama Turnamen <span className="text-red-500">*</span>
+                </label>
+                <input
+                    type="text"
+                    name="name"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                    placeholder="Contoh: Kejuaraan Nasional 2025"
+                    className="border border-gray-300 p-3 rounded-lg focus:ring-3 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all duration-200 shadow-sm"
+                />
+            </div>
 
-          {/* Lokasi */}
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-600 mb-1">
-              Lokasi Turnamen
-            </label>
-            <input
-              type="text"
-              name="location"
-              value={form.location}
-              onChange={handleChange}
-              className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+            {/* Input Lokasi */}
+            <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-700 mb-1">
+                    Lokasi Turnamen
+                </label>
+                <input
+                    type="text"
+                    name="location"
+                    value={form.location}
+                    onChange={handleChange}
+                    placeholder="Contoh: GOR Jaya Sakti"
+                    className="border border-gray-300 p-3 rounded-lg focus:ring-3 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all duration-200 shadow-sm"
+                />
+            </div>
 
-          {/* Tanggal Mulai */}
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-600 mb-1">
-              Tanggal Mulai
-            </label>
-            <input
-              type="date"
-              name="start_date"
-              value={form.start_date}
-              onChange={handleChange}
-              className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+            {/* Input Tanggal Mulai */}
+            <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-700 mb-1">
+                    Tanggal Mulai
+                </label>
+                <input
+                    type="date"
+                    name="start_date"
+                    value={form.start_date}
+                    onChange={handleChange}
+                    className="border border-gray-300 p-3 rounded-lg focus:ring-3 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all duration-200 shadow-sm appearance-none"
+                />
+            </div>
 
-          {/* Tanggal Selesai */}
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-600 mb-1">
-              Tanggal Selesai
-            </label>
-            <input
-              type="date"
-              name="end_date"
-              value={form.end_date}
-              onChange={handleChange}
-              className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+            {/* Input Tanggal Selesai */}
+            <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-700 mb-1">
+                    Tanggal Selesai
+                </label>
+                <input
+                    type="date"
+                    name="end_date"
+                    value={form.end_date}
+                    onChange={handleChange}
+                    className="border border-gray-300 p-3 rounded-lg focus:ring-3 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all duration-200 shadow-sm appearance-none"
+                />
+            </div>
 
-          {/* Status */}
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-600 mb-1">Status</label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={handleChange}
-              className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="aktif">Aktif</option>
-              <option value="nonaktif">Nonaktif</option>
-            </select>
-          </div>
-
-          {/* Poster (Upload File) */}
-          <div className="flex flex-col">
-            <label className="text-sm font-medium text-gray-600 mb-1">
-              Upload Poster Turnamen
-            </label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
-
-          {/* Deskripsi */}
-          <div className="flex flex-col md:col-span-2">
-            <label className="text-sm font-medium text-gray-600 mb-1">
-              Deskripsi
-            </label>
-            <textarea
-              name="description"
-              value={form.description}
-              onChange={handleChange}
-              className="border p-2 rounded h-24 focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
-
-          {/* Tombol */}
-          <div className="md:col-span-2 flex justify-end gap-3 mt-3">
-            {editingId && (
-              <button
-                type="button"
-                onClick={resetForm}
-                className="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-              >
-                Batal
-              </button>
-            )}
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            >
-              {editingId ? "Simpan Perubahan" : "Tambah Turnamen"}
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* TABEL */}
-      <h2 className="text-xl font-semibold mb-3 text-gray-700 border-b pb-2">
-        Daftar Turnamen
-      </h2>
-      <div className="overflow-x-auto shadow rounded-xl">
-        <table className="min-w-full border text-sm">
-          <thead className="bg-gray-100 text-gray-700">
-            <tr>
-              <th className="border p-2">Poster</th>
-              <th className="border p-2">Nama</th>
-              <th className="border p-2">Tanggal</th>
-              <th className="border p-2">Lokasi</th>
-              <th className="border p-2">Status</th>
-              <th className="border p-2">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tournaments.map((t) => (
-              <tr key={t.id} className="hover:bg-gray-50">
-                <td className="border p-2 text-center">
-                  {t.poster ? (
-                    <img
-                      src={`http://localhost:5004/${t.poster}`}
-                      alt={t.name}
-                      className="h-16 w-auto mx-auto rounded"
-                    />
-                  ) : (
-                    <span className="text-gray-400">Tidak ada</span>
-                  )}
-                </td>
-                <td className="border p-2 font-medium">{t.name}</td>
-                <td className="border p-2">
-                  {t.start_date} - {t.end_date}
-                </td>
-                <td className="border p-2">{t.location}</td>
-                <td
-                  className={`border p-2 font-semibold ${
-                    t.status === "aktif" ? "text-green-600" : "text-red-600"
-                  }`}
+            {/* Select Status */}
+            <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-700 mb-1">
+                    Status
+                </label>
+                <select
+                    name="status"
+                    value={form.status}
+                    onChange={handleChange}
+                    className="border border-gray-300 p-3 rounded-lg focus:ring-3 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all duration-200 shadow-sm bg-white appearance-none"
                 >
-                  {t.status}
-                </td>
-                <td className="border p-2 flex gap-2 justify-center">
-                  <button
-                    onClick={() => handleEdit(t)}
-                    className="p-2 text-blue-600 hover:text-blue-800"
-                  >
-                    <Edit size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(t.id)}
-                    className="p-2 text-red-600 hover:text-red-800"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-            {tournaments.length === 0 && (
-              <tr>
-                <td colSpan="6" className="border p-4 text-center text-gray-500 italic">
-                  Belum ada turnamen
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                    <option value="aktif">🟢 Aktif</option>
+                    <option value="nonaktif">🔴 Nonaktif</option>
+                </select>
+            </div>
+
+            {/* Upload Poster (Menggunakan Custom Style) */}
+            <div className="flex flex-col">
+                <label className="text-sm font-semibold text-gray-700 mb-1">
+                    Upload Poster Turnamen
+                </label>
+                <label htmlFor="file-upload" className="flex items-center justify-center border border-dashed border-gray-400 p-3 rounded-lg text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
+                    <Upload size={18} className="mr-2"/> 
+                    <span className="truncate">{form.posterFile ? form.posterFile.name : "Pilih file gambar..."}</span>
+                </label>
+                <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden" // Sembunyikan input asli
+                />
+            </div>
+
+            {/* Textarea Deskripsi */}
+            <div className="flex flex-col md:col-span-2 lg:col-span-3">
+                <label className="text-sm font-semibold text-gray-700 mb-1">
+                    Deskripsi
+                </label>
+                <textarea
+                    name="description"
+                    value={form.description}
+                    onChange={handleChange}
+                    rows="4" // Menggunakan rows daripada h-24
+                    placeholder="Masukkan deskripsi singkat tentang turnamen..."
+                    className="border border-gray-300 p-3 rounded-lg focus:ring-3 focus:ring-yellow-500/50 focus:border-yellow-500 transition-all duration-200 shadow-sm resize-none"
+                />
+            </div>
+
+            {/* Tombol Aksi */}
+            <div className="md:col-span-2 lg:col-span-3 flex justify-end gap-4 mt-4">
+                {editingId && (
+                    <button
+                        type="button"
+                        onClick={resetForm}
+                        className="flex items-center bg-gray-500 text-white px-6 py-3 rounded-xl shadow-md hover:bg-gray-600 transition-colors duration-200"
+                    >
+                        Batal
+                    </button>
+                )}
+                <button
+                    type="submit"
+                    className="flex items-center bg-yellow-500 text-gray-900 px-6 py-3 rounded-xl shadow-lg font-bold hover:bg-yellow-600 transition-colors duration-200 transform hover:scale-[1.01]"
+                >
+                    {editingId ? "Simpan Perubahan" : "Tambah Turnamen"}
+                </button>
+            </div>
+        </form>
     </div>
+
+    {/* --- TABEL SECTION --- */}
+    <h2 className="text-2xl font-bold mb-4 text-gray-800 border-b-2 border-gray-300/50 pb-3">
+        Daftar Turnamen Aktif
+    </h2>
+    <div className="overflow-x-auto shadow-2xl rounded-2xl border border-gray-100">
+        <table className="min-w-full text-sm">
+            <thead className="bg-gray-50 text-gray-700 uppercase tracking-wider">
+                <tr>
+                    <th className="px-4 py-3 text-left border-b border-gray-200">Poster</th>
+                    <th className="px-4 py-3 text-left border-b border-gray-200">Nama Turnamen</th>
+                    <th className="px-4 py-3 text-left border-b border-gray-200">Tanggal Pelaksanaan</th>
+                    <th className="px-4 py-3 text-left border-b border-gray-200 hidden sm:table-cell">Lokasi</th>
+                    <th className="px-4 py-3 text-center border-b border-gray-200">Status</th>
+                    <th className="px-4 py-3 text-center border-b border-gray-200">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {tournaments.map((t) => (
+                    <tr key={t.id} className="border-b border-gray-100 hover:bg-yellow-50/50 transition-colors">
+                        <td className="px-4 py-3 text-center w-24">
+                            {t.poster ? (
+                                <img
+                                    src={`http://localhost:5004/${t.poster}`}
+                                    alt={t.name}
+                                    className="h-16 w-16 object-cover mx-auto rounded-md shadow-md"
+                                />
+                            ) : (
+                                <span className="text-gray-400 text-xs">N/A</span>
+                            )}
+                        </td>
+                        <td className="px-4 py-3 font-semibold text-gray-800">{t.name}</td>
+                        <td className="px-4 py-3 text-gray-600">
+                            {t.start_date} - {t.end_date}
+                        </td>
+                        <td className="px-4 py-3 text-gray-600 hidden sm:table-cell">{t.location}</td>
+                        <td className="px-4 py-3 text-center">
+                            <span
+                                className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                                    t.status === "aktif" 
+                                      ? "bg-green-100 text-green-700" 
+                                      : "bg-red-100 text-red-700"
+                                }`}
+                            >
+                                {t.status.toUpperCase()}
+                            </span>
+                        </td>
+                        <td className="px-4 py-3 flex gap-2 justify-center">
+                            <button
+                                onClick={() => handleEdit(t)}
+                                className="p-2 text-blue-500 rounded-full hover:bg-blue-50 transition-colors"
+                                title="Edit"
+                            >
+                                <Edit size={16} />
+                            </button>
+                            <button
+                                onClick={() => handleDelete(t.id)}
+                                className="p-2 text-red-500 rounded-full hover:bg-red-50 transition-colors"
+                                title="Hapus"
+                            >
+                                <Trash2 size={16} />
+                            </button>
+                        </td>
+                    </tr>
+                ))}
+                {tournaments.length === 0 && (
+                    <tr>
+                        <td colSpan="6" className="p-5 text-center text-gray-500 italic bg-white">
+                            Belum ada data turnamen yang tersedia.
+                        </td>
+                    </tr>
+                )}
+            </tbody>
+        </table>
+    </div>
+</div>
   );
 }
 

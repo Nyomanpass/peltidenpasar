@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
+import { CheckCircle } from "lucide-react"; 
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import api from "../api"; // Mengimpor instans axios dari file api.js
@@ -10,7 +11,7 @@ import PesertaModal from "../components/modalbox/PesertaModal";
 import WinnerModal from "../components/modalbox/WinnerModal";
 import SeedingModal from "../components/modalbox/SeedingModal";
 
-export default function BaganView() {
+export default function BaganView({baganId}) {
   const { id } = useParams();
   const [bagan, setBagan] = useState(null);
   const [selectedMatch, setSelectedMatch] = useState(null);
@@ -21,12 +22,15 @@ export default function BaganView() {
   const [byeSlotsCount, setByeSlotsCount] = useState(0);
   const role = localStorage.getItem('role')
   const tournamentId = localStorage.getItem("selectedTournament");
+  const finalId = baganId || id;
+
+
 
   // Load data bagan menggunakan axios
   const loadBagan = async () => {
     try {
       setIsLoading(true);
-      const res = await api.get(`/bagan/${id}`);
+      const res = await api.get(`/bagan/${finalId}`);
       const data = res.data; // Mengakses data dari properti .data
       setBagan(data);
     } catch (error) {
@@ -177,7 +181,7 @@ export default function BaganView() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen p-8 w-full">
+    <div className="bg-gray-50 min-h-screen w-full">
       <div className="max-w-7xl mx-auto mb-10">
         <h1 className="text-3xl md:text-4xl font-extrabold mb-9 text-center text-gray-800">
           {bagan.nama}
@@ -213,20 +217,21 @@ export default function BaganView() {
               return (
                 <Seed
                   {...props}
-                  className="!bg-white !rounded-xl !shadow-md hover:!shadow-lg transition-shadow duration-200 cursor-pointer"
+                 
                   onClick={() => {
                     setSelectedMatch(match);
                     if (match.peserta1Id !== null && match.peserta2Id !== null) {
                       setModalType("winner");
-                    } else {
-                      setModalType("peserta");
                     }
+                    // } else {
+                    //   setModalType("peserta");
+                    // }
                   }}
                 >
                   <SeedItem>
-                    <div className="px-3 py-2">
+                    <div className="bg-white rounded-lg">
                       <SeedTeam
-                        className={`rounded-lg px-3 py-2 text-start font-medium border-2 
+                        className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
                           ${
                             match.winnerId === match.peserta1Id
                               ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
@@ -242,7 +247,7 @@ export default function BaganView() {
                       </SeedTeam>
 
                       <SeedTeam
-                        className={`rounded-lg px-3 py-2 mt-2 text-start font-medium border-2 
+                        className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
                           ${
                             match.winnerId === match.peserta2Id
                               ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
@@ -276,7 +281,7 @@ export default function BaganView() {
       </div>
 
       {/* Modal */}
-      {modalType === "peserta" && (
+      {modalType === "peserta" && role === "admin" && (
         <PesertaModal
           match={selectedMatch}
           kelompokUmurId={bagan.kelompokUmurId}
@@ -284,14 +289,14 @@ export default function BaganView() {
           onSaved={loadBagan}
         />
       )}
-      {modalType === "winner" && (
+      {modalType === "winner" && role === "admin" && (
         <WinnerModal
           match={selectedMatch}
           onClose={() => setModalType(null)}
           onSaved={loadBagan}
         />
       )}
-      {modalType === "seeding" && (
+      {modalType === "seeding" && role === "admin" && (
         <SeedingModal
           pesertaList={allPeserta}
           byeSlotsCount={byeSlotsCount}
