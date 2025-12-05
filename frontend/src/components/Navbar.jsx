@@ -120,7 +120,7 @@ export default function Navbar() {
           />
           <div className="hidden md:block">
             <h1 className="font-bold text-xl text-black leading-none">PELTI DENPASAR</h1>
-            <p className="text-xs text-gray-600 font-semibold mt-1">Persatuan Lawn Tenis Indonesia</p>
+            <p className="text-xs text-gray-600 font-semibold mt-1">Persatuan Lawn Tenis Indonesia Denpasar</p>
           </div>
         </div>
 

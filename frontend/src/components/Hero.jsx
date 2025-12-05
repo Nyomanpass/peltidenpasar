@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 const slides = [
   {
     title: "Walikota Cup 2025",
-    subtitle: "Ajang Pembuktian Bakat Tenis Bali",
+    subtitle: "Ajang Pembuktian Bakat Tenis Denpasar",
     // Deskripsi yang lebih jelas tentang turnamen
     description: "Ikuti turnamen tenis bergengsi tahunan. Ajang sempurna bagi atlet junior hingga senior untuk menguji kemampuan, meraih gelar, dan mengukir sejarah di kancah Denpasar.",
     ctaText: "Daftar Sekarang",
-    ctaLink: "/tournament/walikotacup",
-    image: "juara.png"
+    ctaLink: "/daftar-peserta",
+    image: "hero.jpg"
   },
   {
     title: "Mencetak Generasi Unggul",
@@ -16,8 +16,8 @@ const slides = [
     // Deskripsi yang lebih jelas tentang pembinaan
     description: "Kami fokus pada pengembangan bibit muda melalui kurikulum latihan tenis terbaik. Menyiapkan atlet Denpasar dari tingkat SD hingga SMA untuk kompetisi nasional dan internasional.",
     ctaText: "Program Pembinaan",
-    ctaLink: "/program/pembinaan",
-     image: "juara.png"
+    ctaLink: "/daftar-peserta",
+     image: "hero.jpg"
   },
   {
     title: "Tenis Untuk Semua",
@@ -25,8 +25,8 @@ const slides = [
     // Deskripsi yang lebih jelas untuk komunitas umum
     description: "Gabung dengan komunitas kami! Selain turnamen, kami menyediakan Fun Match dan program 'Ayo Tenis' untuk masyarakat umum. Sehatkan raga, jalin silaturahmi.",
     ctaText: "Gabung Komunitas",
-    ctaLink: "/komunitas",
-     image: "juara.png"
+    ctaLink: "/daftar-peserta",
+     image: "hero.jpg"
   },
 ];
 
