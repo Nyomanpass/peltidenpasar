@@ -125,33 +125,45 @@ function Sidebar({ isOpen }) {
           )}
         </div>
         {/* --- END BLOK PEMILIHAN TOURNAMENT BARU --- */}
+       {/* Menu List Utama */}
+      <ul className="space-y-1 mt-6 border-t border-white pt-4">
+        {menuItems.map((item) => {
+          // LOGIKA PENGECEKAN AKTIF
+          const currentPath = location.pathname;
+          
+          // 1. Cek apakah path sama persis
+          const isExact = currentPath === item.path;
+          
+          // 2. Cek untuk sub-halaman Peserta
+          const isPesertaDetail = item.label === "Peserta" && currentPath.includes("detail-peserta");
+          
+          // 3. Cek untuk sub-halaman Bagan
+          const isBaganView = item.label === "Bagan" && currentPath.includes("bagan-view");
 
+          // Gabungkan semua kondisi
+          const isActive = isExact || isPesertaDetail || isBaganView;
 
-        {/* Menu List Utama */}
-        <ul className="space-y-1 mt-6 border-t border-white pt-4">
-          {menuItems.map((item) => {
-            const active = location.pathname === item.path;
-            return (
-              <li key={item.path}>
-                <Link
-                  to={item.path}
-                  className={`
-                    flex items-center gap-4 mb-5 p-3 rounded-lg text-md font-medium
-                    transition-all duration-150
-                    ${active
-                      ? "bg-primary/80 text-white" // Active state di dark mode
-                      : "text-white hover:bg-white/30 hover:text-white"} // Default state di dark mode
-                  `}
-                >
-                  <span className={`${active ? "text-white" : "text-white"}`}>
-                    {item.icon}
-                  </span>
-                  {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+          return (
+            <li key={item.path}>
+              <Link
+                to={item.path}
+                className={`
+                  flex items-center gap-4 mb-5 p-3 rounded-lg text-md font-medium
+                  transition-all duration-150
+                  ${isActive
+                    ? "bg-primary/80 text-white shadow-md" 
+                    : "text-white hover:bg-white/30 hover:text-white"}
+                `}
+              >
+                <span className="text-white">
+                  {item.icon}
+                </span>
+                {item.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
 
       </nav>
     </aside>

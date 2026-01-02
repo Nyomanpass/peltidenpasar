@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import api from '../api';
 import WinnerModal from "../components/modalbox/WinnerModal";
 import { Edit, Trash2, Calendar, Clock, PlusCircle, CheckCircle, XCircle, Layout, Filter } from "lucide-react";
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import JadwalPDF from './JadwalPDF';
 
 const JadwalPage = () => {
   const [jadwal, setJadwal] = useState([]);
@@ -32,6 +34,7 @@ const JadwalPage = () => {
 
   //filter jadwal dnegna tanggal
   const [selectedTanggalFilter, setSelectedTanggalFilter] = useState('');
+  const [readyToDownload, setReadyToDownload] = useState(false);
 
   const uniqueTanggal = [...new Set(jadwal.map(j => j.tanggal))].sort(
   (a, b) => new Date(a) - new Date(b)
@@ -179,7 +182,6 @@ const fetchBagan = async () => {
     }
 
     const waktuMulaiFull = `${tanggal}T${waktuMulai}:00.000Z`;
-
     const tournamentId = localStorage.getItem("selectedTournament");
 
     const jadwalData = {
@@ -194,22 +196,28 @@ const fetchBagan = async () => {
       if (editingJadwalId) {
         await api.put(`/jadwal/${editingJadwalId}`, jadwalData);
         setSuccess('Jadwal berhasil diperbarui!');
-        handleCancelEdit();
+        handleCancelEdit(); // Ini biasanya sudah mereset form
       } else {
         await api.post('/jadwal', jadwalData);
         setSuccess('Jadwal berhasil dibuat!');
+        
+        // --- RESET FORM SECARA TOTAL ---
+        setSelectedBaganId(null); // Reset pilihan bagan
         setSelectedMatch('');
         setSelectedLapangan('');
         setTanggal('');
         setWaktuMulai('');
       }
+      
+      // Refresh data dari database
       fetchJadwal();
+
     } catch (err) {
       console.error('Error:', err);
       setError(err.response?.data?.error || 'Gagal menyimpan jadwal.');
     }
   };
-  
+    
   const handleUpdateStatus = async (jadwalId, newStatus) => {
     try {
       await api.put(`/jadwal/${jadwalId}/status`, { status: newStatus });
@@ -260,6 +268,18 @@ const fetchBagan = async () => {
       setError(err.response?.data?.message || 'Gagal menghapus jadwal.');
     }
   };
+
+
+  const filteredMatches = matches.filter((m) => {
+    const isAlreadyScheduled = jadwal.some(
+      (j) => Number(j.matchId) === Number(m.id)
+    );
+
+    if (editingJadwalId && Number(selectedMatch) === Number(m.id)) {
+      return true;
+    }
+    return !isAlreadyScheduled;
+  });
   
   const groupedJadwal = jadwal.reduce((acc, currentJadwal) => {
     const lapanganName = currentJadwal.lapangan?.nama || 'Lapangan Tidak Dikenal';
@@ -327,25 +347,33 @@ const fetchBagan = async () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
         {/* Match Selection */}
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">Match:</label>
-          <select
-            value={selectedMatch}
-            onChange={(e) => setSelectedMatch(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200 bg-white"
-            disabled={!selectedBaganId}
-          >
-            <option value="">-- Pilih Match --</option>
-            {matches.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.peserta1?.namaLengkap || 'Peserta Belum Ditentukan'} vs {m.peserta2?.namaLengkap || 'Peserta Belum Ditentukan'}
-              </option>
-            ))}
-          </select>
-          {!selectedBaganId && (
-            <p className="text-xs text-red-500 mt-1">Pilih bagan terlebih dahulu.</p>
-          )}
-        </div>
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Match:</label>
+            <select
+              value={selectedMatch}
+              onChange={(e) => setSelectedMatch(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200 bg-white"
+              disabled={!selectedBaganId}
+            >
+              <option value="">-- Pilih Match --</option>
+              
+              {/* Gunakan filteredMatches hasil filter di atas */}
+              {filteredMatches.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.peserta1?.namaLengkap || 'Peserta 1'} vs {m.peserta2?.namaLengkap || 'Peserta 2'}
+                </option>
+              ))}
+            </select>
+
+            {/* Pesan Kondisional */}
+            {!selectedBaganId ? (
+              <p className="text-xs text-red-500 mt-1">Pilih bagan terlebih dahulu.</p>
+            ) : filteredMatches.length === 0 ? (
+              <p className="text-xs text-orange-600 mt-1 italic font-medium">
+                ⚠️ Semua pertandingan pada bagan ini sudah dijadwalkan.
+              </p>
+            ) : null}
+          </div>
 
         {/* Lapangan Selection */}
         <div>
@@ -376,14 +404,21 @@ const fetchBagan = async () => {
         </div>
         
         {/* Waktu Mulai Input */}
-        <div>
+       <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">Waktu Mulai:</label>
-          <input
-            type="time"
+          <select
             value={waktuMulai}
             onChange={(e) => setWaktuMulai(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200"
-          />
+            className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200 bg-white"
+          >
+            <option value="">Pilih Jam</option>
+            {/* Membuat pilihan jam dari jam 7 sampai 23 */}
+            {[7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23].map((jam) => (
+              <option key={jam} value={`${jam.toString().padStart(2, '0')}:00`}>
+                Jam {jam}:00
+              </option>
+            ))}
+          </select>
         </div>
       </div>
       
@@ -400,12 +435,14 @@ const fetchBagan = async () => {
         )}
         <button
           type="submit"
+
           className="flex items-center gap-2 bg-blue-600 text-white py-3 px-6 rounded-xl shadow-lg hover:bg-blue-700 transition duration-300 font-bold transform hover:scale-[1.01]"
         >
           {editingJadwalId ? <Edit size={20}/> : <PlusCircle size={20}/>}
           {editingJadwalId ? 'Update Jadwal' : 'Buat Jadwal'}
         </button>
       </div>
+
     </form>
   </div>
    )}
@@ -413,33 +450,80 @@ const fetchBagan = async () => {
   {/* --- BAGIAN FILTER TANGGAL --- */}
 
   
-  <div className="mb-8 flex flex-wrap gap-3 p-4 bg-white rounded-xl shadow-md border border-gray-100 items-center">
-    <p className="text-lg font-bold text-gray-700 flex items-center gap-2"><Filter size={20} className="text-yellow-500"/> Filter Tanggal:</p>
+  {/* --- BAGIAN FILTER DAN DOWNLOAD PDF --- */}
+<div className="mb-8 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
     
-    {uniqueTanggal.map(tgl => (
-      <button
-        key={tgl}
-        onClick={() => setSelectedTanggalFilter(tgl)}
-        className={`py-2 px-4 rounded-xl font-semibold text-sm transition-all duration-200 shadow-sm
-          ${selectedTanggalFilter === tgl 
-            ? 'bg-yellow-500 text-gray-900 border border-yellow-600' 
-            : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300'}
-        `}
-      >
-        {tgl}
-      </button>
-    ))}
-    
-    {/* Tombol Reset Filter */}
-    {selectedTanggalFilter && (
-         <button
-            onClick={() => setSelectedTanggalFilter('')}
-            className="py-2 px-4 rounded-xl font-semibold text-sm bg-red-500 text-white hover:bg-red-600 transition shadow-md"
+    {/* Filter Sisi Kiri */}
+    <div className="flex-1">
+      <div className="flex items-center gap-2 mb-3">
+        <Filter size={20} className="text-yellow-500" />
+        <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Filter Tanggal:</p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {uniqueTanggal.map(tgl => (
+          <button
+            key={tgl}
+            onClick={() => setSelectedTanggalFilter(tgl)}
+            className={`py-2 px-5 rounded-lg font-bold text-sm transition-all duration-200 
+              ${selectedTanggalFilter === tgl 
+                ? 'bg-yellow-500 text-gray-900 shadow-md' 
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-200 border border-gray-200'}
+            `}
           >
-            Reset Filter
+            {tgl}
           </button>
-    )}
+        ))}
+        {selectedTanggalFilter && (
+          <button
+            onClick={() => setSelectedTanggalFilter('')}
+            className="py-2 px-4 rounded-lg font-bold text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+          >
+            Reset
+          </button>
+        )}
+      </div>
+    </div>
+
+    {/* --- BAGIAN TOMBOL EXPORT PDF --- */}
+<div className="flex items-center md:border-l border-gray-100 md:pl-6">
+  {!readyToDownload ? (
+    // Tampilan awal: Tombol biasa (Sangat Ringan, tidak bikin filter macet)
+    <button
+      onClick={() => setReadyToDownload(true)}
+      className="flex items-center gap-2 py-2 px-6 rounded-xl font-bold text-sm bg-red-600 text-white hover:bg-red-700 transition shadow-lg"
+    >
+      <Layout size={18}/> SIAPKAN PDF
+    </button>
+  ) : (
+    // Tampilan setelah diklik: Baru memanggil PDFDownloadLink
+    <PDFDownloadLink
+      document={
+        <JadwalPDF 
+          jadwal={selectedTanggalFilter 
+            ? jadwal.filter(j => j.tanggal === selectedTanggalFilter) 
+            : jadwal
+          } 
+          lapanganList={[...new Set(jadwal.map(j => j.lapangan?.nama))].filter(Boolean)} 
+          selectedTanggal={selectedTanggalFilter}
+          tournamentName={selectedTournamentName}
+        />
+      }
+      fileName={`Jadwal_${selectedTournamentName || 'Turnamen'}.pdf`}
+      className="flex items-center gap-2 py-2 px-6 rounded-xl font-bold text-sm bg-green-600 text-white hover:bg-green-700 transition shadow-lg"
+    >
+      {({ loading }) => (
+        loading ? 'Sedang Memproses...' : (
+          <span onClick={() => setTimeout(() => setReadyToDownload(false), 2000)}>
+            ✅ KLIK UNTUK DOWNLOAD
+          </span>
+        )
+      )}
+    </PDFDownloadLink>
+  )}
+</div>
   </div>
+</div>
 
   {/* --- BAGIAN LIST JADWAL PER LAPANGAN --- */}
   {lapanganList.length > 0 ? (

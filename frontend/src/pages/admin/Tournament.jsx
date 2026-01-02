@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api";
-import { Edit, Trash2, Upload } from "lucide-react";
+import { Edit, Trash2, Upload, X } from "lucide-react";
 
 function Tournament() {
   const [tournaments, setTournaments] = useState([]);
+  const [preview, setPreview] = useState(null);
+  const BASE_URL = "http://localhost:5004";
+
   const [form, setForm] = useState({
     name: "",
     start_date: "",
@@ -12,8 +15,12 @@ function Tournament() {
     description: "",
     status: "nonaktif",
     poster: null, // ubah ke null (bukan string)
+    type: "gratis", // Tambahkan ini
+    nominal: "",    // Tambahkan ini
+    bank_info: "",  // Tambahkan ini
   });
   const [editingId, setEditingId] = useState(null);
+  
 
   // 🔹 Ambil semua turnamen
   useEffect(() => {
@@ -36,7 +43,12 @@ function Tournament() {
 
   // 🔹 Handle upload file
   const handleFileChange = (e) => {
-    setForm({ ...form, poster: e.target.files[0] });
+    const file = e.target.files[0];
+    if (file) {
+      setForm({ ...form, poster: file });
+      // Gunakan URL.createObjectURL HANYA untuk file baru yang dipilih dari komputer
+      setPreview(URL.createObjectURL(file));
+    }
   };
 
   // 🔹 Tambah / Update
@@ -50,6 +62,10 @@ function Tournament() {
       formData.append("location", form.location);
       formData.append("description", form.description);
       formData.append("status", form.status);
+      formData.append("type", form.type);
+      formData.append("nominal", form.nominal);
+      formData.append("bank_info", form.bank_info);
+
       if (form.poster) {
         formData.append("poster", form.poster);
       }
@@ -93,8 +109,17 @@ function Tournament() {
       description: t.description,
       status: t.status,
       poster: null,
+      type: t.type || "gratis",
+      nominal: t.nominal || 0,
+      bank_info: t.bank_info || ""
     });
     setEditingId(t.id);
+    if (t.poster) {
+      setPreview(`${BASE_URL}/${t.poster}`);
+    } else {
+      setPreview(null);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const resetForm = () => {
@@ -106,7 +131,11 @@ function Tournament() {
       description: "",
       status: "nonaktif",
       poster: null,
+      type: "gratis",
+      nominal: 0,
+      bank_info: ""
     });
+    setPreview(null);
     setEditingId(null);
   };
 
@@ -196,23 +225,76 @@ function Tournament() {
                 </select>
             </div>
 
-            {/* Upload Poster (Menggunakan Custom Style) */}
+            {/* Pilih Tipe */}
             <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">
-                    Upload Poster Turnamen
-                </label>
-                <label htmlFor="file-upload" className="flex items-center justify-center border border-dashed border-gray-400 p-3 rounded-lg text-gray-500 cursor-pointer hover:bg-gray-50 transition-colors shadow-sm">
-                    <Upload size={18} className="mr-2"/> 
-                    <span className="truncate">{form.posterFile ? form.posterFile.name : "Pilih file gambar..."}</span>
-                </label>
-                <input
-                    id="file-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="hidden" // Sembunyikan input asli
-                />
+                <label className="text-sm font-semibold text-gray-700 mb-1">Tipe Turnamen</label>
+                <select
+                    name="type"
+                    value={form.type}
+                    onChange={handleChange}
+                    className="border border-gray-300 p-3 rounded-lg bg-white"
+                >
+                    <option value="gratis">Gratis</option>
+                    <option value="berbayar">Berbayar</option>
+                </select>
             </div>
+
+            {/* Jika Admin pilih Berbayar, Munculkan ini */}
+            {form.type === "berbayar" && (
+                <>
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-700 mb-1">Nominal (Rp)</label>
+                        <input
+                            type="number"
+                            name="nominal"
+                            value={form.nominal}
+                            onChange={handleChange}
+                            placeholder="150000"
+                            className="border border-gray-300 p-3 rounded-lg"
+                        />
+                    </div>
+                    <div className="flex flex-col">
+                        <label className="text-sm font-semibold text-gray-700 mb-1">Info Bank & Rekening</label>
+                        <input
+                            type="text"
+                            name="bank_info"
+                            value={form.bank_info}
+                            onChange={handleChange}
+                            placeholder="BCA - 1234567 a/n PELTI"
+                            className="border border-gray-300 p-3 rounded-lg"
+                        />
+                    </div>
+                </>
+            )}
+
+            {/* Upload Poster (Menggunakan Custom Style) */}
+            <div className="flex flex-col text-left relative">
+            <label className="text-sm font-bold text-gray-600 mb-1">Poster Turnamen</label>
+            <label htmlFor="poster-upload" className="flex items-center justify-center border-2 border-dashed border-gray-300 p-3 rounded-xl cursor-pointer hover:bg-gray-50 transition">
+              <Upload size={18} className="mr-2 text-gray-400"/>
+              <span className="text-sm text-gray-500 truncate">{form.poster ? form.poster.name : "Pilih Gambar..."}</span>
+            </label>
+            <input id="poster-upload" type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+
+            {/* AREA PREVIEW GAMBAR */}
+            {preview && (
+              <div className="mt-3 relative group">
+                <div className="w-full h-32 rounded-xl overflow-hidden border border-gray-200">
+                  <img src={preview} alt="Preview" className="w-full h-full object-contain bg-gray-50" />
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => {setPreview(null); setForm({...form, poster: null})}}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white p-1 rounded-full shadow-lg hover:scale-110 transition"
+                >
+                  <X size={14} />
+                </button>
+                <p className="text-[10px] text-center mt-1 text-gray-400 font-bold uppercase tracking-tighter">
+                  {form.poster ? "Preview File Baru" : "Gambar Terpasang"}
+                </p>
+              </div>
+            )}
+          </div>
 
             {/* Textarea Deskripsi */}
             <div className="flex flex-col md:col-span-2 lg:col-span-3">

@@ -10,6 +10,8 @@ export const Bagan = sequelize.define("Bagan", {
   tipe: { type: DataTypes.ENUM("roundrobin", "knockout"), allowNull: false },
   jumlahPeserta: { type: DataTypes.INTEGER, allowNull: false },
   status: { type: DataTypes.ENUM("draft", "aktif", "selesai"), defaultValue: "draft" },
+  isLocked: {type: DataTypes.BOOLEAN,defaultValue: false
+}
 });
 
 KelompokUmur.hasOne(Bagan, { foreignKey: "kelompokUmurId" });

@@ -129,114 +129,127 @@ function shuffle(array) {
 
 // 🔹 Helper untuk menempatkan BYE
 function placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta) {
-  const totalMatches = initialSlots.length / 2;
-  // atur minimal gap berdasarkan ukuran bagan
-  const gapMin = totalMatches <= 4 ? 2 : 1;  
+  const bracketSize = initialSlots.length;
+  const totalMatches = bracketSize / 2;
 
-  // 1. Utamakan BYE melawan peserta seeded
+  // 1. PRIORITAS: Berikan BYE KHUSUS untuk yang isSeeded === true
   for (const seed of seededPeserta) {
     if (byeSlotsCount <= 0) break;
-    const slotIndex = seed.slot - 1;
-    const opponentIndex = slotIndex % 2 === 0 ? slotIndex + 1 : slotIndex - 1;
-    if (!assignedSlots.has(opponentIndex)) {
-      initialSlots[opponentIndex] = null;
-      assignedSlots.add(opponentIndex);
-      byeSlotsCount--;
+    if (seed.isSeeded) {
+      const slotIndex = seed.slot - 1;
+      const opponentIndex = slotIndex % 2 === 0 ? slotIndex + 1 : slotIndex - 1;
+      
+      if (!assignedSlots.has(opponentIndex)) {
+        initialSlots[opponentIndex] = null; // BYE
+        assignedSlots.add(opponentIndex);
+        byeSlotsCount--;
+      }
     }
   }
 
   if (byeSlotsCount <= 0) return;
 
-  // 2. Buat daftar pasangan (pertandingan)
-  let pairs = [];
-  for (let i = 0; i < initialSlots.length; i += 2) {
-    if (!assignedSlots.has(i) || !assignedSlots.has(i + 1)) {
-      pairs.push([i, i + 1]);
+  // 2. SEBAR SISA BYE: ACAK TAPI JANGAN BERDEKATAN
+  // Cari semua pasangan match (pair) yang masih kosong total (dua-duanya belum diisi)
+  let availablePairs = [];
+  for (let i = 0; i < bracketSize; i += 2) {
+    if (!assignedSlots.has(i) && !assignedSlots.has(i + 1)) {
+      availablePairs.push(i); // Simpan index awal match (0, 2, 4, dst)
     }
   }
 
-  // 3. Acak pasangan
-  pairs = shuffle(pairs);
+  // Acak urutan pasangan agar tidak selalu dari atas
+  availablePairs = shuffle(availablePairs);
 
-  let lastUsedIndex = -gapMin - 1;
+  // Tentukan jarak minimal (Gap). 
+  // Misal: Jika ada 16 match, usahakan jarak antar BYE minimal 2 match.
+  const gapMin = totalMatches <= 8 ? 1 : 2; 
+  let lastUsedMatchIndex = -gapMin - 1;
+  let finalSelectedPairs = [];
 
-  // 4. Taruh BYE tersebar dengan jarak minimal
-  for (let idx = 0; idx < pairs.length && byeSlotsCount > 0; idx++) {
-    const [a, b] = pairs[idx];
-
-    if (idx - lastUsedIndex < gapMin) continue;
-
-    if (!assignedSlots.has(a) && !assignedSlots.has(b)) {
-      const slotPilihan = Math.random() < 0.5 ? a : b;
-      initialSlots[slotPilihan] = null;
-      assignedSlots.add(slotPilihan);
-      byeSlotsCount--;
-      lastUsedIndex = idx;
+  // Ambil pasangan dengan filter jarak
+  for (let i = 0; i < availablePairs.length; i++) {
+    const currentMatchIndex = availablePairs[i] / 2; // Match ke-berapa (0, 1, 2...)
+    
+    // Cek apakah jarak dari match sebelumnya cukup jauh
+    if (Math.abs(currentMatchIndex - lastUsedMatchIndex) >= gapMin) {
+      finalSelectedPairs.push(availablePairs[i]);
+      lastUsedMatchIndex = currentMatchIndex;
     }
+    
+    // Jika sudah cukup untuk memenuhi sisa BYE, berhenti
+    if (finalSelectedPairs.length >= byeSlotsCount) break;
   }
 
-  // 5. Kalau masih ada sisa BYE, isi pasangan tersisa
-  for (let idx = 0; idx < pairs.length && byeSlotsCount > 0; idx++) {
-    const [a, b] = pairs[idx];
-    if (!assignedSlots.has(a) && !assignedSlots.has(b)) {
-      const slotPilihan = Math.random() < 0.5 ? a : b;
-      initialSlots[slotPilihan] = null;
-      assignedSlots.add(slotPilihan);
-      byeSlotsCount--;
-    }
+  // Jika setelah difilter jarak ternyata kurang (karena terlalu renggang), 
+  // ambil sisa pasangan apa saja yang tersedia agar BYE tetap habis
+  if (finalSelectedPairs.length < byeSlotsCount) {
+    const remaining = availablePairs.filter(p => !finalSelectedPairs.includes(p));
+    finalSelectedPairs = [...finalSelectedPairs, ...remaining.slice(0, byeSlotsCount - finalSelectedPairs.length)];
+  }
+
+  // Masukkan BYE ke dalam slot yang sudah dipilih secara acak & renggang
+  for (let pairStart of finalSelectedPairs) {
+    if (byeSlotsCount <= 0) break;
+    
+    // Pilih slot 1 atau slot 2 dalam match tersebut secara acak
+    const slotPilihan = pairStart + (Math.random() < 0.5 ? 0 : 1);
+    initialSlots[slotPilihan] = null;
+    assignedSlots.add(slotPilihan);
+    byeSlotsCount--;
   }
 }
-
 
 export const generateUndian = async (req, res) => {
   try {
     const { id } = req.params;
-    const { seededPeserta = [] } = req.body;
+    const { seededPeserta = [] } = req.body; 
 
     const bagan = await Bagan.findByPk(id);
     if (!bagan) return res.status(404).json({ msg: "Bagan tidak ditemukan" });
+    
     const tournamentId = bagan.tournamentId;
+    const kelompokUmurId = bagan.kelompokUmurId;
+
+    // --- A. SYNC STATUS SEED KE DATABASE ---
+    await Peserta.update({ isSeeded: false }, { where: { tournamentId, kelompokUmurId } });
+
+    const seededIdsToUpdate = seededPeserta.filter(p => p.isSeeded).map(p => p.id);
+    if (seededIdsToUpdate.length > 0) {
+      await Peserta.update({ isSeeded: true }, { where: { id: seededIdsToUpdate } });
+    }
+
     const allPeserta = await Peserta.findAll({
-      where: { 
-        kelompokUmurId: bagan.kelompokUmurId,
-        tournamentId: bagan.tournamentId,      // ← TAMBAHKAN INI
-        status: "verified"
-      },
+      where: { kelompokUmurId, tournamentId, status: "verified" },
     });
 
-
-    const seededIds = new Set(seededPeserta.map((p) => p.id));
-    const nonSeededPeserta = allPeserta.filter((p) => !seededIds.has(p.id));
+    // --- B. PREPARASI BRACKET ---
     const totalPeserta = allPeserta.length;
     let bracketSize = 2;
-    while (bracketSize < totalPeserta) {
-      bracketSize *= 2;
-    }
-    
+    while (bracketSize < totalPeserta) { bracketSize *= 2; }
 
-    const initialSlots = new Array(bracketSize).fill(null);
+    const initialSlots = new Array(bracketSize).fill(undefined); // undefined = belum diisi
     const assignedSlots = new Set();
 
-
-    for (const seed of seededPeserta) {
-      const slotIndex = seed.slot - 1;
+    // 1. Plotting Manual & Seed (Menaruh orang di slot pilihannya)
+    for (const p of seededPeserta) {
+      const slotIndex = p.slot - 1;
       if (slotIndex >= 0 && slotIndex < bracketSize) {
-        initialSlots[slotIndex] = seed.id;
+        initialSlots[slotIndex] = p.id;
         assignedSlots.add(slotIndex);
       }
     }
 
-
+    // 2. Penempatan BYE (Khusus Seed & Sebar Jarak)
     let byeSlotsCount = bracketSize - totalPeserta;
-
-
     placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta);
 
-
+    // 3. Pengisian Peserta Biasa (Acak)
+    const seededIds = new Set(seededPeserta.map((p) => p.id));
+    const nonSeededPeserta = allPeserta.filter((p) => !seededIds.has(p.id));
     const shuffledNonSeeded = shuffle(nonSeededPeserta.map(p => p.id));
+    
     let poolIndex = 0;
-
-   
     for (let i = 0; i < bracketSize; i++) {
       if (!assignedSlots.has(i)) {
         if (poolIndex < shuffledNonSeeded.length) {
@@ -246,6 +259,7 @@ export const generateUndian = async (req, res) => {
       }
     }
 
+    // --- C. PEMBUATAN MATCH DI DATABASE ---
     await Match.destroy({ where: { baganId: id } });
 
     let matchCount = bracketSize / 2;
@@ -254,66 +268,42 @@ export const generateUndian = async (req, res) => {
 
     while (matchCount >= 1) {
       for (let i = 0; i < matchCount; i++) {
-        let peserta1Id = null;
-        let peserta2Id = null;
-        
-        if (round === 1) {
-          peserta1Id = initialSlots[i * 2];
-          peserta2Id = initialSlots[i * 2 + 1];
-        }
-
         matchesToCreate.push({
-          baganId: id,
-          round: round,
-          slot: i + 1,
-          peserta1Id: peserta1Id,
-          peserta2Id: peserta2Id,
-          nextMatchId: null,
-          tournamentId: tournamentId
+          baganId: id, round, slot: i + 1,
+          peserta1Id: round === 1 ? initialSlots[i * 2] : null,
+          peserta2Id: round === 1 ? initialSlots[i * 2 + 1] : null,
+          tournamentId
         });
       }
       matchCount /= 2;
       round++;
     }
 
-    const createdMatches = await Match.bulkCreate(matchesToCreate);
+    await Match.bulkCreate(matchesToCreate);
     
-    const finalMatches = await Match.findAll({
-      where: { baganId: id },
-      order: [['round', 'ASC'], ['slot', 'ASC']]
-    });
-
-
+    // Hubungkan nextMatchId (Logika sama seperti sebelumnya)
+    const finalMatches = await Match.findAll({ where: { baganId: id }, order: [['round', 'ASC'], ['slot', 'ASC']] });
     for (const match of finalMatches) {
-      if (match.round === (round - 1)) {
-        continue; 
-      }
-
+      if (match.round === (round - 1)) continue; 
       const nextRoundSlot = Math.ceil(match.slot / 2);
-      const nextRoundMatch = finalMatches.find(
-        (m) => m.round === match.round + 1 && m.slot === nextRoundSlot
-      );
-
-      if (nextRoundMatch) {
-        await Match.update(
-          { nextMatchId: nextRoundMatch.id },
-          { where: { id: match.id } }
-        );
-      }
+      const nextRoundMatch = finalMatches.find(m => m.round === match.round + 1 && m.slot === nextRoundSlot);
+      if (nextRoundMatch) await Match.update({ nextMatchId: nextRoundMatch.id }, { where: { id: match.id } });
     }
 
-
+    // Eksekusi otomatis BYE (Lolos otomatis)
     for (const match of finalMatches.filter(m => m.round === 1)) {
       if (match.peserta1Id === null || match.peserta2Id === null) {
         await _processMatchPeserta(match.id, match.peserta1Id, match.peserta2Id);
       }
     }
 
-    res.status(200).json({ msg: "Pengundian dan pembuatan bagan berhasil" });
+    res.status(200).json({ msg: "Pengundian sukses dengan aturan BYE khusus Seed." });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ msg: err.message });
   }
 };
+
 
 
 export const getUnscheduledMatches = async (req, res) => {

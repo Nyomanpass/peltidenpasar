@@ -1,21 +1,24 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import { Peserta, KelompokUmur } from "../models/index.js";
+import { Peserta, KelompokUmur, Tournament } from "../models/index.js";
 
 // ====== Konfigurasi upload file ======
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const dir = "uploads/fotokartu";
+    // Gunakan folder umum 'uploads/peserta' agar bisa menampung fotokartu & buktibayar
+    const dir = "uploads/peserta";
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     cb(null, dir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname));
+    // Tambahkan prefix fieldname agar file tidak tertukar
+    cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`);
   },
 });
+
 export const upload = multer({ storage });
 
 // ====== Controller ======
@@ -47,11 +50,13 @@ export const getPesertaById = async (req, res) => {
   }
 };
 
-// Create peserta
 export const createPeserta = async (req, res) => {
   try {
-    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId,tournamentId } = req.body;
-    const fotoKartu = req.file ? req.file.path : null;
+    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId } = req.body;
+    
+    // Gunakan Optional Chaining ?. untuk keamanan
+    const fotoKartu = req.files?.fotoKartu ? req.files.fotoKartu[0].path : null;
+    const buktiBayar = req.files?.buktiBayar ? req.files.buktiBayar[0].path : null;
 
     const newData = await Peserta.create({
       namaLengkap,
@@ -60,6 +65,8 @@ export const createPeserta = async (req, res) => {
       kelompokUmurId,
       tournamentId,
       fotoKartu,
+      buktiBayar, 
+      status: "pending"
     });
 
     res.status(201).json(newData);
@@ -68,28 +75,41 @@ export const createPeserta = async (req, res) => {
   }
 };
 
-// Update peserta
 export const updatePeserta = async (req, res) => {
   try {
+    // Cari peserta
     const peserta = await Peserta.findByPk(req.params.id);
     if (!peserta) return res.status(404).json({ message: "Peserta tidak ditemukan" });
 
-    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId } = req.body;
+    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId, status } = req.body;
 
-    if (req.file) {
+    // 1. Logika Update FOTO KARTU (Cek req.files)
+    if (req.files?.fotoKartu) {
       if (peserta.fotoKartu && fs.existsSync(peserta.fotoKartu)) {
         fs.unlinkSync(peserta.fotoKartu);
       }
-      peserta.fotoKartu = req.file.path;
+      peserta.fotoKartu = req.files.fotoKartu[0].path;
     }
 
-    peserta.namaLengkap = namaLengkap || peserta.namaLengkap;
-    peserta.nomorWhatsapp = nomorWhatsapp || peserta.nomorWhatsapp;
-    peserta.tanggalLahir = tanggalLahir || peserta.tanggalLahir;
-    peserta.kelompokUmurId = kelompokUmurId || peserta.kelompokUmurId;
-    peserta.tournamentId = tournamentId || peserta.tournamentId; 
+    // 2. Logika Update BUKTI BAYAR (Cek req.files)
+    if (req.files?.buktiBayar) {
+      if (peserta.buktiBayar && fs.existsSync(peserta.buktiBayar)) {
+        fs.unlinkSync(peserta.buktiBayar);
+      }
+      peserta.buktiBayar = req.files.buktiBayar[0].path;
+    }
 
-    await peserta.save();
+    // 3. Update data menggunakan method update() agar lebih bersih
+    await peserta.update({
+      namaLengkap: namaLengkap || peserta.namaLengkap,
+      nomorWhatsapp: nomorWhatsapp || peserta.nomorWhatsapp,
+      tanggalLahir: tanggalLahir || peserta.tanggalLahir,
+      kelompokUmurId: kelompokUmurId || peserta.kelompokUmurId,
+      tournamentId: tournamentId || peserta.tournamentId,
+      status: status || peserta.status,
+      fotoKartu: peserta.fotoKartu,
+      buktiBayar: peserta.buktiBayar
+    });
 
     res.json({ message: "Peserta berhasil diupdate", data: peserta });
   } catch (error) {
@@ -97,36 +117,58 @@ export const updatePeserta = async (req, res) => {
   }
 };
 
-// Delete peserta
+// Update deletePeserta untuk menghapus BUKTI BAYAR juga jika ada
 export const deletePeserta = async (req, res) => {
   try {
     const peserta = await Peserta.findByPk(req.params.id);
     if (!peserta) return res.status(404).json({ message: "Peserta tidak ditemukan" });
 
+    // Hapus Foto Kartu
     if (peserta.fotoKartu && fs.existsSync(peserta.fotoKartu)) {
       fs.unlinkSync(peserta.fotoKartu);
     }
+    // Hapus Bukti Bayar (Tambahan)
+    if (peserta.buktiBayar && fs.existsSync(peserta.buktiBayar)) {
+      fs.unlinkSync(peserta.buktiBayar);
+    }
 
     await peserta.destroy();
-    res.json({ message: "Peserta berhasil dihapus" });
+    res.json({ message: "Peserta berhasil dihapus beserta file-filenya" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// Verify peserta
 export const verifyPeserta = async (req, res) => {
   try {
     const { id } = req.params;
+    const { status, alasan } = req.body; 
+
     const peserta = await Peserta.findByPk(id);
 
     if (!peserta) return res.status(404).json({ msg: "Peserta tidak ditemukan" });
 
+    if (status === "rejected") {
+      // Jika ditolak, langsung hapus dari database
+      await peserta.destroy();
+      return res.status(200).json({ 
+        msg: "Peserta berhasil ditolak dan data telah dihapus",
+        status: "deleted" 
+      });
+    }
+
+    // Jika diverifikasi (verified)
     peserta.status = "verified";
+    if (alasan) peserta.alasan = alasan; // Opsional jika status verified ingin simpan catatan
+    
     await peserta.save();
 
-    res.status(200).json({ msg: "Peserta berhasil diverifikasi", data: peserta });
+    res.status(200).json({ 
+      msg: "Peserta berhasil diverifikasi", 
+      data: peserta 
+    });
   } catch (error) {
+    console.error("Error verifyPeserta:", error);
     res.status(500).json({ msg: error.message });
   }
 };
@@ -149,7 +191,7 @@ export const getPesertaByKelompokUmur = async (req, res) => {
         {
           model: Peserta,
           as: "peserta",
-          attributes: ["id", "namaLengkap", "status", "kelompokUmurId", "tournamentId"],
+          attributes: ["id", "namaLengkap", "status", "kelompokUmurId", "tournamentId", 'nomorWhatsapp', 'tanggalLahir'],
           where: pesertaFilter,
           required: false, // supaya kelompok umur tetap muncul meskipun tidak ada peserta
         },

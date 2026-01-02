@@ -1,127 +1,168 @@
-import React from 'react';
-import { Calendar, MapPin, Download, Zap, Users } from 'lucide-react'; 
+import React, { useEffect, useState } from 'react';
+import { Calendar, MapPin, Zap, Info, AlertCircle, Loader2 } from 'lucide-react'; 
+import api from '../api'; // Pastikan ini mengarah ke konfigurasi axios Anda
 
 const TournamentComming = () => {
+    const [tournament, setTournament] = useState(null);
+    const [loading, setLoading] = useState(true);
 
-    // Data Turnamen yang Akan Datang (Hanya 1 data yang disorot)
-    const nextTournament = {
-        id: 1,
-        name: "Wali Kota Cup 2025",
-        start_date: "2025-11-12",
-        end_date: "2025-12-17",
-        location: "GOR Ngurah Rai",
-        description: "Wali kota cup 2025 akan hadir sebagai ajang seleksi utama, merupakan kesempatan emas bagi atlet junior dan senior Denpasar untuk meraih poin ranking tertinggi.",
-        status: "PENDAFTARAN DIBUKA",
-        poster: "/tournament.jpg", // Gambar Poster
-        categories: "Tunggal (U14, U18, Senior)",
-        deadline: "05 Desember 2025", // Tambahkan deadline
-        rulesLink: "/turnamen/aturan-wali-kota-2025",
-        registerLink: "/pendaftaran/wali-kota-cup-2025" 
-    };
+    const BASE_URL = "http://localhost:5004"; // Sesuaikan dengan URL Backend Anda
 
-    // Fungsi helper untuk format tanggal (sederhana)
+    useEffect(() => {
+        const fetchLatestTournament = async () => {
+            try {
+                const res = await api.get('/tournaments');
+                // Filter hanya yang statusnya "aktif"
+                // Kemudian ambil yang ID-nya paling besar (terbaru)
+                const activeOnes = res.data
+                    .filter(t => t.status === "aktif")
+                    .sort((a, b) => b.id - a.id);
+
+                if (activeOnes.length > 0) {
+                    setTournament(activeOnes[0]);
+                }
+            } catch (err) {
+                console.error("Gagal mengambil data turnamen:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchLatestTournament();
+    }, []);
+
+    // Helper: Format Tanggal ke Bahasa Indonesia
     const formatDate = (dateString) => {
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString('id-ID', options);
+        if (!dateString) return "-";
+        return new Date(dateString).toLocaleDateString('id-ID', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
     };
+
+    // Helper: Hitung Deadline (H-7 sebelum start_date)
+    const getDeadline = (startDate) => {
+        const date = new Date(startDate);
+        date.setDate(date.getDate() - 7);
+        return date;
+    };
+
+    if (loading) {
+        return (
+            <div className="py-20 flex flex-col items-center justify-center text-gray-500">
+                <Loader2 className="animate-spin mb-2" size={40} />
+                <p className="font-medium">Mencari Turnamen Terbaru...</p>
+            </div>
+        );
+    }
+
+    // Jika tidak ada turnamen aktif di database
+    if (!tournament) return null;
+
+    const deadline = getDeadline(tournament.start_date);
+    const isRegistrationClosed = new Date() > deadline;
 
     return (
-        // Latar Belakang Section: bg-gray-50
         <section id="tournament-highlight" className="py-20 bg-gray-50"> 
             <div className="container mx-auto px-4 max-w-6xl">
                 
-                {/* Header Section */}
+                {/* Judul Seksi */}
                 <div className="text-center mb-12">
-                    <h2 className="text-4xl font-extrabold mb-2 text-secondary">
+                    <h2 className="text-4xl font-extrabold mb-2 text-gray-900 tracking-tight">
                         Turnamen Mendatang
                     </h2>
-                    <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-                        Jangan lewatkan ajang kompetisi resmi utama di kota Denpasar.
+                    <p className="text-lg text-gray-600 max-w-2xl mx-auto italic">
+                        "Siapkan fisik dan mental, raih prestasi tertinggi di Denpasar."
                     </p>
-                    <div className="w-24 h-1 bg-primary mx-auto mt-4 rounded"></div> 
+                    <div className="w-20 h-1.5 bg-blue-600 mx-auto mt-4 rounded-full"></div> 
                 </div>
                 
-                {/* Kartu Turnamen Highlight (2 Kolom: Poster + Detail) */}
-                <div className="bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col lg:flex-row border-b-8 border-primary">
+                {/* Kartu Turnamen Utama */}
+                <div className="bg-white rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-gray-100">
                     
-                    {/* KOLOM KIRI: POSTER VISUAL */}
-                    <div className="relative lg:w-1/3 min-h-[350px] overflow-hidden">
+                    {/* KOLOM KIRI: POSTER */}
+                    <div className="relative lg:w-2/5 min-h-[400px]">
                         <img 
-                            src={nextTournament.poster} 
-                            alt={`Poster ${nextTournament.name}`} 
-                            className="w-full h-full object-cover" 
+                            src={tournament.poster ? `${BASE_URL}/${tournament.poster}` : "/default-tournament.jpg"} 
+                            alt={tournament.name} 
+                            className="w-full h-full object-cover transform hover:scale-105 transition duration-700" 
                         />
-                        {/* Tag Status di Atas Gambar */}
-                        <span className="absolute top-4 left-4 bg-primary text-secondary font-bold px-4 py-1 rounded-full text-sm tracking-wider shadow-md">
-                            {nextTournament.status}
-                        </span>
+                        {/* Status Label */}
+                        <div className="absolute top-6 left-6 flex flex-col gap-2">
+                            <span className={`font-black px-5 py-2 rounded-xl text-xs shadow-lg ${
+                                isRegistrationClosed ? 'bg-red-500 text-white' : 'bg-yellow-400 text-gray-900'
+                            }`}>
+                                {isRegistrationClosed ? "PENDAFTARAN DITUTUP" : "PENDAFTARAN DIBUKA"}
+                            </span>
+                            <span className="bg-blue-600 text-white font-bold px-4 py-1.5 rounded-lg text-[10px] shadow-lg w-fit">
+                                {tournament.type.toUpperCase()}
+                            </span>
+                        </div>
                     </div>
 
-                    {/* KOLOM KANAN: DETAIL & CTA */}
-                    <div className="lg:w-2/3 p-8">
-                        <h3 className="text-4xl font-extrabold text-secondary mb-3">{nextTournament.name}</h3>
+                    {/* KOLOM KANAN: DETAIL DATA */}
+                    <div className="lg:w-3/5 p-8 md:p-12 flex flex-col justify-center">
+                        <h3 className="text-4xl font-black text-gray-900 mb-4 leading-tight">
+                            {tournament.name}
+                        </h3>
                         
-                        <p className="text-gray-600 mb-6 border-b pb-4">{nextTournament.description}</p>
+                        <p className="text-gray-600 mb-8 text-lg leading-relaxed border-l-4 border-blue-100 pl-4">
+                            {tournament.description}
+                        </p>
 
-                        {/* Info Detail Cepat dalam Grid */}
-                        <div className="grid sm:grid-cols-2 gap-4 mb-6">
+                        {/* Grid Informasi Database */}
+                        <div className="grid sm:grid-cols-2 gap-6 mb-8">
                             
-                            {/* Detail Tanggal */}
-                            <div className="flex items-start text-gray-700">
-                                <Calendar className="w-6 h-6 text-primary mr-3 flex-shrink-0" />
-                                <div>
-                                    <span className="font-semibold text-sm text-gray-500 block">Tanggal Acara</span>
-                                    <span className="font-bold">{formatDate(nextTournament.start_date)} - {formatDate(nextTournament.end_date)}</span>
-                                </div>
-                            </div>
+                            <InfoItem 
+                                icon={<Calendar className="text-blue-600" />} 
+                                label="Tanggal Pelaksanaan" 
+                                value={`${formatDate(tournament.start_date)} - ${formatDate(tournament.end_date)}`} 
+                            />
 
-                            {/* Detail Lokasi */}
-                            <div className="flex items-start text-gray-700">
-                                <MapPin className="w-6 h-6 text-primary mr-3 flex-shrink-0" />
-                                <div>
-                                    <span className="font-semibold text-sm text-gray-500 block">Lokasi Pertandingan</span>
-                                    <span className="font-bold">{nextTournament.location}</span>
-                                </div>
-                            </div>
+                            <InfoItem 
+                                icon={<MapPin className="text-red-600" />} 
+                                label="Lokasi Pertandingan" 
+                                value={tournament.location} 
+                            />
                             
-                            {/* Detail Kategori */}
-                             <div className="flex items-start text-gray-700">
-                                <Users className="w-6 h-6 text-primary mr-3 flex-shrink-0" />
-                                <div>
-                                    <span className="font-semibold text-sm text-gray-500 block">Kategori Dibuka</span>
-                                    <span className="font-bold">{nextTournament.categories}</span>
-                                </div>
-                            </div>
+                            <InfoItem 
+                                icon={<Zap className="text-emerald-600" />} 
+                                label="Biaya Pendaftaran" 
+                                value={tournament.type === 'berbayar' 
+                                    ? `Rp ${Number(tournament.nominal).toLocaleString('id-ID')}` 
+                                    : "GRATIS"
+                                } 
+                            />
                             
-                            {/* Detail Deadline (Merah) */}
-                            <div className="flex items-start text-red-600">
-                                <Zap className="w-6 h-6 mr-3 flex-shrink-0" />
-                                <div>
-                                    <span className="font-semibold text-sm block">Batas Pendaftaran</span>
-                                    <span className="font-bold">{nextTournament.deadline}</span>
-                                </div>
-                            </div>
+                            <InfoItem 
+                                icon={<AlertCircle className="text-orange-600" />} 
+                                label="Batas Pendaftaran (H-7)" 
+                                value={formatDate(deadline)} 
+                                isDeadline={true}
+                            />
                         </div>
+
+                        {/* Info Bank jika Berbayar */}
+                        {tournament.type === 'berbayar' && tournament.bank_info && (
+                            <div className="mb-8 p-4 bg-blue-50 rounded-2xl border border-blue-100 flex items-center gap-4">
+                                <Info className="text-blue-600 flex-shrink-0" />
+                                <p className="text-sm text-blue-800">
+                                    Pembayaran melalui: <span className="font-bold">{tournament.bank_info}</span>
+                                </p>
+                            </div>
+                        )}
                         
-                        {/* Tombol Aksi dan Peraturan */}
-                        <div className="flex flex-col sm:flex-row gap-4 mt-6">
-                            
-                            {/* Tombol Daftar (Primary) */}
+                        {/* Tombol Aksi */}
+                        <div className="flex flex-col sm:flex-row gap-4">
                             <a
-                                href={nextTournament.registerLink}
-                                className="inline-flex items-center bg-primary text-secondary font-bold py-3 px-8 rounded-full hover:opacity-90 transition duration-300 shadow-lg text-lg justify-center"
+                                href={isRegistrationClosed ? "#" : "/daftar-peserta"}
+                                className={`inline-flex items-center justify-center py-4 px-10 rounded-2xl font-black text-lg transition duration-300 shadow-xl ${
+                                    isRegistrationClosed 
+                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
+                                    : "bg-blue-600 text-white hover:bg-blue-700 hover:-translate-y-1 shadow-blue-200"
+                                }`}
                             >
-                                Daftar Sekarang →
-                            </a>
-                            
-                            {/* Tombol Peraturan (Sekunder) */}
-                            <a
-                                href={nextTournament.rulesLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center text-indigo-600 font-semibold py-3 px-8 rounded-full hover:bg-gray-100 transition duration-200 border border-gray-300 justify-center"
-                            >
-                                <Download className="w-5 h-5 mr-2" /> Unduh Peraturan
+                                {isRegistrationClosed ? "Pendaftaran Berakhir" : "Daftar Sekarang →"}
                             </a>
                         </div>
                     </div>
@@ -130,5 +171,16 @@ const TournamentComming = () => {
         </section>
     );
 };
+
+// Sub-komponen agar kode rapi
+const InfoItem = ({ icon, label, value, isDeadline }) => (
+    <div className="flex items-start">
+        <div className="p-3 bg-gray-50 rounded-xl mr-4">{icon}</div>
+        <div>
+            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block mb-1">{label}</span>
+            <span className={`font-bold text-gray-800 ${isDeadline ? 'text-red-600' : ''}`}>{value}</span>
+        </div>
+    </div>
+);
 
 export default TournamentComming;

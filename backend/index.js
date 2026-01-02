@@ -29,6 +29,8 @@ import jadwalRoutes from './routes/JadwalRoutes.js'
 import lapanganRoutes from './routes/LapanganRoutes.js'
 //tournament
 import tournamentRoutes from './routes/TournamentRoutes.js'
+//double team
+import doubleRoutes from "./routes/DoubleRoutes.js"; 
 
 
 
@@ -65,6 +67,9 @@ app.use('/api', lapanganRoutes);
 //tournament
 app.use('/api', tournamentRoutes);
 
+//double team
+app.use("/api", doubleRoutes);
+
 
 
 app.get("/", (req, res) => res.send("API OK"));
@@ -73,7 +78,8 @@ const start = async () => {
   try {
     await sequelize.authenticate();
     console.log("✅ Database connected");
-    await sequelize.sync(); // PAKAI force untuk bikin ulang tabel dari nol
+    await sequelize.sync();
+    // await sequelize.sync({ alter: true });
     app.listen(5004, () => console.log("Server berjalan di port 5004"));
   } catch (error) {
     console.error("❌ Error saat menjalankan server:", error);

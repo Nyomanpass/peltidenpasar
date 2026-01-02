@@ -1,8 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "../api";
-
+import { X, CheckCircle, Upload, CreditCard, Loader2 } from "lucide-react";
 
 function PesertaForm({ onSuccess }) {
+  const fileInputRef = useRef(null);
+  const buktiBayarRef = useRef(null);
+
   const [formData, setFormData] = useState({
     namaLengkap: "",
     nomorWhatsapp: "",
@@ -10,44 +13,56 @@ function PesertaForm({ onSuccess }) {
     kelompokUmurId: "",
     tournamentId: "",
     fotoKartu: null,
+    buktiBayar: null,
   });
 
   const [kelompokList, setKelompokList] = useState([]);
   const [tournamentList, setTournamentList] = useState([]);
+  const [selectedTournament, setSelectedTournament] = useState(null);
+  const [previewFoto, setPreviewFoto] = useState(null);
+  const [previewBayar, setPreviewBayar] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Ambil daftar kelompok umur dari API
   useEffect(() => {
     fetchKelompok();
-    fetchTournament()
+    fetchTournament();
   }, []);
 
-    const fetchKelompok = async () => {
-      try {
-        const res = await api.get("/kelompok-umur");
-        setKelompokList(res.data);
-      } catch (err) {
-        console.error("Gagal fetch kelompok umur:", err);
-      }
-    };
-
-    const fetchTournament = async () => {
-      try{
-        const res = await api.get('/tournaments');
-        const activeTournaments = res.data.filter(
-          (t) => t.status = "aktif"
-        )
-        setTournamentList(activeTournaments);
-
-      }catch(err){
-        console.error("Fetch tourmanet ada masalah:", err);
-      }
+  const fetchKelompok = async () => {
+    try {
+      const res = await api.get("/kelompok-umur");
+      setKelompokList(res.data);
+    } catch (err) {
+      console.error("Gagal fetch kelompok umur:", err);
     }
-    
+  };
+
+  const fetchTournament = async () => {
+    try {
+      const res = await api.get('/tournaments');
+      const activeTournaments = res.data.filter((t) => t.status === "aktif");
+      setTournamentList(activeTournaments);
+    } catch (err) {
+      console.error("Fetch tournament error:", err);
+    }
+  };
+
+  const handleTournamentChange = (e) => {
+    const id = e.target.value;
+    setFormData({ ...formData, tournamentId: id, buktiBayar: null });
+    setPreviewBayar(null);
+    const detail = tournamentList.find((t) => t.id === parseInt(id));
+    setSelectedTournament(detail);
+  };
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
-    if (files) {
-      setFormData({ ...formData, [name]: files[0] });
+    if (files && files[0]) {
+      const file = files[0];
+      setFormData({ ...formData, [name]: file });
+      const objectUrl = URL.createObjectURL(file);
+      if (name === "fotoKartu") setPreviewFoto(objectUrl);
+      if (name === "buktiBayar") setPreviewBayar(objectUrl);
     } else {
       setFormData({ ...formData, [name]: value });
     }
@@ -55,229 +70,221 @@ function PesertaForm({ onSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (selectedTournament?.type === "berbayar" && !formData.buktiBayar) {
+      alert("Harap unggah bukti pembayaran terlebih dahulu!");
+      return;
+    }
 
+    setIsSubmitting(true);
     try {
-      // Kirim FormData agar bisa upload file
       const data = new FormData();
-      data.append("namaLengkap", formData.namaLengkap);
-      data.append("nomorWhatsapp", formData.nomorWhatsapp);
-      data.append("tanggalLahir", formData.tanggalLahir);
-      data.append("kelompokUmurId", formData.kelompokUmurId);
-      data.append("tournamentId", formData.tournamentId);
-      if (formData.fotoKartu) data.append("fotoKartu", formData.fotoKartu);
+      Object.keys(formData).forEach(key => {
+        if (formData[key]) data.append(key, formData[key]);
+      });
 
       await api.post("/peserta", data, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Peserta berhasil ditambahkan ✅");
-      if (onSuccess) onSuccess();
-
-      // Reset form
+      alert("Pendaftaran Berhasil! ✅");
+      
       setFormData({
-        namaLengkap: "",
-        nomorWhatsapp: "",
-        tanggalLahir: "",
-        kelompokUmurId: "",
-        tournamentId: "",
-        fotoKartu: null,
+        namaLengkap: "", nomorWhatsapp: "", tanggalLahir: "",
+        kelompokUmurId: "", tournamentId: "", fotoKartu: null, buktiBayar: null,
       });
+      setPreviewFoto(null);
+      setPreviewBayar(null);
+      setSelectedTournament(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (buktiBayarRef.current) buktiBayarRef.current.value = "";
+      
+      if (onSuccess) onSuccess();
     } catch (err) {
-      console.error("Gagal tambah peserta:", err);
-      alert("Terjadi kesalahan saat menambahkan peserta ❌");
+      alert("Gagal mendaftar, silakan cek kembali data Anda.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-  <div className="flex items-stretch justify-center bg-gray-50 font-sans min-h-screen">
- 
-  <div className="bg-white shadow-2xl overflow-hidden w-full h-full min-h-screen">
-    <div className="lg:grid lg:grid-cols-2 h-full min-h-screen">
-      
-    <div className="flex relative bg-secondary p-8 flex-col justify-center text-white h-[70vh] md:h-full md:min-h-screen overflow-hidden">
- 
-  <div className="absolute top-0 -left-1/3 w-72 h-72 md:w-96 md:h-96 bg-primary rounded-full transform -translate-y-1/2"></div>
-  <div className="absolute -bottom-90 -right-1/3 md:w-96 md:h-96 w-72 h-72 bg-primary rounded-full transform -translate-y-1/2"></div>
+    <div className="bg-gray-50 font-sans min-h-screen">
+      <div className="bg-white shadow-2xl w-full min-h-screen">
+        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
+          
+          {/* KOLOM KIRI: BRANDING & INFO (50%) */}
+          <div className="relative bg-secondary p-8 lg:p-16 flex flex-col justify-center items-center text-white overflow-hidden order-2 lg:order-1">
+            <div className="absolute top-0 -left-12 w-64 h-64 bg-primary/20 rounded-full transform -translate-y-1/2 blur-2xl"></div>
+            <div className="absolute bottom-0 -right-12 w-64 h-64 bg-primary/20 rounded-full transform translate-y-1/2 blur-2xl"></div>
 
-
-  <div className="flex flex-col items-center mb-6 relative z-10">
-    <img
-      src="/logo.png"
-      alt="Logo"
-      className="w-20 h-20 mb-2 drop-shadow-md"
-    />
-    <h1 className="text-xl font-bold text-white">PELTI DENPASAR</h1>
-    <p className="text-sm text-gray-white -mt-1">Persatuan Lawn Tenis Indonesia</p>
-  </div>
-
-  {/* === Konten Teks === */}
-  <div className="max-w-md mx-auto text-center md:text-left relative z-10">
-    <h1 className="text-3xl font-extrabold leading-tight mb-4 text-white">
-      Ayo Gabung, Jadi Juara Baru!
-    </h1>
-    <p className="text-white text-md mb-6">Daftar sekarang! Raih gelar juara Turnamen Tenis PELTI Denpasar di kategori umur Anda.</p>
-    <div className="space-y-3 text-white">
-      {[
-        "Lengkapi data diri Anda.",
-        "Pilih Kelompok Umur yang tepat.",
-        "Upload Foto Kartu Keluarga/KTP.",
-      ].map((text, i) => (
-        <p
-          key={i}
-          className="flex items-center justify-center md:justify-start text-md"
-        >
-          <span className="w-6 h-6 mr-2 inline-flex items-center justify-center bg-white/50 rounded-full text-xs font-bold text-slate-900 shadow">
-            {i + 1}
-          </span>
-          {text}
-        </p>
-      ))}
-    </div>
-  </div>
-</div>
-
-
-      {/* Kolom Kanan */}
-      <div className="p-8 md:p-12 lg:p-16 flex md:mt-0 mt-18 md:items-center md:justify-center h-full min-h-screen bg-white">
-        
-        <form onSubmit={handleSubmit} className="w-full max-w-lg space-y-6">
-
-          <h2 className="text-3xl font-extrabold text-gray-800 mb-2">
-            Formulir Pendaftaran
-          </h2>
-          <p className="text-gray-500 mb-8">
-            Isi semua bidang untuk melanjutkan pendaftaran peserta.
-          </p>
-
-  <div>
-                <label htmlFor="tournamentId" className="mb-2 block text-sm font-medium text-gray-700">
-                  Pilih Turnamen
-                </label>
-                <select
-                  id="tournamentId"
-                  name="tournamentId"
-                  value={formData.tournamentId}
-                  onChange={handleChange}
-                  className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white cursor-pointer"
-                  required
-                >
-                  <option value="">-- Pilih Turnamen Aktif --</option>
-
-                  {tournamentList.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </select>
+            <div className="relative z-10 w-full max-w-md flex flex-col items-center text-center">
+              <div className="flex flex-col items-center mb-8">
+                <img src="/logo.png" alt="Logo" className="w-20 h-20 mb-4 drop-shadow-lg p-2 rounded-2xl bg-white/10" />
+                <h1 className="text-2xl font-black tracking-tighter">PELTI DENPASAR</h1>
+                <p className="text-sm uppercase tracking-[0.2em] text-blue-200">Persatuan Lawn Tenis Indonesia</p>
               </div>
-          {/* Input Nama */}
-          <div>
-            <label htmlFor="namaLengkap" className="mb-2 block text-sm font-medium text-gray-700">
-              Nama Lengkap
-            </label>
-            <input
-              type="text"
-              id="namaLengkap"
-              name="namaLengkap"
-              value={formData.namaLengkap}
-              onChange={handleChange}
-              className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition duration-150"
-              placeholder="Masukkan nama lengkap Anda"
-              required
-            />
+
+              <div className="mb-10">
+                <h1 className="text-3xl lg:text-4xl font-extrabold leading-tight mb-4 italic">Ayo Gabung, Jadi Juara Baru!</h1>
+                <p className="text-blue-100 text-sm opacity-80 leading-relaxed">
+                  Raih gelar juara Turnamen Tenis PELTI Denpasar di kategori umur Anda.
+                </p>
+              </div>
+              
+              <div className="hidden lg:block w-full space-y-4">
+                {[
+                  "Lengkapi data diri sesuai identitas.",
+                  "Pilih Kelompok Umur yang tersedia.",
+                  "Upload bukti identitas (KK/KTP).",
+                  "Lakukan pembayaran (untuk turnamen berbayar).",
+                ].map((text, i) => (
+                  <div key={i} className="flex items-center justify-center gap-4 group bg-white/5 p-3 rounded-2xl border border-white/10">
+                    <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-primary rounded-xl text-white text-xs font-black shadow-lg">
+                      {i + 1}
+                    </span>
+                    <p className="text-sm font-medium text-left w-64">{text}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* Input Nomor WhatsApp */}
-          <div>
-            <label htmlFor="nomorWhatsapp" className="mb-2 block text-sm font-medium text-gray-700">
-              Nomor Whatsapp
-            </label>
-            <input
-              type="text"
-              id="nomorWhatsapp"
-              name="nomorWhatsapp"
-              value={formData.nomorWhatsapp}
-              onChange={handleChange}
-              className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition duration-150"
-              placeholder="0812xxxxxxx"
-              required
-            />
+          {/* KOLOM KANAN: FORMULIR (50%) */}
+          <div className="flex-1 p-6  bg-white flex flex-col justify-center items-center order-1">
+            <div className="w-full max-w-2xl">
+              <div className="mb-10 text-center lg:text-left">
+                <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Formulir Pendaftaran</h2>
+                <p className="text-slate-500 text-sm italic">Lengkapi data peserta dengan benar untuk verifikasi.</p>
+                <div className="w-16 h-1 bg-primary rounded-full mt-4 mx-auto lg:mx-0"></div>
+              </div>
+
+              <form onSubmit={handleSubmit} className="space-y-6">
+                
+                {/* PILIH TURNAMEN */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 uppercase ml-1 tracking-wider">Turnamen</label>
+                  <select
+                    name="tournamentId"
+                    value={formData.tournamentId}
+                    onChange={handleTournamentChange}
+                    className="w-full border-2 border-slate-100 bg-slate-50 p-3.5 rounded-xl focus:border-primary outline-none transition-all font-bold text-slate-700 text-sm"
+                    required
+                  >
+                    <option value="">-- Pilih Turnamen Aktif --</option>
+                    {tournamentList.map((t) => (
+                      <option key={t.id} value={t.id}>{t.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* AREA PEMBAYARAN */}
+                {selectedTournament && selectedTournament.type === "berbayar" && (
+                  <div className="p-5 bg-amber-50 rounded-2xl border border-amber-200 space-y-4 shadow-sm">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <CreditCard size={18}/>
+                      <h3 className="font-bold uppercase text-[11px] tracking-wider">Instruksi Pembayaran</h3>
+                    </div>
+                    
+                    <div className="bg-white p-4 rounded-xl border border-amber-100 flex justify-between items-center">
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Nominal Transfer</p>
+                        <p className="text-lg font-black text-blue-600">Rp {Number(selectedTournament.nominal).toLocaleString()}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Bank / Tujuan</p>
+                        <p className="text-xs font-bold text-slate-700">{selectedTournament.bank_info}</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-black text-amber-700 ml-1 uppercase">Upload Bukti Transfer</label>
+                      <input
+                        ref={buktiBayarRef}
+                        type="file"
+                        name="buktiBayar"
+                        onChange={handleChange}
+                        required
+                        className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:bg-amber-500 file:text-white file:font-bold hover:file:bg-amber-600 cursor-pointer"
+                      />
+                      {previewBayar && (
+                        <div className="relative w-24 aspect-square rounded-xl overflow-hidden shadow-md border-2 border-white mt-2">
+                          <img src={previewBayar} alt="Preview" className="w-full h-full object-cover" />
+                          <button 
+                            type="button" 
+                            onClick={() => { setPreviewBayar(null); setFormData({...formData, buktiBayar: null}); buktiBayarRef.current.value = ""; }}
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-md"
+                          ><X size={12}/></button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* BIODATA PESERTA */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Nama Lengkap</label>
+                    <input type="text" name="namaLengkap" value={formData.namaLengkap} onChange={handleChange} className="w-full border-2 border-slate-100 p-3.5 rounded-xl outline-none focus:border-primary transition text-sm shadow-sm" placeholder="Nama Lengkap" required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">No. WhatsApp</label>
+                    <input type="text" name="nomorWhatsapp" value={formData.nomorWhatsapp} onChange={handleChange} className="w-full border-2 border-slate-100 p-3.5 rounded-xl outline-none focus:border-primary transition text-sm shadow-sm" placeholder="08xxxxxxxx" required />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Tanggal Lahir</label>
+                    <input type="date" name="tanggalLahir" value={formData.tanggalLahir} onChange={handleChange} className="w-full border-2 border-slate-100 p-3.5 rounded-xl outline-none focus:border-primary transition text-sm shadow-sm" required />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Kelompok Umur</label>
+                    <select name="kelompokUmurId" value={formData.kelompokUmurId} onChange={handleChange} className="w-full border-2 border-slate-100 p-3.5 rounded-xl bg-white outline-none focus:border-primary transition text-sm shadow-sm font-medium" required>
+                      <option value="">-- Pilih --</option>
+                      {kelompokList.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                {/* FOTO IDENTITAS */}
+                <div className="space-y-3 p-5 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                  <label className="text-xs font-bold text-slate-600 flex items-center gap-2">
+                    <Upload size={16} className="text-primary"/> Foto Identitas (KK/KTP)
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    name="fotoKartu"
+                    accept="image/*"
+                    onChange={handleChange}
+                    className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:bg-slate-700 file:text-white file:font-bold hover:file:bg-black transition-all cursor-pointer"
+                  />
+                  {previewFoto && (
+                    <div className="relative w-full max-w-[240px] aspect-video rounded-xl overflow-hidden shadow-lg border-2 border-white mt-2">
+                      <img src={previewFoto} alt="Preview" className="w-full h-full object-cover" />
+                      <button 
+                        type="button" 
+                        onClick={() => { setPreviewFoto(null); setFormData({...formData, fotoKartu: null}); fileInputRef.current.value = ""; }}
+                        className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-md hover:bg-red-600 transition"
+                      ><X size={14}/></button>
+                    </div>
+                  )}
+                </div>
+
+                {/* SUBMIT BUTTON */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-primary text-white font-black text-sm py-4 rounded-xl hover:bg-blue-600 transform hover:scale-[1.01] active:scale-95 transition-all duration-300 shadow-xl shadow-blue-100 flex items-center justify-center gap-3 uppercase tracking-widest disabled:bg-slate-300"
+                >
+                  {isSubmitting ? <Loader2 className="animate-spin" size={20}/> : <>Daftar Sekarang <CheckCircle size={18}/></>}
+                </button>
+              </form>
+            </div>
           </div>
 
-          {/* Input Tanggal Lahir */}
-          <div>
-            <label htmlFor="tanggalLahir" className="mb-2 block text-sm font-medium text-gray-700">
-              Tanggal Lahir
-            </label>
-            <input
-              type="date"
-              id="tanggalLahir"
-              name="tanggalLahir"
-              value={formData.tanggalLahir}
-              onChange={handleChange}
-              className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition duration-150"
-              required
-            />
-          </div>
-
-          {/* Dropdown Kelompok Umur */}
-          <div>
-            <label htmlFor="kelompokUmurId" className="mb-2 block text-sm font-medium text-gray-700">
-              Kelompok Umur
-            </label>
-            <select
-              id="kelompokUmurId"
-              name="kelompokUmurId"
-              value={formData.kelompokUmurId}
-              onChange={handleChange}
-              className="w-full border border-gray-300 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 transition duration-150 bg-white cursor-pointer"
-              required
-            >
-              <option value="">-- Pilih Kelompok Umur --</option>
-              {kelompokList.map((k) => (
-                <option key={k.id} value={k.id}>
-                  {k.nama}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Upload Foto */}
-          <div>
-            <label htmlFor="fotoKartu" className="mb-2 block text-sm font-medium text-gray-700">
-              Upload Foto KK / KTP (Bukti Usia)
-            </label>
-            <input
-              type="file"
-              id="fotoKartu"
-              name="fotoKartu"
-              accept="image/*"
-              onChange={handleChange}
-              className="w-full text-gray-700 
-                file:mr-4 file:py-2 file:px-4 
-                file:rounded-lg file:border-0 
-                file:text-sm file:font-semibold 
-                file:bg-primary file:text-white
-                hover:file:bg-primary transition duration-150"
-            />
-          </div>
-
-          {/* Tombol Submit */}
-          <button
-            type="submit"
-            className="w-full bg-primary text-white font-bold py-3 rounded-xl 
-                      hover:bg-primary transform hover:scale-[1.01] 
-                      transition duration-300 shadow-md"
-          >
-            Daftar Sekarang
-          </button>
-        </form>
+        </div>
       </div>
     </div>
-  </div>
-</div>
-
-
   );
 }
 

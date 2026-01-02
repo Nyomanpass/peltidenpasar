@@ -48,27 +48,56 @@ function NavbarDashboard({ toggleSidebar }) {
     fetchPendingUsers();
   }, []);
 
-  // 3. Handler Verifikasi (Verify)
+  // Handler Verifikasi (Setuju)
   const handleVerify = async (id) => {
     try {
-      // Menggunakan endpoint /verify sesuai PesertaList.jsx
       await api.put(`/peserta/${id}/verify`, { status: "verified" });
-      fetchPendingUsers(); // Refresh daftar setelah verifikasi
+      fetchPendingUsers();
+      alert("Peserta berhasil diverifikasi!");
     } catch (error) {
-      console.error("Gagal verifikasi:", error);
+      console.error(error);
     }
   };
 
-  // 4. Handler Tolak (Reject)
-  const handleReject = async (id) => {
-    // Asumsi: Anda memiliki endpoint untuk menolak, misalnya mengubah status menjadi 'rejected'
-    try {
-      await api.put(`/peserta/${id}/status`, { status: "rejected" });
-      fetchPendingUsers(); // Refresh daftar setelah tolak
-    } catch (error) {
-      console.error("Gagal menolak:", error);
+  // Handler Tolak (Reject)
+const handleReject = async (id, message) => {
+  try {
+    // 1. Cari data peserta dari state lokal SEBELUM dihapus di backend
+    const user = pendingUsers.find(p => p.id === id);
+    
+    if (!user) {
+      alert("Data peserta tidak ditemukan di list.");
+      return;
     }
-  };
+
+    // 2. Panggil API untuk hapus data di backend
+    await api.put(`/peserta/${id}/verify`, { 
+      status: "rejected", 
+      alasan: message 
+    });
+
+    // 3. Jalankan logika WhatsApp
+    let phone = user.nomorWhatsapp; // Pastikan nama field sesuai dengan Model (nomorWhatsapp)
+    
+    if (phone) {
+      // Format nomor: ubah 08... menjadi 628...
+      if (phone.startsWith("0")) phone = "62" + phone.slice(1);
+      
+      const text = `Halo *${user.namaLengkap}*,\n\nMohon maaf, pendaftaran Anda di PELTI Denpasar ditolak dengan alasan:\n\n_"${message}"_\n\nSilakan melakukan pendaftaran ulang dengan data yang benar. Terima kasih.`;
+      
+      // Buka link WhatsApp
+      window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, "_blank");
+    }
+
+    // 4. Refresh list (karena data sudah dihapus di backend, list akan otomatis berkurang)
+    fetchPendingUsers();
+    alert("Peserta ditolak, pesan WA terkirim, dan data dihapus.");
+
+  } catch (error) {
+    console.error(error);
+    alert("Gagal memproses penolakan.");
+  }
+};
   
   // 5. Handler Detail (Navigasi)
   const handleViewDetail = (id) => {

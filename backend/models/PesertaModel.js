@@ -14,11 +14,21 @@ export const Peserta = sequelize.define("Peserta", {
     references: { model: "kelompok_umur", key: "id" },
   },
   fotoKartu: { type: DataTypes.STRING, allowNull: true },
+  buktiBayar: { 
+  type: DataTypes.STRING, 
+  allowNull: true 
+},
   status: { 
     type: DataTypes.ENUM("pending", "verified", "rejected"),
     allowNull: false,
     defaultValue: "pending"
-  }
+  },
+  isSeeded: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  },
+
 }, {
   tableName: "peserta",
   timestamps: true,

@@ -2,6 +2,7 @@ import { Bagan } from "../models/BaganModel.js";
 import { KelompokUmur } from "../models/KelompokUmurModel.js";
 import { Match } from "../models/MatchModel.js";
 import { Peserta } from "../models/PesertaModel.js";
+import { Tournament } from "../models/TournamentModel.js"; // Import model tournament
 
 export const createBagan = async (req, res) => {
   try {
@@ -96,7 +97,6 @@ export const createBagan = async (req, res) => {
 };
 
 
-
 export const getBaganWithMatches = async (req, res) => {
   try {
     const { id } = req.params;
@@ -104,10 +104,22 @@ export const getBaganWithMatches = async (req, res) => {
     const bagan = await Bagan.findByPk(id, {
       include: [
         {
+          model: Tournament,
+          attributes: ['name']
+        },
+        {
           model: Match,
           include: [
-            { model: Peserta, as: "peserta1" },
-            { model: Peserta, as: "peserta2" },
+            { 
+              model: Peserta, 
+              as: "peserta1",
+              attributes: ['id', 'namaLengkap', 'isSeeded'] // Tambahkan isSeeded di sini
+            },
+            { 
+              model: Peserta, 
+              as: "peserta2",
+              attributes: ['id', 'namaLengkap', 'isSeeded'] // Tambahkan isSeeded di sini
+            },
             { model: Peserta, as: "winner" }, 
           ],
         },
@@ -166,6 +178,24 @@ export const deleteBagan = async (req, res) => {
     res.json({ msg: "Bagan dan semua match terkait berhasil dihapus" });
   } catch (err) {
     res.status(500).json({ msg: err.message });
+  }
+};
+
+export const lockBagan = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const bagan = await Bagan.findByPk(id);
+
+    if (!bagan) {
+      return res.status(404).json({ message: "Bagan tidak ditemukan" });
+    }
+
+    // Update isLocked menjadi true (1)
+    await bagan.update({ isLocked: true });
+
+    res.status(200).json({ message: "Bagan berhasil dikunci!" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 

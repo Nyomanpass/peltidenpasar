@@ -1,19 +1,7 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api";
-import { ArrowLeft, User, Mail, Phone, Calendar, Users, FileText, CheckCircle, Clock } from "lucide-react";
-
-// Fungsi untuk mendapatkan inisial nama, diambil dari logika sebelumnya
-const getInitials = (name) => {
-    if (!name) return '?';
-    const parts = name.split(' ').filter(n => n);
-    if (parts.length > 1) {
-        // Mengambil inisial dari kata pertama dan terakhir
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-    }
-    // Mengambil huruf pertama jika hanya satu kata
-    return parts[0][0].toUpperCase();
-};
+import { ArrowLeft, User, Phone, Calendar, Users, FileText, CheckCircle, X, Bell, XCircle, Send } from "lucide-react";
 
 export default function DetailPeserta() {
   const { id } = useParams();
@@ -21,155 +9,173 @@ export default function DetailPeserta() {
   const [peserta, setPeserta] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [modalImage, setModalImage] = useState(null);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // State baru untuk fitur Tolak
+  const [isRejecting, setIsRejecting] = useState(false);
+  const [rejectMessage, setRejectMessage] = useState("");
+
+  const BASE_URL = "http://localhost:5004";
 
   useEffect(() => {
-    const fetchPesertaDetail = async () => {
-      try {
-        const res = await api.get(`/peserta/${id}`);
-        setPeserta(res.data);
-      } catch (err) {
-        console.error("Error fetching detail peserta:", err);
-        setError("Gagal mengambil data peserta.");
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchPesertaDetail();
+    fetchPendingTotal();
   }, [id]);
 
-  // Handler Verifikasi
-  const handleVerify = async () => {
-    if (!peserta) return;
-    // Menggunakan custom modal, BUKAN window.confirm
-    if (!window.confirm(`Apakah Anda yakin ingin memverifikasi ${peserta.namaLengkap}?`)) return; 
-    
+  const fetchPesertaDetail = async () => {
     try {
-      // Asumsi endpoint verifikasi
-      await api.put(`/peserta/${id}/verify`, { status: "verified" });
-      setPeserta(p => ({ ...p, status: 'verified' }));
+      const res = await api.get(`/peserta/${id}`);
+      setPeserta(res.data);
     } catch (err) {
-      console.error("Error verifying:", err);
-      setError("Gagal memverifikasi peserta.");
+      setError("Gagal mengambil data peserta.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) return <div className="p-6 text-center text-xl text-gray-500">Memuat detail peserta...</div>;
-  if (error || !peserta) return <div className="p-6 text-center text-red-500 text-xl">{error || "Data peserta tidak ditemukan."}</div>;
+  const fetchPendingTotal = async () => {
+    try {
+      const res = await api.get("/peserta?status=pending");
+      setPendingCount(res.data.length);
+    } catch (err) { console.error(err); }
+  };
 
-  const fotoUrl = peserta.fotoKartu ? `http://localhost:5004/${peserta.fotoKartu}` : null;
-  const statusClass = peserta.status === "pending" 
-    ? "bg-yellow-100 text-yellow-700 border-yellow-300" 
-    : peserta.status === "verified"
-    ? "bg-green-100 text-green-700 border-green-300"
-    : "bg-red-100 text-red-700 border-red-300";
+  // HANDLER VERIFIKASI (SETUJU)
+  const handleVerify = async () => {
+    if (!window.confirm(`Verifikasi ${peserta.namaLengkap}?`)) return;
+    try {
+      await api.put(`/peserta/${id}/verify`, { status: "verified" });
+      setPeserta(p => ({ ...p, status: 'verified' }));
+      fetchPendingTotal();
+      alert("Peserta berhasil diverifikasi! ✅");
+    } catch (err) { alert("Gagal memverifikasi."); }
+  };
+
+  // HANDLER TOLAK (REJECT)
+  const handleReject = async () => {
+    if (!rejectMessage) {
+      alert("Mohon masukkan alasan penolakan.");
+      return;
+    }
+
+    try {
+      // 1. Update status di backend
+      await api.put(`/peserta/${id}/verify`, { 
+        status: "rejected", 
+        alasan: rejectMessage 
+      });
+
+      // 2. Logika WhatsApp
+      let phone = peserta.nomorWhatsapp;
+      if (phone) {
+        if (phone.startsWith("0")) phone = "62" + phone.slice(1);
+        const text = `Halo *${peserta.namaLengkap}*,\n\nMohon maaf, pendaftaran Anda di PELTI Denpasar *DITOLAK* dengan alasan:\n\n_"${rejectMessage}"_\n\nSilakan melakukan pendaftaran ulang dengan data yang benar. Terima kasih.`;
+        window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, "_blank");
+      }
+
+      alert("Peserta ditolak dan pesan WA telah disiapkan.");
+      navigate(-1); // Kembali ke list karena data sudah ditolak/dihapus
+    } catch (error) {
+      console.error(error);
+      alert("Gagal memproses penolakan.");
+    }
+  };
+
+  if (loading) return <div className="p-10 text-center text-gray-500">Memuat data...</div>;
+  if (error || !peserta) return <div className="p-10 text-center text-red-500 font-bold">{error}</div>;
 
   return (
-    <div className="min-h-auto bg-gray-50">
+    <div className="max-w-5xl mx-auto p-4 md:p-6 bg-gray-50 min-h-screen font-sans">
       
-      {/* Tombol Kembali */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-6 flex items-center gap-2 px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 transition shadow-sm"
-      >
-        <ArrowLeft size={18} /> Kembali
-      </button>
+      {/* Modal Popup Gambar (Tetap sama) */}
+      {modalImage && (
+        <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 p-4" onClick={() => setModalImage(null)}>
+          <div className="relative max-w-4xl w-full bg-white rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
+            <button onClick={() => setModalImage(null)} className="absolute top-4 right-4 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 z-10"><X size={24} /></button>
+            <div className="p-2"><img src={modalImage} alt="Preview" className="w-full max-h-[80vh] object-contain rounded-lg" /></div>
+          </div>
+        </div>
+      )}
 
-      {/* Konten Utama Detail */}
-      <div className="bg-white rounded-xl shadow-2xl p-8 max-w-5xl mx-auto">
-        
-        <h1 className="text-3xl font-bold text-gray-900 mb-6 border-b pb-2">
-          Detail Peserta: {peserta.namaLengkap}
-        </h1>
+      {/* Header Info */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+        <button onClick={() => navigate(-1)} className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-black bg-white rounded-lg border border-gray-200 shadow-sm"><ArrowLeft size={18} /> Kembali</button>
+        {pendingCount > 0 && (
+          <div className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg animate-pulse">
+            <Bell size={18} /> <span className="text-sm font-bold">{pendingCount} Peserta Menunggu</span>
+          </div>
+        )}
+      </div>
 
-        <div className="md:flex gap-10">
-          
-          {/* KOLOM KIRI: Foto & Status */}
-          <div className="flex flex-col items-center mb-8 md:mb-0 md:w-1/3">
-            <div className="w-64 h-64 rounded-xl overflow-hidden shadow-xl flex items-center justify-center">
-              {fotoUrl ? (
-                <img
-                  src={fotoUrl}
-                  alt={peserta.namaLengkap}
-                  className="w-full h-full object-cover"
-                  onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/256x256/CCCCCC/333333?text=Foto+NDK" }}
-                />
-              ) : (
-                // Avatar Inisial sebagai fallback
-                <div className="w-full h-full flex items-center justify-center bg-blue-500 text-white text-7xl font-extrabold">
-                    {getInitials(peserta.namaLengkap)}
-                </div>
-              )}
+      <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
+        <div className={`h-4 ${peserta.status === 'verified' ? 'bg-green-500' : peserta.status === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
+
+        <div className="p-8">
+          <div className="flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-4xl font-extrabold text-gray-900">{peserta.namaLengkap}</h1>
+              <p className="text-gray-500">Status: <span className="font-bold">{peserta.status.toUpperCase()}</span></p>
             </div>
-            
-            {/* Status Badge Besar */}
-            <div className={`mt-6 px-5 py-2 text-md font-bold uppercase rounded-full border shadow-md ${statusClass}`}>
-                Status: {peserta.status === "pending" ? "Menunggu Verifikasi" : peserta.status}
+            <div className={`px-6 py-2 rounded-full font-bold text-sm border shadow-sm ${
+              peserta.status === 'verified' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+            }`}>
+              {peserta.status.toUpperCase()}
             </div>
-
-            {/* Tombol Verifikasi */}
-            {peserta.status === "pending" && (
-                <button
-                  onClick={handleVerify}
-                  className="mt-6 w-full max-w-[250px] flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition shadow-lg text-lg"
-                >
-                  <CheckCircle size={20} /> Verifikasi
-                </button>
-            )}
-            
           </div>
 
-          {/* KOLOM KANAN: Informasi Detail & Dokumen */}
-          <div className="md:w-2/3 space-y-6">
-            
-            <h2 className="text-xl font-bold text-yellow-600 border-b pb-2">Informasi Umum</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* KOLOM KIRI: DATA PRIBADI & AKSI */}
+            <div className="space-y-6">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><User size={20} className="text-blue-500" /> Data Pribadi</h2>
+              <div className="grid gap-3">
+                <InfoRow label="Whatsapp" value={peserta.nomorWhatsapp} icon={<Phone size={16}/>} />
+                <InfoRow label="Tgl Lahir" value={new Date(peserta.tanggalLahir).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })} icon={<Calendar size={16}/>} />
+                <InfoRow label="Kelompok Umur" value={peserta.kelompokUmur?.nama || "Umum"} icon={<Users size={16}/>} />
+              </div>
 
-            <div className="grid md:grid-cols-2 gap-4">
-              <InfoItem 
-                  icon={<User size={20} className="text-blue-500"/>} 
-                  label="Nama Lengkap" 
-                  value={peserta.namaLengkap} 
-              />
-              <InfoItem 
-                  icon={<Phone size={20} className="text-blue-500"/>} 
-                  label="Nomor Whatsapp" 
-                  value={peserta.nomorWhatsapp} 
-              />
-              <InfoItem 
-                  icon={<Calendar size={20} className="text-blue-500"/>} 
-                  label="Tanggal Lahir" 
-                  value={new Date(peserta.tanggalLahir).toLocaleDateString("id-ID")} 
-              />
-              <InfoItem 
-                  icon={<Users size={20} className="text-blue-500"/>} 
-                  label="Kelompok Umur" 
-                  value={peserta.kelompokUmur?.nama || "N/A"} 
-              />
-               {peserta.email && (
-                  <InfoItem 
-                      icon={<Mail size={20} className="text-blue-500"/>} 
-                      label="Email Peserta" 
-                      value={peserta.email} 
-                  />
+              {/* TOMBOL AKSI VERIFIKASI / TOLAK */}
+              {peserta.status === "pending" && (
+                <div className="mt-8 space-y-4">
+                  {!isRejecting ? (
+                    <div className="flex gap-4">
+                      <button onClick={handleVerify} className="flex-1 flex items-center justify-center gap-2 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 shadow-lg transition-transform active:scale-95">
+                        <CheckCircle size={22} /> Verifikasi
+                      </button>
+                      <button onClick={() => setIsRejecting(true)} className="flex-1 flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 shadow-lg transition-transform active:scale-95">
+                        <XCircle size={22} /> Tolak
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-red-50 p-4 rounded-2xl border border-red-100 animate-in fade-in slide-in-from-top-2">
+                      <label className="block text-sm font-bold text-red-700 mb-2">Alasan Penolakan:</label>
+                      <textarea 
+                        className="w-full p-3 border border-red-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none text-sm"
+                        placeholder="Contoh: Bukti transfer tidak terbaca / palsu..."
+                        rows="3"
+                        value={rejectMessage}
+                        onChange={(e) => setRejectMessage(e.target.value)}
+                      />
+                      <div className="flex gap-2 mt-3">
+                        <button onClick={handleReject} className="flex-1 bg-red-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-red-700">
+                          <Send size={18}/> Kirim & WA
+                        </button>
+                        <button onClick={() => setIsRejecting(false)} className="px-5 bg-gray-200 text-gray-700 py-3 rounded-xl font-bold hover:bg-gray-300">Batal</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
             </div>
-            
-            {/* Bagian Dokumen Pendukung */}
-            <div className="pt-6 border-t border-gray-100 mt-6">
-                <h2 className="text-xl font-bold text-yellow-600 mb-4 border-b pb-2">Dokumen Pendukung</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <DocumentLink 
-                        label="Lihat Bukti Pembayaran" 
-                        path={peserta.buktiTransfer} 
-                        baseUrl="http://localhost:5004"
-                    />
-                     <DocumentLink 
-                        label="Lihat Kartu Identitas" 
-                        path={peserta.kartuIdentitas} 
-                        baseUrl="http://localhost:5004"
-                    />
-                </div>
-            </div>
 
+            {/* KOLOM KANAN: DOKUMEN */}
+            <div className="space-y-6">
+              <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><FileText size={20} className="text-orange-500" /> Dokumen</h2>
+              <div className="flex flex-col gap-4">
+                <DocButton label="Bukti Pembayaran" path={peserta.buktiBayar} baseUrl={BASE_URL} onOpen={setModalImage} color="bg-emerald-600" />
+                <DocButton label="Kartu Identitas (KK/KTP)" path={peserta.fotoKartu} baseUrl={BASE_URL} onOpen={setModalImage} color="bg-blue-600" />
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -177,35 +183,25 @@ export default function DetailPeserta() {
   );
 }
 
-// Sub-komponen untuk menampilkan setiap item info (Card style)
-const InfoItem = ({ icon, label, value }) => (
-    <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex-shrink-0 p-2 bg-yellow-50 rounded-full">
-            {icon}
-        </div>
-        <div>
-            <p className="text-xs font-medium text-gray-500 uppercase">{label}</p>
-            <p className="text-lg font-bold text-gray-900 leading-snug">{value}</p>
-        </div>
+// Komponen Pembantu (InfoRow & DocButton) sama dengan sebelumnya...
+function InfoRow({ label, value, icon }) {
+  return (
+    <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 shadow-sm">
+      <div className="p-2 bg-white rounded-lg text-blue-600">{icon}</div>
+      <div>
+        <p className="text-[10px] uppercase font-bold text-gray-400">{label}</p>
+        <p className="text-gray-800 font-bold">{value}</p>
+      </div>
     </div>
-);
+  );
+}
 
-// Sub-komponen untuk link dokumen
-const DocumentLink = ({ label, path, baseUrl }) => {
-    const url = path ? `${baseUrl}/${path}` : null;
-    
-    return (
-        <a 
-            href={url || "#"} 
-            target={url ? "_blank" : "_self"} 
-            rel="noopener noreferrer"
-            className={`flex items-center justify-center gap-2 p-4 rounded-lg text-center font-semibold transition text-sm ${
-                url 
-                ? "bg-blue-600 text-white hover:bg-blue-700 shadow-lg"
-                : "bg-gray-300 text-gray-700 cursor-not-allowed opacity-70"
-            }`}
-        >
-            <FileText size={18} /> {label} {url ? "" : " (Tidak Ada)"}
-        </a>
-    );
-};
+function DocButton({ label, path, baseUrl, onOpen, color }) {
+  const isExist = !!path;
+  return (
+    <button onClick={() => isExist && onOpen(`${baseUrl}/${path}`)} disabled={!isExist} className={`flex items-center justify-between w-full p-5 rounded-2xl font-bold transition-all ${isExist ? `${color} text-white shadow-md hover:scale-[1.01]` : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
+      <div className="flex items-center gap-3"><FileText size={20} /><span>{label}</span></div>
+      <span className="text-[10px] bg-white/20 px-2 py-1 rounded">{isExist ? "LIHAT" : "N/A"}</span>
+    </button>
+  );
+}

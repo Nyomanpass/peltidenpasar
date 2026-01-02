@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { Trophy, Award, Crown, CheckCircle } from "lucide-react";
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import JuaraPDF from './JuaraPDF'; // Sesuaikan path-nya
 
 const JuaraPage = () => {
   const [baganList, setBaganList] = useState([]);
   const [winnersData, setWinnersData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const tName = localStorage.getItem("selectedTournamentName") || "TURNAMEN PELTI";
+  const formattedFileName = `Daftar_Juara_${tName.replace(/\s+/g, '_')}.pdf`;
 
   const fetchAllData = async () => {
     try {
@@ -88,6 +92,7 @@ const JuaraPage = () => {
     );
   }
 
+
   return (
     <div className="font-sans bg-white min-h-screen">
       <div className="space-y-12 max-w-7xl mx-auto">
@@ -100,6 +105,26 @@ const JuaraPage = () => {
             </p>
           </div>
         )}
+
+        {winnersData.length > 0 && (
+    <PDFDownloadLink
+      document={
+        <JuaraPDF 
+          winnersData={winnersData} 
+          tournamentName={tName}
+        />
+      }
+      fileName={formattedFileName}
+      className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all"
+    >
+      {({ loading }) => (
+        <>
+          <Trophy size={20} />
+          {loading ? "Menyiapkan PDF..." : "Download PDF Juara"}
+        </>
+      )}
+    </PDFDownloadLink>
+  )}
 
         {winnersData.map((data) => {
           const winners = data.winners;

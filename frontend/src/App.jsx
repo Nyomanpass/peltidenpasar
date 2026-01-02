@@ -23,6 +23,7 @@ import BaganView from "./pages/BaganView";
 import JuaraPage from "./pages/JuaraPage";
 import SkorPage from "./pages/SkorPage";
 import Tournament from "./pages/admin/Tournament";
+import PesertaGanda from "./components/admin/PesertaGanda"; 
 
 //landing page
 import TournamentUser from "./pages/user/TournamentUser";
@@ -67,6 +68,7 @@ export default function App() {
             <Route path="jadwal-pertandingan" element={<JadwalPage/>}/>
             <Route path="hasil-pertandingan" element={<JuaraPage/>}/>
             <Route path="skor" element={<SkorPage/>}/>
+            <Route path="peserta-ganda" element={<PesertaGanda />} />
           </Route>
 
           <Route
