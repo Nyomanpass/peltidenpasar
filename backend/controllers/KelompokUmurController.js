@@ -25,8 +25,11 @@ export const getKelompokUmurById = async (req, res) => {
 // ✅ Create kelompok umur
 export const createKelompokUmur = async (req, res) => {
   try {
-    const { nama } = req.body;
-    const newData = await KelompokUmur.create({ nama });
+    const { nama, umur } = req.body; // Ambil 'umur' dari body
+    const newData = await KelompokUmur.create({ 
+        nama, 
+        umur: parseInt(umur) || 0 // Pastikan angka
+    });
     res.status(201).json(newData);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -36,12 +39,13 @@ export const createKelompokUmur = async (req, res) => {
 // ✅ Update kelompok umur
 export const updateKelompokUmur = async (req, res) => {
   try {
-    const { nama } = req.body;
+    const { nama, umur } = req.body;
     const data = await KelompokUmur.findByPk(req.params.id);
 
     if (!data) return res.status(404).json({ message: "Data tidak ditemukan" });
 
     data.nama = nama;
+    data.umur = parseInt(umur) || 0;
     await data.save();
 
     res.json({ message: "Data berhasil diupdate", data });

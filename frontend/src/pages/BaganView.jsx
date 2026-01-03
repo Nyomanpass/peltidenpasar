@@ -46,16 +46,22 @@ export default function BaganView({baganId}) {
   // Load peserta menggunakan axios
   const loadAllPeserta = async (kelompokUmurId) => {
     try {
-      const res = await api.get('/pesertafilter', {
+      const isDouble = bagan?.kategori === "double";
+      // Jika double, ambil dari tabel double-teams. Jika single, tetap pesertafilter.
+      const endpoint = isDouble ? '/double-teams' : '/pesertafilter';
+      
+      const res = await api.get(endpoint, {
         params: {
           kelompokUmurId: kelompokUmurId,
           status: 'verified',
           tournamentId
         }
       });
-      const data = res.data; // Mengakses data dari properti .data
-      console.log("Peserta setelah filter:", res.data);
+      
+      const data = res.data;
       setAllPeserta(data);
+      
+      // Hitung Bye
       const totalPeserta = data.length;
       let bracketSize = 2;
       while (bracketSize < totalPeserta) {
@@ -64,7 +70,6 @@ export default function BaganView({baganId}) {
       setByeSlotsCount(bracketSize - totalPeserta);
     } catch (error) {
       console.error(error);
-      alert(error.message);
     }
   };
 
@@ -187,18 +192,33 @@ const handleLockBagan = async () => {
   }
   
   // Konversi Matches ke format react-brackets
+ // --- MULAI GANTI DARI SINI ---
   const roundsMap = {};
+  const isDouble = bagan.kategori === "double"; 
+
   bagan.Matches.forEach((m) => {
     if (!roundsMap[m.round]) roundsMap[m.round] = [];
+
+    // Fungsi pembantu untuk menentukan nama (Ganda atau Tunggal)
+    const getTeamName = (peserta, doubleTeam, id, doubleId) => {
+      if (isDouble) {
+        if (doubleTeam) return `${doubleTeam.Player1?.namaLengkap} / ${doubleTeam.Player2?.namaLengkap}`;
+        return doubleId ? "TBD" : "BYE";
+      }
+      if (peserta) return peserta.namaLengkap;
+      return id ? "TBD" : "BYE";
+    };
+
     roundsMap[m.round].push({
       id: m.id,
       teams: [
-        { name: m.peserta1?.namaLengkap || (m.peserta1Id ? "TBD" : "BYE") },
-        { name: m.peserta2?.namaLengkap || (m.peserta2Id ? "TBD" : "BYE") },
+        { name: getTeamName(m.peserta1, m.doubleTeam1, m.peserta1Id, m.doubleTeam1Id) },
+        { name: getTeamName(m.peserta2, m.doubleTeam2, m.peserta2Id, m.doubleTeam2Id) },
       ],
       raw: m,
     });
   });
+  // --- SAMPAI DI SINI ---
 
   const rounds = Object.keys(roundsMap)
     .sort((a, b) => a - b)
@@ -206,16 +226,17 @@ const handleLockBagan = async () => {
       title: `Babak ${round}`,
       seeds: roundsMap[round],
     }));
-
+// --- GANTI BAGIAN JUARA INI ---
   const finalRound = Math.max(...bagan.Matches.map((m) => m.round));
   const finalMatch = bagan.Matches.find((m) => m.round === finalRound);
 
   let juara = null;
-  if (finalMatch && finalMatch.winnerId) {
-    if (finalMatch.winnerId === finalMatch.peserta1Id) {
-      juara = finalMatch.peserta1?.namaLengkap;
-    } else if (finalMatch.winnerId === finalMatch.peserta2Id) {
-      juara = finalMatch.peserta2?.namaLengkap;
+  if (finalMatch) {
+    if (isDouble && finalMatch.winnerDoubleId) {
+      const winner = finalMatch.winnerDoubleId === finalMatch.doubleTeam1Id ? finalMatch.doubleTeam1 : finalMatch.doubleTeam2;
+      juara = winner ? `${winner.Player1?.namaLengkap} / ${winner.Player2?.namaLengkap}` : "TBD";
+    } else if (!isDouble && finalMatch.winnerId) {
+      juara = finalMatch.winnerId === finalMatch.peserta1Id ? finalMatch.peserta1?.namaLengkap : finalMatch.peserta2?.namaLengkap;
     }
   }
 
@@ -288,98 +309,121 @@ const handleLockBagan = async () => {
                     {role === "admin" && <th className="p-4 border-b text-center">Aksi</th>}
                   </tr>
                 </thead>
-                <tbody>
-                  {bagan.Matches.map((m, index) => (
-                    <tr key={m.id} className="hover:bg-blue-50 transition-colors">
-                      <td className="p-4 border-b font-medium text-gray-500">#{index + 1}</td>
-                      <td className={`p-4 border-b font-semibold ${m.winnerId === m.peserta1Id ? "text-blue-600" : ""}`}>
-                        {m.peserta1?.namaLengkap || "TBD"}
-                      </td>
-                      <td className="p-4 border-b text-center text-gray-400 font-bold">VS</td>
-                      <td className={`p-4 border-b font-semibold ${m.winnerId === m.peserta2Id ? "text-blue-600" : ""}`}>
-                        {m.peserta2?.namaLengkap || "TBD"}
-                      </td>
-                      <td className="p-4 border-b text-center">
-                        <span className="bg-gray-100 px-3 py-1 rounded-md font-mono font-bold">
-                          {m.score1 ?? 0} - {m.score2 ?? 0}
-                        </span>
-                      </td>
-                      {role === "admin" && (
-                        <td className="p-4 border-b text-center">
-                          <button 
-                            onClick={() => {
-                              setSelectedMatch(m);
-                              setModalType("winner");
-                            }}
-                            className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200"
-                          >
-                            Input Skor
-                          </button>
+                  <tbody>
+                    {bagan.Matches.map((m, index) => (
+                      <tr key={m.id} className="hover:bg-blue-50 transition-colors">
+                        <td className="p-4 border-b font-medium text-gray-500">#{index + 1}</td>
+                        
+                        {/* PESERTA 1 (Kiri) */}
+                        <td className={`p-4 border-b font-semibold ${
+                          (isDouble ? m.winnerDoubleId === m.doubleTeam1Id : m.winnerId === m.peserta1Id) ? "text-blue-600" : ""
+                        }`}>
+                          {isDouble 
+                            ? (m.doubleTeam1?.namaTim || (m.doubleTeam1Id ? "TBD" : "BYE")) 
+                            : (m.peserta1?.namaLengkap || (m.peserta1Id ? "TBD" : "BYE"))}
                         </td>
-                      )}
-                    </tr>
-                  ))}
-                </tbody>
+
+                        <td className="p-4 border-b text-center text-gray-400 font-bold">VS</td>
+
+                        {/* PESERTA 2 (Kanan) */}
+                        <td className={`p-4 border-b font-semibold ${
+                          (isDouble ? m.winnerDoubleId === m.doubleTeam2Id : m.winnerId === m.peserta2Id) ? "text-blue-600" : ""
+                        }`}>
+                          {isDouble 
+                            ? (m.doubleTeam2?.namaTim || (m.doubleTeam2Id ? "TBD" : "BYE")) 
+                            : (m.peserta2?.namaLengkap || (m.peserta2Id ? "TBD" : "BYE"))}
+                        </td>
+
+                        <td className="p-4 border-b text-center">
+                          <span className="bg-gray-100 px-3 py-1 rounded-md font-mono font-bold">
+                            {m.score1 ?? 0} - {m.score2 ?? 0}
+                          </span>
+                        </td>
+
+                        {role === "admin" && (
+                          <td className="p-4 border-b text-center">
+                            <button 
+                              onClick={() => {
+                                setSelectedMatch(m);
+                                setModalType("winner");
+                              }}
+                              className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200"
+                            >
+                              Input Skor
+                            </button>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                  </tbody>
               </table>
             </div>
           ) : (
-          <Bracket
-            rounds={rounds}
-            renderSeedComponent={(props) => {
-              const match = props.seed.raw;
-              return (
-                <Seed
-                  {...props}
-                 
-                  onClick={() => {
-                    setSelectedMatch(match);
-                    if (match.peserta1Id !== null && match.peserta2Id !== null) {
-                      setModalType("winner");
-                    }
-                    // } else {
-                    //   setModalType("peserta");
-                    // }
-                  }}
-                >
-                  <SeedItem>
-                    <div className="bg-white rounded-lg">
-                      <SeedTeam
-                        className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
-                          ${
-                            match.winnerId === match.peserta1Id
-                              ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                              : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                          }
-                        `}
-                      >
-                        {match.peserta1?.namaLengkap ||
-                          (match.peserta1Id ? "TBD" : "BYE")}
-                        {match.score1 !== null && (
-                          <span className="float-right font-bold">{match.score1}</span>
-                        )}
-                      </SeedTeam>
+            <Bracket
+              rounds={rounds}
+              renderSeedComponent={(props) => {
+                const match = props.seed.raw;
+                const isDouble = bagan.kategori === "double";
 
-                      <SeedTeam
-                        className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
-                          ${
-                            match.winnerId === match.peserta2Id
-                              ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                              : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                          }
-                        `}
-                      >
-                        {match.peserta2?.namaLengkap ||
-                          (match.peserta2Id ? "TBD" : "BYE")}
-                        {match.score2 !== null && (
-                          <span className="float-right font-bold">{match.score2}</span>
-                        )}
-                      </SeedTeam>
-                    </div>
-                  </SeedItem>
-                </Seed>
-              );
-            }}
-          />
+                return (
+                  <Seed
+                    {...props}
+                    onClick={() => {
+                      setSelectedMatch(match);
+                      // Cek apakah kedua sisi ada isinya (baik Single maupun Double)
+                      const hasS1 = isDouble ? match.doubleTeam1Id : match.peserta1Id;
+                      const hasS2 = isDouble ? match.doubleTeam2Id : match.peserta2Id;
+                      
+                      if (hasS1 !== null && hasS2 !== null) {
+                        setModalType("winner");
+                      }
+                    }}
+                  >
+                    <SeedItem>
+                      <div className="bg-white rounded-lg">
+                        {/* --- TEAM 1 --- */}
+                        <SeedTeam
+                          className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
+                            ${
+                              (isDouble ? (match.winnerDoubleId === match.doubleTeam1Id && match.doubleTeam1Id !== null) : (match.winnerId === match.peserta1Id && match.peserta1Id !== null))
+                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                            }
+                          `}
+                        >
+                          {isDouble 
+                            ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
+                            : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
+                          
+                          {match.score1 !== null && (
+                            <span className="float-right font-bold">{match.score1}</span>
+                          )}
+                        </SeedTeam>
+
+                        {/* --- TEAM 2 --- */}
+                        <SeedTeam
+                          className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
+                            ${
+                              (isDouble ? (match.winnerDoubleId === match.doubleTeam2Id && match.doubleTeam2Id !== null) : (match.winnerId === match.peserta2Id && match.peserta2Id !== null))
+                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                            }
+                          `}
+                        >
+                          {isDouble 
+                            ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
+                            : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
+                          
+                          {match.score2 !== null && (
+                            <span className="float-right font-bold">{match.score2}</span>
+                          )}
+                        </SeedTeam>
+                      </div>
+                    </SeedItem>
+                  </Seed>
+                );
+              }}
+            />
           )}
         </div>
 
@@ -400,28 +444,41 @@ const handleLockBagan = async () => {
                   Peserta Unggulan (Seeded)
                 </p>
                 <div className="space-y-2">
-                  {bagan.Matches.filter(m => m.round === 1).map((m) => (
-                    <div key={m.id}>
-                      {/* Cek Peserta 1 */}
-                      {m.peserta1?.isSeeded && (
-                        <div className="flex justify-between items-center p-3 bg-yellow-50 border border-yellow-100 rounded-xl">
-                          <span className="text-sm font-bold text-gray-800">{m.peserta1.namaLengkap}</span>
-                          <span className="text-[10px] bg-yellow-400 text-white px-2 py-0.5 rounded font-black">SEED</span>
-                        </div>
-                      )}
-                      {/* Cek Peserta 2 */}
-                      {m.peserta2?.isSeeded && (
-                        <div className="flex justify-between items-center p-3 bg-yellow-50 border border-yellow-100 rounded-xl">
-                          <span className="text-sm font-bold text-gray-800">{m.peserta2.namaLengkap}</span>
-                          <span className="text-[10px] bg-yellow-400 text-white px-2 py-0.5 rounded font-black">SEED</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {/* Jika tidak ada yang di-seed, tampilkan placeholder */}
-                  {bagan.Matches.every(m => !m.peserta1?.isSeeded && !m.peserta2?.isSeeded) && (
-                    <p className="text-sm text-gray-400 italic">Tidak ada peserta unggulan yang ditetapkan.</p>
-                  )}
+                  {(() => {
+                    const seededFinal = [];
+                    const seenIds = new Set();
+
+                    // HANYA ambil dari Babak 1 (Round 1) bagan yang sedang tampil
+                    bagan.Matches.filter(m => m.round === 1).forEach((m) => {
+                      const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
+                      const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
+                      const id1 = isDouble ? m.doubleTeam1Id : m.peserta1Id;
+                      const id2 = isDouble ? m.doubleTeam2Id : m.peserta2Id;
+
+                      // Validasi: Harus ada ID-nya DAN status isSeeded-nya TRUE
+                      if (id1 && p1?.isSeeded && !seenIds.has(id1)) {
+                        seededFinal.push(p1);
+                        seenIds.add(id1);
+                      }
+                      if (id2 && p2?.isSeeded && !seenIds.has(id2)) {
+                        seededFinal.push(p2);
+                        seenIds.add(id2);
+                      }
+                    });
+
+                    if (seededFinal.length === 0) {
+                      return <p className="text-sm text-gray-400 italic">Tidak ada peserta unggulan.</p>;
+                    }
+
+                    return seededFinal.map((p, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-3 bg-white border border-yellow-200 rounded-xl shadow-sm">
+                        <span className="text-sm font-bold text-gray-800">
+                          {isDouble ? (p.namaTim || p.Player1?.namaLengkap) : p.namaLengkap}
+                        </span>
+                        <span className="text-[10px] bg-yellow-400 text-white px-2 py-0.5 rounded font-black">SEED</span>
+                      </div>
+                    ));
+                  })()}
                 </div>
               </div>
 

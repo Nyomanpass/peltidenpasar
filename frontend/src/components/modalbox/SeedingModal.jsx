@@ -91,7 +91,10 @@ export default function SeedingModal({ pesertaList, onClose, onSaved }) {
                 >
                   <option value="">Pilih Peserta...</option>
                   {pesertaList.map((p) => (
-                    <option key={p.id} value={p.id}>{p.namaLengkap}</option>
+                    <option key={p.id} value={p.id}>
+                        {/* Jika ada namaTim tampilkan namaTim, jika tidak gunakan namaLengkap */}
+                        {p.namaTim ? p.namaTim : p.namaLengkap}
+                      </option>
                   ))}
                 </select>
               </div>

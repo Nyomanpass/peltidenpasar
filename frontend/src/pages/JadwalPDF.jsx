@@ -133,44 +133,42 @@ const JadwalPDF = ({ jadwal = [], lapanganList = [], selectedTanggal, tournament
               </View>
 
               {/* Kolom Lapangan */}
-              {lapanganList.map((lapName) => {
-                const matchData = validJadwal.find(j => 
-                    j.waktuMulai.slice(11, 16) === jam && 
-                    j.lapangan?.nama === lapName
-                );
+                {lapanganList.map((lapName) => {
+                  const matchData = validJadwal.find(j => 
+                      j.waktuMulai.slice(11, 16) === jam && 
+                      j.lapangan?.nama === lapName
+                  );
 
-                const bName = matchData?.match?.bagan?.nama || '';
-                const bId = matchData?.match?.bagan?.id || 0;
-                const bColor = getBaganColor(bId);
+                  const bName = matchData?.match?.bagan?.nama || '';
+                  const bId = matchData?.match?.bagan?.id || 0;
+                  const bColor = getBaganColor(bId);
 
-                return (
-                  <View key={lapName} style={styles.tableCol}>
-                    {matchData ? (
-                      <View style={{ width: '100%', alignItems: 'center', paddingVertical: 5 }}>
-                        {/* Nama Bagan */}
-                        <View style={[styles.baganLabel, { backgroundColor: bColor }]}>
-                          <Text>{bName}</Text>
+                  return (
+                    <View key={lapName} style={styles.tableCol}>
+                      {matchData ? (
+                        <View style={{ width: '100%', alignItems: 'center', paddingVertical: 5 }}>
+                          {/* Label Nama Bagan */}
+                          <View style={[styles.baganLabel, { backgroundColor: bColor }]}>
+                            <Text>{bName}</Text>
+                          </View>
+
+                          {/* LOGIKA PENAMAAN GANDA / SINGLE */}
+                          <Text style={styles.tableCellPeserta}>
+                            {matchData.match?.doubleTeam1?.namaTim || matchData.match?.peserta1?.namaLengkap || 'TBA'}
+                          </Text>
+
+                          <Text style={styles.textVs}>vs</Text>
+
+                          <Text style={styles.tableCellPeserta}>
+                            {matchData.match?.doubleTeam2?.namaTim || matchData.match?.peserta2?.namaLengkap || 'TBA'}
+                          </Text>
                         </View>
-
-                        {/* Nama Peserta 1 (Font 14) */}
-                        <Text style={styles.tableCellPeserta}>
-                          {matchData.match?.peserta1?.namaLengkap || 'TBA'}
-                        </Text>
-
-                        {/* Tulisan vs (Font 10) */}
-                        <Text style={styles.textVs}>vs</Text>
-
-                        {/* Nama Peserta 2 (Font 14) */}
-                        <Text style={styles.tableCellPeserta}>
-                          {matchData.match?.peserta2?.namaLengkap || 'TBA'}
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text style={{ color: '#ddd', fontSize: 12 }}>-</Text>
-                    )}
-                  </View>
-                );
-              })}
+                      ) : (
+                        <Text style={{ color: '#ddd', fontSize: 12 }}>-</Text>
+                      )}
+                    </View>
+                  );
+                })}
             </View>
           ))}
         </View>

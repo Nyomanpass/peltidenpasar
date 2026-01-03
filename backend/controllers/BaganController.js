@@ -3,60 +3,75 @@ import { KelompokUmur } from "../models/KelompokUmurModel.js";
 import { Match } from "../models/MatchModel.js";
 import { Peserta } from "../models/PesertaModel.js";
 import { Tournament } from "../models/TournamentModel.js"; // Import model tournament
+import { DoubleTeam } from "../models/DoubleTeamModel.js"; // Pastikan diimport
 
 export const createBagan = async (req, res) => {
   try {
-    const { kelompokUmurId, tournamentId } = req.body;
+    const { kelompokUmurId, tournamentId, kategori } = req.body;
+    const isDouble = kategori === "double";
 
     const kelompokumur = await KelompokUmur.findByPk(kelompokUmurId);
-    if (!kelompokumur) {
-      return res.status(404).json({ msg: "Kelompok umur tidak ditemukan." });
+    if (!kelompokumur) return res.status(404).json({ msg: "Kelompok umur tidak ditemukan." });
+
+    // 1. Ambil data peserta/tim berdasarkan kategori
+    let listPeserta = [];
+    if (isDouble) {
+      listPeserta = await DoubleTeam.findAll({
+        where: { kelompokUmurId: kelompokUmurId, tournamentId, status: "verified" }
+      });
+    } else {
+      listPeserta = await Peserta.findAll({
+        where: { kelompokUmurId, tournamentId, status: "verified" }
+      });
     }
 
-    // Ambil peserta berdasarkan tournament
-    const peserta = await Peserta.findAll({
-      where: { 
-        kelompokUmurId, 
-        tournamentId,
-        status: "verified"
-      }
-    });
+    const jumlah = listPeserta.length;
+    if (jumlah === 0) return res.status(400).json({ msg: "Tidak ada peserta terverifikasi." });
 
-    const jumlah = peserta.length;
-
+    // 2. Tentukan tipe (Contoh: <= 4 orang maka Round Robin)
     let tipe = "roundrobin";
     if (jumlah > 4) tipe = "knockout";
 
     const bagan = await Bagan.create({
-      nama: `Bagan ${kelompokumur.nama}`,
+      nama: `Bagan ${isDouble ? '(Ganda)' : '(Tunggal)'} ${kelompokumur.nama}`,
       tipe,
       jumlahPeserta: jumlah,
       kelompokUmurId,
       tournamentId,
+      kategori: kategori || "single",
       status: "draft",
     });
 
-    // --- Round Robin ---
+    // --- LOGIKA ROUND ROBIN ---
     if (tipe === "roundrobin") {
       for (let i = 0; i < jumlah; i++) {
         for (let j = i + 1; j < jumlah; j++) {
-          await Match.create({
+          const matchObj = {
             baganId: bagan.id,
             round: 1,
             slot: i + 1,
-            peserta1Id: peserta[i].id,
-            peserta2Id: peserta[j].id,
-            tournamentId
-          });
+            tournamentId,
+            status: "belum"
+          };
+
+          // Masukkan ID ke kolom yang sesuai
+          if (isDouble) {
+            matchObj.doubleTeam1Id = listPeserta[i].id;
+            matchObj.doubleTeam2Id = listPeserta[j].id;
+          } else {
+            matchObj.peserta1Id = listPeserta[i].id;
+            matchObj.peserta2Id = listPeserta[j].id;
+          }
+
+          await Match.create(matchObj);
         }
       }
     }
 
-    // --- Knockout ---
+    // --- LOGIKA KNOCKOUT ---
     else {
       let size = 2;
       while (size < jumlah) size *= 2;
-
       const totalRounds = Math.log2(size);
       const allMatches = [];
 
@@ -67,20 +82,18 @@ export const createBagan = async (req, res) => {
             baganId: bagan.id,
             round,
             slot,
-            peserta1Id: null,
-            peserta2Id: null,
-            tournamentId
+            tournamentId,
+            status: "belum"
           });
           allMatches.push(match);
         }
       }
 
+      // Hubungkan Next Match
       for (let m of allMatches) {
         if (m.round < totalRounds) {
           const nextSlot = Math.ceil(m.slot / 2);
-          const next = allMatches.find(
-            (nm) => nm.round === m.round + 1 && nm.slot === nextSlot
-          );
+          const next = allMatches.find(nm => nm.round === m.round + 1 && nm.slot === nextSlot);
           if (next) {
             m.nextMatchId = next.id;
             await m.save();
@@ -92,6 +105,7 @@ export const createBagan = async (req, res) => {
     res.status(201).json({ msg: "Bagan berhasil dibuat", bagan });
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ msg: err.message });
   }
 };
@@ -101,39 +115,61 @@ export const getBaganWithMatches = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 1. Ambil data dasar bagan dulu untuk cek kategori
+    const checkBagan = await Bagan.findByPk(id);
+    if (!checkBagan) return res.status(404).json({ msg: "Bagan tidak ditemukan" });
+
+    const isDouble = checkBagan.kategori === "double";
+
+    // 2. Tentukan relasi Match yang akan di-include
+    const matchInclude = isDouble ? [
+      { 
+        model: DoubleTeam, as: "doubleTeam1", 
+        attributes: ['id', 'namaTim', 'isSeeded'], // Ambil isSeeded dari tabel DoubleTeam
+        include: [
+          { model: Peserta, as: "Player1", attributes: ['namaLengkap'] },
+          { model: Peserta, as: "Player2", attributes: ['namaLengkap'] }
+        ] 
+      },
+      { 
+        model: DoubleTeam, as: "doubleTeam2", 
+        attributes: ['id', 'namaTim', 'isSeeded'], // Ambil isSeeded dari tabel DoubleTeam
+        include: [
+          { model: Peserta, as: "Player1", attributes: ['namaLengkap'] },
+          { model: Peserta, as: "Player2", attributes: ['namaLengkap'] }
+        ] 
+      },
+      { model: DoubleTeam, as: "winnerDouble" }
+    ] : [
+      { 
+        model: Peserta, as: "peserta1", 
+        attributes: ['id', 'namaLengkap', 'isSeeded'] // Ambil isSeeded dari tabel Peserta
+      },
+      { 
+        model: Peserta, as: "peserta2", 
+        attributes: ['id', 'namaLengkap', 'isSeeded'] // Ambil isSeeded dari tabel Peserta
+      },
+      { model: Peserta, as: "winner" }
+    ];
+
+    // 3. Eksekusi Query Utama
     const bagan = await Bagan.findByPk(id, {
       include: [
-        {
-          model: Tournament,
-          attributes: ['name']
-        },
-        {
-          model: Match,
-          include: [
-            { 
-              model: Peserta, 
-              as: "peserta1",
-              attributes: ['id', 'namaLengkap', 'isSeeded'] // Tambahkan isSeeded di sini
-            },
-            { 
-              model: Peserta, 
-              as: "peserta2",
-              attributes: ['id', 'namaLengkap', 'isSeeded'] // Tambahkan isSeeded di sini
-            },
-            { model: Peserta, as: "winner" }, 
-          ],
+        { model: Tournament, attributes: ['name'] },
+        { 
+          model: Match, 
+          include: matchInclude 
         },
       ],
+      order: [[Match, 'round', 'ASC'], [Match, 'slot', 'ASC']]
     });
-
-    if (!bagan) return res.status(404).json({ msg: "Bagan tidak ditemukan" });
 
     res.json(bagan);
   } catch (err) {
+    console.error("Error getBaganWithMatches:", err);
     res.status(500).json({ msg: err.message });
   }
 };
-
 
 export const getAllBagan = async (req, res) => {
   try {
@@ -198,4 +234,3 @@ export const lockBagan = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-

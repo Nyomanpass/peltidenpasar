@@ -26,7 +26,7 @@ export const DoubleTeam = sequelize.define("DoubleTeam", {
     allowNull: false,
     references: { model: "tournaments", key: "id" }
   },
-  kelompokUmurTargetId: {
+  kelompokUmurId: {
     type: DataTypes.INTEGER,
     allowNull: false,
     references: { model: "kelompok_umur", key: "id" },
@@ -47,4 +47,4 @@ export const DoubleTeam = sequelize.define("DoubleTeam", {
 DoubleTeam.belongsTo(Peserta, { as: 'Player1', foreignKey: 'player1Id' });
 DoubleTeam.belongsTo(Peserta, { as: 'Player2', foreignKey: 'player2Id' });
 DoubleTeam.belongsTo(Tournament, { foreignKey: 'tournamentId' });
-DoubleTeam.belongsTo(KelompokUmur, { foreignKey: 'kelompokUmurTargetId' });
+DoubleTeam.belongsTo(KelompokUmur, { foreignKey: 'kelompokUmurId' });

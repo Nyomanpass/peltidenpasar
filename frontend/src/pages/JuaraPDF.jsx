@@ -25,7 +25,6 @@ const styles = StyleSheet.create({
   
   podiumContainer: { flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
   
-  // Kotak Juara
   winnerBox: { 
     flex: 1, 
     padding: 10, 
@@ -40,9 +39,8 @@ const styles = StyleSheet.create({
   bronze: { backgroundColor: '#ecfdf5', borderColor: '#6ee7b7' },
   
   label: { fontSize: 8, fontWeight: 'bold', color: '#92400e', marginBottom: 4, textTransform: 'uppercase' },
-  name: { fontSize: 11, fontWeight: 'bold', textAlign: 'center', color: '#111827' },
+  name: { fontSize: 10, fontWeight: 'bold', textAlign: 'center', color: '#111827' },
   
-  // Tabel Klasemen
   table: { 
     marginTop: 15, 
     borderStyle: 'solid', 
@@ -83,11 +81,27 @@ const styles = StyleSheet.create({
     paddingTop: 5 
   }
 });
+
+// FUNGSI HELPER: Untuk menangani nama Single atau Double
+const getFormattedName = (winner) => {
+  if (!winner) return "-";
+  
+  // Jika ini data DoubleTeam (punya Player1 dan Player2)
+  if (winner.Player1 && winner.Player2) {
+    return `${winner.Player1.namaLengkap} / ${winner.Player2.namaLengkap}`;
+  }
+  
+  // Jika ini data DoubleTeam tapi hanya punya nama tim
+  if (winner.namaTim) return winner.namaTim;
+
+  // Jika ini data Peserta Tunggal
+  return winner.namaLengkap || "-";
+};
+
 const JuaraPDF = ({ winnersData = [], tournamentName }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Header Laporan */}
         <View style={styles.header}>
           <Text style={styles.title}>DAFTAR PEMENANG RESMI</Text>
           <Text style={styles.tournamentName}>{tournamentName?.toUpperCase()}</Text>
@@ -101,18 +115,17 @@ const JuaraPDF = ({ winnersData = [], tournamentName }) => {
             <View key={data.baganId || index} style={styles.categorySection} wrap={false}>
               <Text style={styles.categoryTitle}>{data.baganNama}</Text>
               
-              {/* Barisan Podium */}
               <View style={styles.podiumContainer}>
                 {/* Juara 1 */}
                 <View style={[styles.winnerBox, styles.gold]}>
                   <Text style={styles.label}>Juara 1</Text>
-                  <Text style={styles.name}>{w.juara1?.namaLengkap || '-'}</Text>
+                  <Text style={styles.name}>{getFormattedName(w.juara1)}</Text>
                 </View>
 
                 {/* Juara 2 */}
                 <View style={[styles.winnerBox, styles.silver]}>
                   <Text style={styles.label}>Juara 2</Text>
-                  <Text style={styles.name}>{w.juara2?.namaLengkap || '-'}</Text>
+                  <Text style={styles.name}>{getFormattedName(w.juara2)}</Text>
                 </View>
 
                 {/* Juara 3 */}
@@ -120,20 +133,20 @@ const JuaraPDF = ({ winnersData = [], tournamentName }) => {
                   <Text style={styles.label}>Juara 3</Text>
                   {Array.isArray(w.juara3) ? (
                     w.juara3.filter(p => p != null).map((p, i) => (
-                      <Text key={i} style={styles.name}>{p.namaLengkap}</Text>
+                      <Text key={i} style={styles.name}>{getFormattedName(p)}</Text>
                     ))
                   ) : (
-                    <Text style={styles.name}>{w.juara3?.namaLengkap || '-'}</Text>
+                    <Text style={styles.name}>{getFormattedName(w.juara3)}</Text>
                   )}
                 </View>
               </View>
 
-              {/* Tabel Klasemen jika ada data Round Robin */}
+              {/* Tabel Klasemen Round Robin */}
               {w.klasemen && w.klasemen.length > 0 && (
                 <View style={styles.table}>
                   <View style={styles.tableHeader}>
                     <Text style={styles.tableColIndex}>POS</Text>
-                    <Text style={styles.tableColName}>NAMA PESERTA</Text>
+                    <Text style={styles.tableColName}>NAMA PESERTA / TIM</Text>
                     <Text style={styles.tableColPoint}>POIN</Text>
                     <Text style={styles.tableColWL}>W</Text>
                     <Text style={styles.tableColWL}>L</Text>
@@ -141,7 +154,7 @@ const JuaraPDF = ({ winnersData = [], tournamentName }) => {
                   {w.klasemen.map((p, idx) => (
                     <View key={idx} style={styles.tableRow}>
                       <Text style={styles.tableColIndex}>{idx + 1}</Text>
-                      <Text style={styles.tableColName}>{p.peserta?.namaLengkap || '-'}</Text>
+                      <Text style={styles.tableColName}>{getFormattedName(p.peserta)}</Text>
                       <Text style={[styles.tableColPoint, {color: '#2563eb'}]}>{p.poin || 0}</Text>
                       <Text style={styles.tableColWL}>{p.menang || 0}</Text>
                       <Text style={styles.tableColWL}>{p.kalah || 0}</Text>

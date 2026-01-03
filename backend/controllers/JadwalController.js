@@ -6,26 +6,31 @@ import { Peserta } from '../models/PesertaModel.js';
 import { Lapangan } from '../models/LapanganModel.js';
 import { Bagan } from '../models/BaganModel.js';
 import { Op } from 'sequelize'; // Import operator Sequelize
+import { DoubleTeam } from '../models/DoubleTeamModel.js';
 
 
 export const getJadwal = async (req, res) => {
   try {
-    const { tournamentId } = req.query; // ← ambil dari query
+    const { tournamentId } = req.query;
 
     const whereCondition = {};
     if (tournamentId) {
-      whereCondition.tournamentId = tournamentId; // ← filter di backend
+      whereCondition.tournamentId = tournamentId;
     }
 
     const jadwal = await Jadwal.findAll({
-      where: whereCondition, // ← pasang filter di sini
+      where: whereCondition,
       include: [
         { 
           model: Match, 
           as: 'match',
           include: [
+            // Include untuk Single
             { model: Peserta, as: 'peserta1', attributes: ['id', 'namaLengkap'] },
             { model: Peserta, as: 'peserta2', attributes: ['id', 'namaLengkap'] },
+            // TAMBAHKAN INI UNTUK GANDA
+            { model: DoubleTeam, as: 'doubleTeam1', attributes: ['id', 'namaTim'] },
+            { model: DoubleTeam, as: 'doubleTeam2', attributes: ['id', 'namaTim'] },
             { 
               model: Bagan,
               as: 'bagan',
@@ -63,8 +68,11 @@ export const getJadwalByTanggal = async (req, res) => {
           model: Match,
           as: "match",
           include: [
-            { model: Peserta, as: "peserta1" },
-            { model: Peserta, as: "peserta2" }
+            { model: Peserta, as: "peserta1", attributes: ['id', 'namaLengkap'] },
+            { model: Peserta, as: "peserta2", attributes: ['id', 'namaLengkap'] },
+            // TAMBAHKAN INI UNTUK GANDA
+            { model: DoubleTeam, as: 'doubleTeam1', attributes: ['id', 'namaTim'] },
+            { model: DoubleTeam, as: 'doubleTeam2', attributes: ['id', 'namaTim'] },
           ]
         },
         {

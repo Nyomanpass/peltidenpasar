@@ -135,7 +135,10 @@ function Sidebar({ isOpen }) {
           const isExact = currentPath === item.path;
           
           // 2. Cek untuk sub-halaman Peserta
-          const isPesertaDetail = item.label === "Peserta" && currentPath.includes("detail-peserta");
+          const isPesertaDetail = item.label === "Peserta" && (
+            currentPath.includes("detail-peserta") || 
+            currentPath.includes("peserta-ganda") // <--- Tambahkan ini agar menu Peserta aktif saat di Peserta Ganda
+          );
           
           // 3. Cek untuk sub-halaman Bagan
           const isBaganView = item.label === "Bagan" && currentPath.includes("bagan-view");

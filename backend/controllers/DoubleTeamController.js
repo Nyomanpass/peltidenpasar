@@ -1,60 +1,103 @@
-// controllers/DoubleTeamController.js
 import { DoubleTeam } from "../models/DoubleTeamModel.js";
 import { Peserta } from "../models/PesertaModel.js";
-import { KelompokUmur } from "../models/KelompokUmurModel.js"; // Asumsi kamu punya model ini
+import { KelompokUmur } from "../models/KelompokUmurModel.js";
 
-// controllers/DoubleTeamController.js
+// 1. FUNGSI CREATE (POST)
 export const createDoubleTeam = async (req, res) => {
-  const { player1Id, player2Id, tournamentId, kelompokUmurTargetId } = req.body;
+  // Destructuring menggunakan kelompokUmurId sesuai model terbaru
+  const { player1Id, player2Id, tournamentId, kelompokUmurId } = req.body;
 
   try {
     const p1 = await Peserta.findByPk(player1Id);
     const p2 = await Peserta.findByPk(player2Id);
-    const targetKU = await KelompokUmur.findByPk(kelompokUmurTargetId);
+    const targetKU = await KelompokUmur.findByPk(kelompokUmurId);
 
-    // Ambil data kelompok umur asli masing-masing pemain
-    const kuP1 = await KelompokUmur.findByPk(p1.kelompokUmurId);
-    const kuP2 = await KelompokUmur.findByPk(p2.kelompokUmurId);
+    if (!p1 || !p2 || !targetKU) {
+      return res.status(404).json({ msg: "Data peserta atau kategori tidak ditemukan." });
+    }
 
-    // Validasi umur: Pemain tidak boleh lebih tua dari kategori target
-    if (kuP1.umur > targetKU.umur || kuP2.umur > targetKU.umur) {
+    // Validasi Umur (Opsional namun disarankan)
+    // Asumsi: Anda memiliki fungsi hitungUmur di backend atau field umur di model Peserta
+    const hitungUmur = (tgl) => {
+        const lahir = new Date(tgl);
+        const hariIni = new Date();
+        let age = hariIni.getFullYear() - lahir.getFullYear();
+        return age;
+    };
+
+    if (hitungUmur(p1.tanggalLahir) > targetKU.umur || hitungUmur(p2.tanggalLahir) > targetKU.umur) {
       return res.status(400).json({ 
         msg: "Gagal! Salah satu pemain melebihi batas umur kategori ini." 
       });
     }
 
-    // Buat Tim Ganda
+    // Simpan ke Database
     const newTeam = await DoubleTeam.create({
       player1Id,
       player2Id,
       tournamentId,
-      kelompokUmurTargetId,
+      kelompokUmurId, // Menggunakan field kelompokUmurId sesuai model
       namaTim: `${p1.namaLengkap} / ${p2.namaLengkap}`,
       status: "verified"
     });
 
     res.status(201).json({ msg: "Tim Ganda Berhasil Dibuat", data: newTeam });
   } catch (error) {
-    res.status(500).json({ msg: error.message });
+    console.error(error);
+    res.status(500).json({ msg: "Terjadi kesalahan server saat membuat tim." });
   }
 };
 
+// 2. FUNGSI GET (READ)
 export const getDoubleTeams = async (req, res) => {
   try {
-    const { tournamentId } = req.query;
-    if (!tournamentId) return res.status(400).json({ msg: "Tournament ID diperlukan" });
+    const { tournamentId, kelompokUmurId } = req.query;
 
-    const response = await DoubleTeam.findAll({
-      where: { tournamentId },
+    // Filter dinamis
+    const filter = { tournamentId };
+    if (kelompokUmurId) {
+      filter.kelompokUmurId = kelompokUmurId;
+    }
+
+    const teams = await DoubleTeam.findAll({
+      where: filter,
       include: [
-        { model: Peserta, as: 'Player1', attributes: ['id', 'namaLengkap'] },
-        { model: Peserta, as: 'Player2', attributes: ['id', 'namaLengkap'] },
-        { model: KelompokUmur, as: 'KelompokUmur', attributes: ['id', 'nama'] }
-      ]
+        { 
+          model: Peserta, 
+          as: "Player1", 
+          attributes: ["id", "namaLengkap", "tanggalLahir"] 
+        },
+        { 
+          model: Peserta, 
+          as: "Player2", 
+          attributes: ["id", "namaLengkap", "tanggalLahir"] 
+        },
+        { 
+          model: KelompokUmur, 
+          attributes: ["id", "nama", "umur"] 
+        }
+      ],
+      order: [['createdAt', 'DESC']]
     });
-    res.status(200).json(response);
+
+    res.json(teams);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Gagal mengambil data tim ganda." });
+  }
+};
+
+
+export const deleteDoubleTeam = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const team = await DoubleTeam.findByPk(id);
+    if (!team) return res.status(404).json({ msg: "Tim tidak ditemukan" });
+
+    await team.destroy();
+    res.status(200).json({ msg: "Tim Ganda berhasil dihapus" });
   } catch (error) {
-    console.error("🔥 ERROR BACKEND:", error.message);
     res.status(500).json({ msg: error.message });
   }
 };

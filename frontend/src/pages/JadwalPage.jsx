@@ -36,6 +36,8 @@ const JadwalPage = () => {
   const [selectedTanggalFilter, setSelectedTanggalFilter] = useState('');
   const [readyToDownload, setReadyToDownload] = useState(false);
 
+  const [filterBaganKategori, setFilterBaganKategori] = useState("all");
+
   const uniqueTanggal = [...new Set(jadwal.map(j => j.tanggal))].sort(
   (a, b) => new Date(a) - new Date(b)
   );
@@ -319,61 +321,117 @@ const fetchBagan = async () => {
     <form onSubmit={handleSubmit} className="space-y-6">
       
       {/* Pilihan Bagan (Custom Chip/Tag Selection) */}
-      <div>
-        <label className="block text-sm font-bold text-gray-700 mb-2">Pilih Bagan Pertandingan:</label>
-        <div className="flex flex-wrap gap-3">
-          {baganList.length === 0 ? (
-              <p className="text-sm text-gray-500 italic">Tidak ada bagan yang tersedia untuk dipilih.</p>
-          ) : (
-            baganList.map((bagan) => (
-              <span
-                key={bagan.id}
-                onClick={() => setSelectedBaganId(bagan.id)}
-                className={`py-2 px-4 rounded-full transition-all duration-200 text-sm font-semibold cursor-pointer select-none border shadow-sm
-                  ${selectedBaganId === Number(bagan.id)
-                    ? 'bg-blue-600 text-white border-blue-700'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300'
-                  }
-                `}
-              >
-                <Layout size={16} className="inline mr-1"/> {bagan.nama}
-              </span>
-            ))
-          )}
-        </div>
-      </div>
+     {/* --- FILTER KATEGORI BAGAN --- */}
+<div>
+  <label className="block text-sm font-bold text-gray-700 mb-2">Pilih Bagan Pertandingan:</label>
+  
+  {/* Tab Filter (Semua / Single / Double) */}
+  <div className="flex gap-2 mb-3 bg-gray-100 p-1 rounded-xl w-fit border border-gray-200">
+    <button
+      type="button"
+      onClick={() => setFilterBaganKategori("all")}
+      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+        filterBaganKategori === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      Semua
+    </button>
+    <button
+      type="button"
+      onClick={() => setFilterBaganKategori("single")}
+      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+        filterBaganKategori === "single" ? "bg-blue-600 text-white shadow-md" : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      Single
+    </button>
+    <button
+      type="button"
+      onClick={() => setFilterBaganKategori("double")}
+      className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+        filterBaganKategori === "double" ? "bg-purple-600 text-white shadow-md" : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      Double
+    </button>
+  </div>
+
+  {/* Daftar Chip Bagan yang sudah terfilter */}
+  <div className="flex flex-wrap gap-3">
+    {baganList.length === 0 ? (
+      <p className="text-sm text-gray-500 italic">Tidak ada bagan yang tersedia.</p>
+    ) : (
+      baganList
+        .filter(b => filterBaganKategori === "all" ? true : b.kategori === filterBaganKategori)
+        .map((bagan) => (
+          <span
+            key={bagan.id}
+            onClick={() => setSelectedBaganId(Number(bagan.id))}
+            className={`py-2 px-4 rounded-full transition-all duration-200 text-sm font-semibold cursor-pointer select-none border shadow-sm flex items-center gap-1
+              ${selectedBaganId === Number(bagan.id)
+                ? 'bg-blue-600 text-white border-blue-700 ring-2 ring-blue-200'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-gray-300'
+              }
+            `}
+          >
+            <Layout size={14} /> 
+            {bagan.nama}
+            <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full border ${
+              selectedBaganId === Number(bagan.id) 
+              ? 'bg-blue-800 border-blue-400' 
+              : 'bg-gray-200 border-gray-400 text-gray-500'
+            }`}>
+              {bagan.kategori}
+            </span>
+          </span>
+        ))
+    )}
+    
+    {/* Pesan jika hasil filter kosong */}
+    {baganList.length > 0 && baganList.filter(b => filterBaganKategori === "all" ? true : b.kategori === filterBaganKategori).length === 0 && (
+      <p className="text-sm text-orange-600 italic">Tidak ada bagan kategori {filterBaganKategori}.</p>
+    )}
+  </div>
+</div>
       
       {/* Grid Input Utama */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         
         {/* Match Selection */}
-          <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Match:</label>
-            <select
-              value={selectedMatch}
-              onChange={(e) => setSelectedMatch(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200 bg-white"
-              disabled={!selectedBaganId}
-            >
-              <option value="">-- Pilih Match --</option>
-              
-              {/* Gunakan filteredMatches hasil filter di atas */}
-              {filteredMatches.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.peserta1?.namaLengkap || 'Peserta 1'} vs {m.peserta2?.namaLengkap || 'Peserta 2'}
-                </option>
-              ))}
-            </select>
+      <div>
+        <label className="block text-sm font-bold text-gray-700 mb-2">Match:</label>
+        <select
+          value={selectedMatch}
+          onChange={(e) => setSelectedMatch(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200 bg-white"
+          disabled={!selectedBaganId}
+        >
+          <option value="">-- Pilih Match --</option>
+          
+          {/* GANTI DENGAN KODE INI */}
+          {filteredMatches.map((m) => {
+            // Logika: Cek data Ganda (doubleTeam), jika null pakai data Single (peserta)
+            const p1 = m.doubleTeam1?.namaTim || m.peserta1?.namaLengkap || 'TBD';
+            const p2 = m.doubleTeam2?.namaTim || m.peserta2?.namaLengkap || 'TBD';
+            
 
-            {/* Pesan Kondisional */}
-            {!selectedBaganId ? (
-              <p className="text-xs text-red-500 mt-1">Pilih bagan terlebih dahulu.</p>
-            ) : filteredMatches.length === 0 ? (
-              <p className="text-xs text-orange-600 mt-1 italic font-medium">
-                ⚠️ Semua pertandingan pada bagan ini sudah dijadwalkan.
-              </p>
-            ) : null}
-          </div>
+            return (
+              <option key={m.id} value={m.id}>
+                {p1} vs {p2}
+              </option>
+            );
+          })}
+        </select>
+
+        {/* Pesan Kondisional */}
+        {!selectedBaganId ? (
+          <p className="text-xs text-red-500 mt-1">Pilih bagan terlebih dahulu.</p>
+        ) : filteredMatches.length === 0 ? (
+          <p className="text-xs text-orange-600 mt-1 italic font-medium">
+            ⚠️ Semua pertandingan pada bagan ini sudah dijadwalkan.
+          </p>
+        ) : null}
+      </div>
 
         {/* Lapangan Selection */}
         <div>
@@ -541,53 +599,57 @@ const fetchBagan = async () => {
               key={j.id} 
               className="bg-white p-6 rounded-2xl shadow-xl border border-gray-100 flex flex-col justify-between relative transform hover:scale-[1.01] transition duration-300"
             >
-              {/* Tombol Aksi Edit/Hapus (di sudut) */}
+              {/* Tombol Aksi Edit/Hapus */}
               {role === "admin" && (
                 <div className="absolute top-3 right-3 flex space-x-2">
                   <button
                     onClick={() => handleEditClick(j)}
                     className="p-2 rounded-full bg-yellow-500/10 text-yellow-600 hover:bg-yellow-500/20 transition duration-300"
-                    aria-label="Edit Jadwal"
-                    title="Edit Jadwal"
                   >
                     <Edit size={16} />
                   </button>
                   <button
                     onClick={() => handleDeleteJadwal(j.id)}
                     className="p-2 rounded-full bg-red-500/10 text-red-600 hover:bg-red-500/20 transition duration-300"
-                    aria-label="Hapus Jadwal"
-                    title="Hapus Jadwal"
                   >
                     <Trash2 size={16} />
                   </button>
                 </div>
               )}
 
-              <div className="pr-10"> {/* Padding agar tidak tertutup tombol aksi */}
+              <div className="pr-10">
                 {j.match?.bagan?.nama && (
                   <p className="text-xs font-semibold text-blue-600 mb-2 uppercase tracking-wider">
                     {j.match.bagan.nama}
                   </p>
                 )}
 
+                {/* --- PERUBAHAN 1: LOGIKA NAMA MATCH --- */}
                 <h4 className="text-lg font-extrabold text-gray-900 leading-snug mb-3">
-                  {j.match?.peserta1?.namaLengkap || 'Peserta Belum Ditentukan'} vs{' '}
-                  {j.match?.peserta2?.namaLengkap || 'Peserta Belum Ditentukan'}
+                  {j.match?.doubleTeam1?.namaTim || j.match?.peserta1?.namaLengkap || 'TBA'} 
+                  <span className="text-gray-400 mx-1"> vs </span> 
+                  {j.match?.doubleTeam2?.namaTim || j.match?.peserta2?.namaLengkap || 'TBA'}
                 </h4>
 
                 {j.status === 'selesai' ? (
                   /* Tampilan Skor dan Pemenang */
                   <div className="border-y border-gray-200 py-3 my-3 bg-green-50/50 rounded-lg p-2">
                     <p className="text-lg font-bold text-gray-700">Skor: {j.match.score1} - {j.match.score2}</p>
+                    
+                    {/* --- PERUBAHAN 2: LOGIKA NAMA PEMENANG --- */}
                     <p className="text-sm font-bold text-green-700 mt-1 flex items-center gap-1">
                       <CheckCircle size={16}/> Pemenang:
-                      {j.match.winnerId === j.match.peserta1Id ? ` ${j.match.peserta1?.namaLengkap}` : ` ${j.match.peserta2?.namaLengkap}`}
+                      {j.match.winnerDoubleId 
+                        ? ` ${j.match.doubleTeam1?.id === j.match.winnerDoubleId ? j.match.doubleTeam1?.namaTim : j.match.doubleTeam2?.namaTim}` 
+                        : ` ${j.match.winnerId === j.match.peserta1Id ? j.match.peserta1?.namaLengkap : j.match.peserta2?.namaLengkap}`}
                     </p>
                   </div>
                 ) : (
                   /* Tampilan Belum Selesai */
                   <div className="border-y border-gray-200 py-3 my-3">
-                    <p className="text-sm text-gray-500 italic flex items-center gap-1"><XCircle size={16} className="text-red-500"/> Pertandingan belum selesai</p>
+                    <p className="text-sm text-gray-500 italic flex items-center gap-1">
+                      <XCircle size={16} className="text-red-500"/> Pertandingan belum selesai
+                    </p>
                   </div>
                 )}
 
@@ -601,11 +663,6 @@ const fetchBagan = async () => {
                     <strong>Waktu:</strong>{' '}
                     {new Date(j.waktuMulai.slice(0, -1)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                   </p>
-                  {/* Waktu Selesai jika tersedia */}
-                  {/* <p className="text-gray-700 text-sm font-medium flex items-center gap-2">
-                    <Clock size={16} className="text-yellow-600"/> 
-                    <strong>Selesai:</strong> {new Date(j.waktuSelesai.slice(0, -1)).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                  </p> */}
                 </div>
               </div>
               
@@ -654,7 +711,7 @@ const fetchBagan = async () => {
         <p className="text-lg text-gray-600">Tidak ada jadwal pertandingan yang tersedia.</p>
     </div>
   )}
-
+  
   {showWinnerModal && selectedMatchToScore && (
     <WinnerModal
       match={selectedMatchToScore}
