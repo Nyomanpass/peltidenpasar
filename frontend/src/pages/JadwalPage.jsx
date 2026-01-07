@@ -4,6 +4,7 @@ import WinnerModal from "../components/modalbox/WinnerModal";
 import { Edit, Trash2, Calendar, Clock, PlusCircle, CheckCircle, XCircle, Layout, Filter } from "lucide-react";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import JadwalPDF from './JadwalPDF';
+import RefereeForm from './RefereeForm';
 
 const JadwalPage = () => {
   const [jadwal, setJadwal] = useState([]);
@@ -11,6 +12,9 @@ const JadwalPage = () => {
   const [lapangan, setLapangan] = useState([]);
   const role = localStorage.getItem('role');
   const selectedTournamentName = localStorage.getItem("selectedTournamentName");
+
+  const [isRefereeMode, setIsRefereeMode] = useState(false);
+  const [activeMatchData, setActiveMatchData] = useState(null);
   
   // --- STATE BARU UNTUK PILIH BAGAN ---
   const [baganList, setBaganList] = useState([]);
@@ -293,6 +297,26 @@ const fetchBagan = async () => {
   }, {});
 
   const lapanganList = Object.keys(groupedJadwal);
+
+  const openRefereePanel = (jadwal) => {
+    setActiveMatchData(jadwal); // Menyimpan data match yang dipilih
+    setIsRefereeMode(true);     // Pindah ke tampilan wasit
+  };
+
+
+  if (isRefereeMode) {
+    return (
+      <RefereeForm 
+        match={activeMatchData.match} 
+        jadwalId={activeMatchData.id}
+        onFinish={() => {
+          setIsRefereeMode(false);
+          fetchJadwal(); // Refresh data biar statusnya jadi 'selesai'
+        }}
+        onBack={() => setIsRefereeMode(false)}
+      />
+    );
+  }
 
   return (
 <div className="font-sans min-h-screen">
@@ -667,6 +691,7 @@ const fetchBagan = async () => {
               </div>
               
               {/* Footer Status dan Aksi */}
+             {/* Footer Status dan Aksi */}
               <div className="mt-5 pt-4 border-t border-gray-100">
                 <p className="text-sm font-semibold uppercase tracking-wide flex justify-between items-center">
                   Status Pertandingan:
@@ -681,21 +706,35 @@ const fetchBagan = async () => {
                   </span>
                 </p>
 
-                <div className="mt-4 flex space-x-3">
-                  {j.status !== 'berlangsung' && j.status !== 'selesai' && (
+                <div className="mt-4 flex flex-col gap-2"> {/* Gunakan flex-col agar tombol rapi */}
+                  
+                  {/* JIKA STATUS TERJADWAL: Munculkan tombol Mulai */}
+                 {(j.status === 'terjadwal' || j.status === 'belum' || j.status === 'aktif') && (
                     <button
                       onClick={() => handleUpdateStatus(j.id, 'berlangsung')}
-                      className="flex-1 bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition duration-300 font-semibold text-sm"
+                      className="w-full bg-yellow-600 text-white py-2 px-4 rounded-lg hover:bg-yellow-700 transition duration-300 font-semibold text-sm flex items-center justify-center gap-2"
                     >
-                      Mulai Sekarang
+                      <CheckCircle size={16}/> Mulai Sekarang
                     </button>
                   )}
-                  {(j.status === 'berlangsung' || j.status === 'terjadwal') && (
+
+                  {/* JIKA STATUS BERLANGSUNG: Munculkan tombol Buka Wasit */}
+                  {j.status === 'berlangsung' && (
+                    <button
+                      onClick={() => openRefereePanel(j)} // MEMANGGIL FUNGSI WASIT
+                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
+                    >
+                      <Layout size={16}/> BUKA PANEL WASIT
+                    </button>
+                  )}
+
+                  {/* JIKA ADMIN: Masih bisa akses modal manual jika diperlukan */}
+                  {role === 'admin' && j.status !== 'selesai' && (
                     <button
                       onClick={() => handleCompleteJadwal(j)}
-                      className="flex-1 bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300 font-semibold text-sm"
+                      className="w-full bg-gray-100 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-200 transition duration-300 font-medium text-xs border border-gray-200"
                     >
-                      Input Skor & Selesaikan
+                      Input Manual (Admin)
                     </button>
                   )}
                 </div>

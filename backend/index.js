@@ -7,6 +7,7 @@ import './models/KelompokUmurModel.js';
 import './models/PesertaModel.js';
 import './models/JadwalModel.js'
 import "./models/index.js";
+import "./models/MatchScoreLog.js";
 
 
 // autentication
@@ -69,6 +70,7 @@ app.use('/api', tournamentRoutes);
 
 //double team
 app.use("/api", doubleRoutes);
+
 
 
 

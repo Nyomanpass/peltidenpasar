@@ -1,5 +1,5 @@
 import express from "express";
-import { updateWinner, setMatchPeserta, generateUndian, getMatches, getJuara } from "../controllers/MatchController.js";
+import { updateWinner, setMatchPeserta, generateUndian, getMatches, getJuara, updateMatchPoint, getMatchDetailHistory, getMatchLog, undoLastPoint} from "../controllers/MatchController.js";
 
 const router = express.Router();
 
@@ -10,6 +10,10 @@ router.patch("/:matchId/winner", updateWinner);
 router.patch("/:matchId/peserta", setMatchPeserta);
 router.post("/bagan/:id/undian", generateUndian);
 router.get("/matches", getMatches);
-router.get("/juara/:baganId", getJuara)
+router.get("/juara/:baganId", getJuara);
+router.post('/update-point', updateMatchPoint);
+router.get('/history/:matchId', getMatchDetailHistory);
+router.get('/match-log/:id', getMatchLog);
+router.delete('/undo-point/:id', undoLastPoint);
 
 export default router;

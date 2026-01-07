@@ -3,6 +3,7 @@ import { Peserta } from "../models/PesertaModel.js";
 import { Bagan } from "../models/BaganModel.js";
 import { Jadwal } from "../models/JadwalModel.js";
 import { DoubleTeam } from "../models/DoubleTeamModel.js";
+import { MatchScoreLog } from "../models/MatchScoreLog.js";
 import { Op } from "sequelize";
 
 const _processMatchPeserta = async (matchId, side1Id, side2Id, kategori) => {
@@ -559,3 +560,105 @@ export const getJuara = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
+
+export const getMatchDetailHistory = async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    
+    const logs = await MatchScoreLog.findAll({
+      where: { matchId },
+      order: [['createdAt', 'ASC']] // Urutkan dari poin pertama sampai terakhir
+    });
+
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+
+export const updateMatchPoint = async (req, res) => {
+  const { matchId, setKe, skorP1, skorP2, gameP1, gameP2, keterangan, winnerId, statusMatch, isDouble } = req.body;
+
+  try {
+    // 1. Simpan history poin ke Log
+    await MatchScoreLog.create({
+      matchId, setKe, skorP1, skorP2, gameP1, gameP2, keterangan
+    });
+
+    // 2. Siapkan data untuk update tabel Match
+    const updateData = {
+      score1: gameP1, 
+      score2: gameP2,
+      status: statusMatch || 'belum' 
+    };
+
+    // Jika pertandingan selesai, tentukan winnerId masuk ke kolom mana
+    if (statusMatch === 'selesai') {
+      if (isDouble) {
+        updateData.winnerDoubleId = winnerId;
+        updateData.winnerId = null; // Pastikan kolom single kosong jika double
+      } else {
+        updateData.winnerId = winnerId;
+        updateData.winnerDoubleId = null;
+      }
+    }
+
+    await Match.update(updateData, { where: { id: matchId } });
+
+    res.json({ message: "Skor berhasil diperbarui" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+// Fungsi untuk mengambil log skor terakhir berdasarkan Match ID
+export const getMatchLog = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        // Cari satu data terbaru di tabel MatchScoreLog (asumsi nama modelnya MatchScoreLog)
+        // Jika nama model log kamu berbeda, silakan sesuaikan namanya
+        const log = await MatchScoreLog.findOne({
+            where: { matchId: id },
+            order: [['id', 'DESC']] // Ambil yang paling baru (ID paling besar)
+        });
+
+        if (!log) {
+            return res.status(200).json(null); // Kirim null jika belum ada poin sama sekali
+        }
+
+        res.status(200).json(log);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+// Menghapus log skor paling baru untuk match tertentu
+export const undoLastPoint = async (req, res) => {
+    try {
+        const { id } = req.params; // ini matchId
+        
+        // 1. Cari log paling terakhir
+        const lastLog = await MatchScoreLog.findOne({
+            where: { matchId: id },
+            order: [['id', 'DESC']]
+        });
+
+        if (lastLog) {
+            // 2. Hapus log tersebut
+            await lastLog.destroy();
+            res.status(200).json({ message: "Undo berhasil" });
+        } else {
+            res.status(404).json({ message: "Tidak ada data untuk di-undo" });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+

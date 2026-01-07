@@ -23,7 +23,7 @@ export const Match = sequelize.define("Match", {
   score1: { type: DataTypes.INTEGER, allowNull: true },
   score2: { type: DataTypes.INTEGER, allowNull: true },
   nextMatchId: { type: DataTypes.INTEGER, allowNull: true },
-  status: { type: DataTypes.ENUM("belum", "selesai"), defaultValue: "belum" },
+  status: { type: DataTypes.ENUM("belum","berlangsung","selesai"), defaultValue: "belum" },
   tournamentId: { type: DataTypes.INTEGER, allowNull: false },
   baganId: { type: DataTypes.INTEGER, allowNull: false },
 });
