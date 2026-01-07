@@ -262,18 +262,32 @@ export const generateUndian = async (req, res) => {
 // 4. GET MATCHES (FIXED: SEED SEKARANG TERBAWA)
 export const getMatches = async (req, res) => {
   try {
-    const { baganId } = req.query;
+    const { baganId, tournamentId, status } = req.query;
+    
+    // 1. Tentukan filter (Where)
+    let whereCondition = {};
+    
+    if (baganId) {
+      // Jika dipanggil dari sistem BAGAN (seperti sebelumnya)
+      whereCondition.baganId = baganId;
+    } else if (tournamentId) {
+      // Jika dipanggil dari SKOR PAGE
+      whereCondition.tournamentId = tournamentId;
+    }
+
+    // 2. Tambahkan filter status jika dikirim (misal: 'selesai')
+    if (status) {
+      whereCondition.status = status;
+    }
+
     const matches = await Match.findAll({
-      where: { baganId },
+      where: whereCondition, // Menggunakan filter dinamis
       include: [
-        // Untuk Single: Tambahkan isSeeded
         { model: Peserta, as: "peserta1", attributes: ["namaLengkap", "isSeeded"] },
         { model: Peserta, as: "peserta2", attributes: ["namaLengkap", "isSeeded"] },
-        
-        // Untuk Double: Tambahkan isSeeded pada level DoubleTeam
         { 
           model: DoubleTeam, as: "doubleTeam1", 
-          attributes: ["id", "namaTim", "isSeeded"], // Tambahkan isSeeded di sini jika ada
+          attributes: ["id", "namaTim", "isSeeded"],
           include: [
             { model: Peserta, as: "Player1", attributes: ["namaLengkap", "isSeeded"] }, 
             { model: Peserta, as: "Player2", attributes: ["namaLengkap", "isSeeded"] }
@@ -281,15 +295,19 @@ export const getMatches = async (req, res) => {
         },
         { 
           model: DoubleTeam, as: "doubleTeam2", 
-          attributes: ["id", "namaTim", "isSeeded"], // Tambahkan isSeeded di sini jika ada
+          attributes: ["id", "namaTim", "isSeeded"],
           include: [
             { model: Peserta, as: "Player1", attributes: ["namaLengkap", "isSeeded"] }, 
             { model: Peserta, as: "Player2", attributes: ["namaLengkap", "isSeeded"] }
           ] 
         },
       ],
-      order: [['round', 'ASC'], ['slot', 'ASC']]
+      // Jika status 'selesai', urutkan berdasarkan waktu update terbaru
+      order: status === 'selesai' 
+        ? [['updatedAt', 'DESC']] 
+        : [['round', 'ASC'], ['slot', 'ASC']]
     });
+    
     res.json(matches);
   } catch (error) { 
     res.status(500).json({ error: error.message }); 
@@ -581,40 +599,74 @@ export const getMatchDetailHistory = async (req, res) => {
 
 
 export const updateMatchPoint = async (req, res) => {
-  const { matchId, setKe, skorP1, skorP2, gameP1, gameP2, keterangan, winnerId, statusMatch, isDouble } = req.body;
+    try {
+        const { 
+            matchId, setKe, skorP1, skorP2, gameP1, gameP2, 
+            setMenangP1, setMenangP2, statusMatch, winnerId 
+        } = req.body;
 
-  try {
-    // 1. Simpan history poin ke Log
-    await MatchScoreLog.create({
-      matchId, setKe, skorP1, skorP2, gameP1, gameP2, keterangan
-    });
+        // 1. Cari data match dulu
+        const match = await Match.findByPk(matchId);
+        if (!match) return res.status(404).json({ msg: "Match tidak ditemukan" });
 
-    // 2. Siapkan data untuk update tabel Match
-    const updateData = {
-      score1: gameP1, 
-      score2: gameP2,
-      status: statusMatch || 'belum' 
-    };
+        // 2. Simpan ke Log (History) - PASTIKAN INI BERHASIL
+        await MatchScoreLog.create({
+            matchId,
+            setKe,
+            skorP1,
+            skorP2,
+            gameP1,
+            gameP2,
+            setMenangP1,
+            setMenangP2,
+            keterangan: statusMatch === 'selesai' ? "Match Ended" : `Point: ${skorP1}-${skorP2} (Game: ${gameP1}-${gameP2})`
+        });
 
-    // Jika pertandingan selesai, tentukan winnerId masuk ke kolom mana
-    if (statusMatch === 'selesai') {
-      if (isDouble) {
-        updateData.winnerDoubleId = winnerId;
-        updateData.winnerId = null; // Pastikan kolom single kosong jika double
-      } else {
-        updateData.winnerId = winnerId;
-        updateData.winnerDoubleId = null;
-      }
+        // 3. Siapkan data update untuk tabel Match (Hanya satu kali update saja)
+        const updateData = {
+            status: statusMatch,
+            winnerId: (match.peserta1Id || !match.doubleTeam1Id) ? winnerId : null,
+            winnerDoubleId: match.doubleTeam1Id ? winnerId : null,
+            score1: setMenangP1, // Total set menang P1
+            score2: setMenangP2, // Total set menang P2
+        };
+
+        // Simpan skor game ke kolom set yang sesuai di MatchModel
+        if (setKe === 1) {
+            updateData.set1P1 = gameP1;
+            updateData.set1P2 = gameP2;
+        } else if (setKe === 2) {
+            updateData.set2P1 = gameP1;
+            updateData.set2P2 = gameP2;
+        } else if (setKe === 3) {
+            updateData.set3P1 = gameP1;
+            updateData.set3P2 = gameP2;
+        }
+
+        // 4. Jalankan Update Sekaligus
+        await match.update(updateData);
+
+        // 5. LOGIKA OTOMATIS LOLOS (Jika Selesai)
+        if (statusMatch === 'selesai' && match.nextMatchId && winnerId) {
+            const nextMatch = await Match.findByPk(match.nextMatchId);
+            if (nextMatch) {
+                if (match.slot % 2 !== 0) {
+                    if (match.doubleTeam1Id) nextMatch.doubleTeam1Id = winnerId;
+                    else nextMatch.peserta1Id = winnerId;
+                } else {
+                    if (match.doubleTeam1Id) nextMatch.doubleTeam2Id = winnerId;
+                    else nextMatch.peserta2Id = winnerId;
+                }
+                await nextMatch.save();
+            }
+        }
+
+        res.status(200).json({ msg: "Skor Berhasil Diperbarui" });
+    } catch (error) {
+        console.error("ERROR UPDATE POINT:", error);
+        res.status(500).json({ msg: error.message });
     }
-
-    await Match.update(updateData, { where: { id: matchId } });
-
-    res.json({ message: "Skor berhasil diperbarui" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
 };
-
 
 // Fungsi untuk mengambil log skor terakhir berdasarkan Match ID
 export const getMatchLog = async (req, res) => {
@@ -660,5 +712,19 @@ export const undoLastPoint = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
+};
+
+
+export const getMatchLogs = async (req, res) => {
+  try {
+    const { matchId } = req.params;
+    const logs = await MatchScoreLog.findAll({
+      where: { matchId },
+      order: [['createdAt', 'ASC']] // Urutkan dari poin awal ke akhir
+    });
+    res.json(logs);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
 

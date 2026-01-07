@@ -308,10 +308,23 @@ const fetchBagan = async () => {
     return (
       <RefereeForm 
         match={activeMatchData.match} 
-        jadwalId={activeMatchData.id}
-        onFinish={() => {
-          setIsRefereeMode(false);
-          fetchJadwal(); // Refresh data biar statusnya jadi 'selesai'
+        onFinish={async (finalData) => {
+          try {
+            // 1. Update status JADWAL menjadi selesai
+            await api.put(`/jadwal/${activeMatchData.id}/status`, { 
+              status: 'selesai' 
+            });
+
+            // 2. Keluar dari mode wasit
+            setIsRefereeMode(false);
+
+            // 3. Refresh data agar kartu langsung jadi hijau dan skor muncul
+            fetchJadwal();
+            setSuccess("Pertandingan selesai & skor otomatis tersimpan!");
+          } catch (err) {
+            console.error("Gagal menutup jadwal:", err);
+            setIsRefereeMode(false);
+          }
         }}
         onBack={() => setIsRefereeMode(false)}
       />

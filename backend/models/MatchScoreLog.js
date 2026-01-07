@@ -35,7 +35,15 @@ export const MatchScoreLog = sequelize.define("MatchScoreLog", {
   keterangan: {
     type: DataTypes.STRING, // Contoh: "Point for Player 1", "Ace", "Deuce"
     allowNull: true,
-  }
+  },
+  setMenangP1: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0, // Sudah menang berapa set (0, 1, atau 2)
+  },
+  setMenangP2: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
 }, {
   tableName: "match_score_logs",
   timestamps: true, // Ini penting untuk mengurutkan history berdasarkan waktu

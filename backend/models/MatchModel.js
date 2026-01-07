@@ -22,6 +22,13 @@ export const Match = sequelize.define("Match", {
 
   score1: { type: DataTypes.INTEGER, allowNull: true },
   score2: { type: DataTypes.INTEGER, allowNull: true },
+  set1P1: { type: DataTypes.INTEGER, defaultValue: 0 },
+  set1P2: { type: DataTypes.INTEGER, defaultValue: 0 },
+  set2P1: { type: DataTypes.INTEGER, defaultValue: 0 },
+  set2P2: { type: DataTypes.INTEGER, defaultValue: 0 },
+  set3P1: { type: DataTypes.INTEGER, defaultValue: 0 },
+  set3P2: { type: DataTypes.INTEGER, defaultValue: 0 },
+
   nextMatchId: { type: DataTypes.INTEGER, allowNull: true },
   status: { type: DataTypes.ENUM("belum","berlangsung","selesai"), defaultValue: "belum" },
   tournamentId: { type: DataTypes.INTEGER, allowNull: false },
