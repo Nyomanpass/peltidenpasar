@@ -43,100 +43,123 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
     fetchLastScore();
   }, [match.id]);
 
-  const handlePoint = async (player) => {
-    let nP1 = p1Point, nP2 = p2Point, nG1 = p1Game, nG2 = p2Game;
-    let nSetW1 = setMenangP1, nSetW2 = setMenangP2, nSetKe = currentSet;
-    let isGameEnd = false;
-    let isMatchFinished = false;
+const handlePoint = async (player) => {
+  let nP1 = p1Point, nP2 = p2Point, nG1 = p1Game, nG2 = p2Game;
+  let nSetW1 = setMenangP1, nSetW2 = setMenangP2, nSetKe = currentSet;
+  let isGameEnd = false;
+  let isMatchFinished = false;
+  let logKeterangan = `Point: ${nP1}-${nP2}`; // Default keterangan
 
-    const isTieBreakMode = nG1 === 6 && nG2 === 6;
+  const isTieBreakMode = nG1 === 6 && nG2 === 6;
 
-    // --- 1. LOGIKA POIN ---
-    if (isTieBreakMode) {
-      let tP1 = parseInt(nP1) || 0; let tP2 = parseInt(nP2) || 0;
-      if (player === 1) tP1++; else tP2++;
-      nP1 = tP1.toString(); nP2 = tP2.toString();
-      if ((tP1 >= 7 && tP1 - tP2 >= 2) || (tP2 >= 7 && tP2 - tP1 >= 2)) isGameEnd = true;
+  // --- 1. LOGIKA POIN ---
+  if (isTieBreakMode) {
+    let tP1 = parseInt(nP1) || 0; let tP2 = parseInt(nP2) || 0;
+    if (player === 1) tP1++; else tP2++;
+    nP1 = tP1.toString(); nP2 = tP2.toString();
+    logKeterangan = `Tiebreak: ${nP1}-${nP2}`;
+    if ((tP1 >= 7 && tP1 - tP2 >= 2) || (tP2 >= 7 && tP2 - tP1 >= 2)) isGameEnd = true;
+  } else {
+    if (player === 1) {
+      if (nP1 === "40" && nP2 < "40") isGameEnd = true;
+      else if (nP1 === "Ad") isGameEnd = true;
+      else if (nP1 === "40" && nP2 === "Ad") nP2 = "40";
+      else nP1 = points[points.indexOf(nP1) + 1];
     } else {
-      if (player === 1) {
-        if (nP1 === "40" && nP2 < "40") isGameEnd = true;
-        else if (nP1 === "Ad") isGameEnd = true;
-        else if (nP1 === "40" && nP2 === "Ad") nP2 = "40";
-        else nP1 = points[points.indexOf(nP1) + 1];
-      } else {
-        if (nP2 === "40" && nP1 < "40") isGameEnd = true;
-        else if (nP2 === "Ad") isGameEnd = true;
-        else if (nP2 === "40" && nP1 === "Ad") nP1 = "40";
-        else nP2 = points[points.indexOf(nP2) + 1];
-      }
+      if (nP2 === "40" && nP1 < "40") isGameEnd = true;
+      else if (nP2 === "Ad") isGameEnd = true;
+      else if (nP2 === "40" && nP1 === "Ad") nP1 = "40";
+      else nP2 = points[points.indexOf(nP2) + 1];
     }
+    logKeterangan = `Point: ${nP1}-${nP2}`;
+  }
 
-    // --- 2. LOGIKA GAME & SET ---
-   // --- 2. LOGIKA GAME & SET ---
-    if (isGameEnd) {
+  // --- 2. LOGIKA GAME & SET ---
+  if (isGameEnd) {
     if (player === 1) nG1++; else nG2++;
-    nP1 = "0"; nP2 = "0"; // Reset Point
+    nP1 = "0"; nP2 = "0"; // Reset Point untuk log berikutnya
+    logKeterangan = `Game: ${nG1}-${nG2}`;
 
-    // LOGIKA TENIS YANG BENAR:
     let isSetFinished = false;
-
-    // Kondisi A: Menang 6 game dan selisih 2 (6-0, 6-1, ... 6-4)
-    if ((nG1 === 6 && nG2 <= 4) || (nG2 === 6 && nG1 <= 4)) {
-        isSetFinished = true;
-    } 
-    // Kondisi B: Menang 7 game (7-5 atau 7-6 dari tie-break)
-    else if (nG1 === 7 || nG2 === 7) {
-        isSetFinished = true;
-    }
+    if ((nG1 === 6 && nG2 <= 4) || (nG2 === 6 && nG1 <= 4)) isSetFinished = true;
+    else if (nG1 === 7 || nG2 === 7) isSetFinished = true;
 
     if (isSetFinished) {
-        if (nG1 > nG2) nSetW1++; else nSetW2++;
-        
-        // Cek apakah MATCH selesai (Menang 2 Set)
-        if (nSetW1 === 2 || nSetW2 === 2) {
+      if (nG1 > nG2) nSetW1++; else nSetW2++;
+      
+      if (nSetW1 === 2 || nSetW2 === 2) {
         isMatchFinished = true;
-        } else {
-        alert(`Set ${nSetKe} Selesai! Skor Set: ${nG1}-${nG2}`);
+        logKeterangan = "Match Ended"; // Ini yang akan muncul di database
+      } else {
+        logKeterangan = `Set ${nSetKe} Ended`; // Penanda akhir set
+        
+        // KIRIM LOG PENUTUP SET TERLEBIH DAHULU SEBELUM RESET
+        try {
+          await api.post('/update-point', {
+            matchId: match.id,
+            setKe: nSetKe,
+            skorP1: "0", skorP2: "0",
+            gameP1: nG1, gameP2: nG2,
+            setMenangP1: nSetW1, setMenangP2: nSetW2,
+            statusMatch: 'berlangsung',
+            keterangan: logKeterangan
+          });
+        } catch (e) { console.error(e); }
+
+        // Setelah kirim log penutup, baru persiapkan untuk set baru
+        alert(`Set ${nSetKe} Selesai! Skor: ${nG1}-${nG2}`);
         nSetKe++;
-        nG1 = 0; nG2 = 0; // RESET GAME KE 0-0 UNTUK SET BARU
-        }
+        nG1 = 0; nG2 = 0; 
+        logKeterangan = "Start New Set";
+      }
     }
-    }
+  }
 
-    // Tentukan WinnerId jika selesai
-    let winnerId = null;
+  // Tentukan WinnerId jika selesai
+  const isDouble = !!match.doubleTeam1Id; // Cek kategori
+  let winnerId = null;
     if (isMatchFinished) {
-      winnerId = nSetW1 > nSetW2 ? (match.doubleTeam1Id || match.peserta1Id) : (match.doubleTeam2Id || match.peserta2Id);
+      // Samakan logika penentuan ID dengan WinnerModal
+      winnerId = nSetW1 > nSetW2 
+        ? (isDouble ? match.doubleTeam1Id : match.peserta1Id) 
+        : (isDouble ? match.doubleTeam2Id : match.peserta2Id);
     }
 
-    setP1Point(nP1); setP2Point(nP2); setP1Game(nG1); setP2Game(nG2);
-    setCurrentSet(nSetKe); setSetMenangP1(nSetW1); setSetMenangP2(nSetW2);
+  // Update State UI
+  setP1Point(nP1); setP2Point(nP2); setP1Game(nG1); setP2Game(nG2);
+  setCurrentSet(nSetKe); setSetMenangP1(nSetW1); setSetMenangP2(nSetW2);
 
-    // 2. Kirim ke Backend
-    try {
-      await api.post('/update-point', {
-        matchId: match.id,
-        setKe: nSetKe,
-        skorP1: nP1, skorP2: nP2,
-        gameP1: nG1, gameP2: nG2,
-        setMenangP1: nSetW1, setMenangP2: nSetW2,
-        statusMatch: isMatchFinished ? 'selesai' : 'berlangsung',
-        winnerId: winnerId
+  // 3. Kirim ke Backend (Log Reguler atau Match Ended)
+ try {
+    // 1. Tetap kirim log reguler untuk statistik (api.post)
+    await api.post('/update-point', {
+      matchId: match.id,
+      setKe: nSetKe,
+      skorP1: nP1, skorP2: nP2,
+      gameP1: nG1, gameP2: nG2,
+      setMenangP1: nSetW1, setMenangP2: nSetW2,
+      statusMatch: isMatchFinished ? 'selesai' : 'berlangsung',
+      keterangan: logKeterangan
+    });
+
+    // 2. JIKA SELESAI, KIRIM KE ENDPOINT WINNER (Seperti WinnerModal)
+    // Ini agar bagan terupdate benar dan tidak menimpa BYE
+    if (isMatchFinished) {
+      await api.patch(`/${match.id}/winner`, {
+        winnerId: isDouble ? null : winnerId,
+        winnerDoubleId: isDouble ? winnerId : null,
+        score1: nSetW1, // Total set menang
+        score2: nSetW2,
+        isDouble: isDouble
       });
 
-      // 3. Jika Match Selesai, JANGAN langsung onFinish, tapi tampilkan MODAL dulu
-      if (isMatchFinished) {
-        setFinalWinnerData({
-            winnerId: winnerId,
-            score1: nSetW1,
-            score2: nSetW2
-        });
-        setShowResultConfirm(true); // Memunculkan overlay konfirmasi
-      }
-    } catch (err) {
-      console.error("Gagal update:", err);
+      setFinalWinnerData({ winnerId, score1: nSetW1, score2: nSetW2 });
+      setShowResultConfirm(true);
     }
-  };
+  } catch (err) {
+    console.error("Gagal update data:", err);
+  }
+};
 
   const handleUndo = async () => {
     if (window.confirm("Undo poin terakhir?")) {

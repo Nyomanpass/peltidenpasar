@@ -36,7 +36,6 @@ const seedPeserta = async () => {
       dataPeserta.push({
         namaLengkap: nama,
         nomorWhatsapp: randomWA,
-        tanggalLahir: "20016-01-01",
         kelompokUmurId: 1, 
         tournamentId: 10,   
         fotoKartu: "dummy-ktp.jpg",
