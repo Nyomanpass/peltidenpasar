@@ -12,12 +12,13 @@ const JuaraPage = () => {
   // State untuk mencegah PDF crash (Eo is not a function)
   const [readyPDF, setReadyPDF] = useState(false);
 
-  const tName = localStorage.getItem("selectedTournamentName") || "TURNAMEN PELTI";
+  const [tName, setTName] = useState(localStorage.getItem("selectedTournamentName") || "TURNAMEN"); 
 
   const fetchAllData = async () => {
     try {
       setIsLoading(true);
       const selectedTournament = localStorage.getItem("selectedTournament");
+      setTName(localStorage.getItem("selectedTournamentName") || "TURNAMEN");
 
       if (!selectedTournament) {
         setError("Silakan pilih turnamen terlebih dahulu.");
@@ -60,7 +61,22 @@ const JuaraPage = () => {
   };
 
   useEffect(() => {
+    // Fungsi yang akan dipanggil saat turnamen berubah
+    const handleTournamentChange = () => {
+      console.log("Turnamen berubah, memuat ulang data juara...");
+      fetchAllData();
+    };
+
+    // Jalankan pertama kali saat komponen mount
     fetchAllData();
+
+    // Dengar event 'tournament-changed'
+    window.addEventListener("tournament-changed", handleTournamentChange);
+
+    // Bersihkan listener saat komponen tidak lagi dipakai
+    return () => {
+      window.removeEventListener("tournament-changed", handleTournamentChange);
+    };
   }, []);
 
   // Reset tombol PDF setiap kali filter berubah agar tidak crash

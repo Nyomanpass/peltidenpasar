@@ -47,12 +47,29 @@ const JadwalPage = () => {
   );
 
   // Set tanggal filter otomatis hanya jika belum ada yang dipilih
-  useEffect(() => {
-    if (uniqueTanggal.length > 0 && !selectedTanggalFilter) {
-      setSelectedTanggalFilter(uniqueTanggal[0]); // pilih tanggal paling kecil
-    }
-  }, [uniqueTanggal, selectedTanggalFilter]);
+// --- GANTI DENGAN KODE INI ---
+useEffect(() => {
+  if (uniqueTanggal.length > 0 && !selectedTanggalFilter) {
+    // 1. Ambil tanggal hari ini dalam format YYYY-MM-DD
+    // Kita gunakan Intl.DateTimeFormat agar zona waktu sesuai dengan lokal (Indonesia)
+    const today = new Intl.DateTimeFormat('fr-CA', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
 
+    // 2. Cek apakah ada jadwal untuk tanggal hari ini
+    const isTodayAvailable = uniqueTanggal.includes(today);
+
+    if (isTodayAvailable) {
+      // Jika hari ini ada jadwal, otomatis pilih hari ini
+      setSelectedTanggalFilter(today);
+    } else {
+      // Jika tidak ada jadwal hari ini, pilih tanggal paling awal/kecil
+      setSelectedTanggalFilter(uniqueTanggal[0]);
+    }
+  }
+}, [uniqueTanggal, selectedTanggalFilter]);
 
 
   useEffect(() => {
@@ -117,28 +134,31 @@ const fetchBagan = async () => {
 };
 
 
-
-  // --- MODIFIKASI FUNGSI FETCH MATCHES UNTUK MENERIMA BAGAN ID ---
-  const fetchMatches = async (baganId) => {
+  const fetchMatches = async (baganId, currentEditingId = null) => {
     try {
-      // Mengirim baganId sebagai query parameter
       const newTournamentId = localStorage.getItem("selectedTournament");
       const response = await api.get('/matches', {
         params: { baganId: baganId, tournamentId: newTournamentId }
       });
-       let matchesBelumSelesai = response.data.filter(
-      m => m.status === 'belum' || m.status === 'aktif'
-    );
+      
+      let data = response.data;
 
-    // Filter match yang sudah ada di jadwal lain (kecuali jadwal yang sedang diedit, jika edit)
-    matchesBelumSelesai = matchesBelumSelesai.filter(
-      m => !jadwal.some(j => j.matchId === m.id && j.id !== editingJadwalId)
-    );
+      let matchesBelumSelesai = data.filter(
+        m => m.status === 'belum' || m.status === 'aktif'
+      );
+
+      // Gunakan currentEditingId dari parameter, bukan dari state global
+      matchesBelumSelesai = matchesBelumSelesai.filter(
+        m => !jadwal.some(j => j.matchId === m.id && j.id !== (currentEditingId || editingJadwalId))
+      );
+
       setMatches(matchesBelumSelesai);
+      return matchesBelumSelesai; 
     } catch (err) {
       console.error('Error:', err);
     }
   };
+
 
   const fetchLapangan = async () => {
     try {
@@ -149,26 +169,34 @@ const fetchBagan = async () => {
     }
   };
 
-  const handleEditClick = (jadwal) => {
-    setEditingJadwalId(jadwal.id);
-    setSelectedMatch(jadwal.matchId);
-    setSelectedLapangan(jadwal.lapanganId);
-    setTanggal(jadwal.tanggal);
-    setSelectedBaganId(jadwal.match.baganId); 
+  const handleEditClick = async (jadwalData) => { 
+    // 1. Set ID yang sedang diedit ke state
+    setEditingJadwalId(jadwalData.id);
+    
+    const baganId = jadwalData.match.baganId;
+    setSelectedBaganId(baganId);
+    
+    // 2. Oper jadwalData.id secara langsung sebagai argumen kedua
+    // Ini memastikan filter di fetchMatches tahu bahwa match ini BOLEH muncul
+    await fetchMatches(baganId, jadwalData.id); 
 
-    const waktuMulaiFormatted = jadwal.waktuMulai.slice(11, 16);
+    // 3. Baru set matchId-nya
+    setSelectedMatch(jadwalData.matchId);
+    setSelectedLapangan(jadwalData.lapanganId);
+    setTanggal(jadwalData.tanggal);
+
+    const waktuMulaiFormatted = jadwalData.waktuMulai.slice(11, 16);
     setWaktuMulai(waktuMulaiFormatted);
     
     setSuccess('');
     setError('');
-    window.scrollTo({
-    top: 0,
-    behavior: 'smooth' // Membuat efek gulir lebih halus
-  });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCancelEdit = () => {
     setEditingJadwalId(null);
+    setSelectedBaganId(''); // Tambahkan ini
+    setMatches([]);
     setSelectedMatch('');
     setSelectedLapangan('');
     setTanggal('');
@@ -203,6 +231,12 @@ const fetchBagan = async () => {
         await api.put(`/jadwal/${editingJadwalId}`, jadwalData);
         setSuccess('Jadwal berhasil diperbarui!');
         handleCancelEdit(); // Ini biasanya sudah mereset form
+         // --- RESET FORM SECARA TOTAL ---
+        setSelectedBaganId(null); // Reset pilihan bagan
+        setSelectedMatch('');
+        setSelectedLapangan('');
+        setTanggal('');
+        setWaktuMulai('');
       } else {
         await api.post('/jadwal', jadwalData);
         setSuccess('Jadwal berhasil dibuat!');
@@ -440,18 +474,13 @@ const fetchBagan = async () => {
         <select
           value={selectedMatch}
           onChange={(e) => setSelectedMatch(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200 bg-white"
+           className="w-full rounded-lg border border-gray-300 p-3 shadow-sm focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 transition-all duration-200 bg-white"
           disabled={!selectedBaganId}
         >
           <option value="">-- Pilih Match --</option>
-          
-          {/* GANTI DENGAN KODE INI */}
           {filteredMatches.map((m) => {
-            // Logika: Cek data Ganda (doubleTeam), jika null pakai data Single (peserta)
             const p1 = m.doubleTeam1?.namaTim || m.peserta1?.namaLengkap || 'TBD';
             const p2 = m.doubleTeam2?.namaTim || m.peserta2?.namaLengkap || 'TBD';
-            
-
             return (
               <option key={m.id} value={m.id}>
                 {p1} vs {p2}

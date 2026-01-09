@@ -23,11 +23,14 @@ function PesertaGanda() {
 
   const [collapsedPlayers, setCollapsedPlayers] = useState({});
 
+  
+
   const toggleModalGroup = (id) => {
     setCollapsedPlayers(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   const role = localStorage.getItem("role");
+  const isAdmin = role === "admin"; // Pastikan ini true jika admin
   const isActive = (path) => location.pathname === path;
 
   const fetchData = useCallback(async (idOverride) => {
@@ -131,14 +134,22 @@ function PesertaGanda() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4">
+            {isAdmin && (
             <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
-              <Link to="/admin/peserta" className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta") ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+              <Link 
+                to={"/admin/peserta"} 
+                className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta") || isActive("/tournament/peserta") ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
                 <User size={16} /> Single
               </Link>
-              <Link to="/admin/peserta-ganda" className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta-ganda") ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+              <Link 
+                to={"/admin/peserta-ganda"} 
+                className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta-ganda") || isActive("/tournament/peserta-ganda") ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+              >
                 <Users2 size={16} /> Double
               </Link>
             </div>
+            )}
 
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -151,18 +162,19 @@ function PesertaGanda() {
               />
             </div>
                   
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:bg-blue-700 transition-all"
-            >
-              <UserPlus size={18} /> BUAT TIM GANDA
-            </button>
+            {isAdmin && (
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:bg-blue-700 transition-all"
+              >
+                <UserPlus size={18} /> BUAT TIM GANDA
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {/* --- LIST KELOMPOK UMUR DAN TIM GANDA --- */}
-      {/* --- KONTEN UTAMA: DAFTAR TIM GANDA PER KATEGORI --- */}
+   
 {(() => {
   // 1. Hitung total tim yang cocok dengan pencarian di SEMUA kelompok umur
   const allFilteredTeams = doubleTeams.filter((team) => {
@@ -272,13 +284,16 @@ function PesertaGanda() {
                         </td>
                         <td className="px-6 py-3">
                           <div className="flex justify-center gap-2">
-                            {role === "admin" && (
+                            {isAdmin ? (
                               <button 
                                 onClick={() => handleDeleteTeam(team.id)} 
                                 className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
                               >
                                 <Trash2 size={16} />
                               </button>
+                            ) : (
+                              <span className="text-gray-400 text-[10px] font-bold uppercase italic tracking-wider">
+                              View Only</span>
                             )}
                           </div>
                         </td>

@@ -4,6 +4,7 @@ import { Bagan } from "../models/BaganModel.js";
 import { Jadwal } from "../models/JadwalModel.js";
 import { DoubleTeam } from "../models/DoubleTeamModel.js";
 import { MatchScoreLog } from "../models/MatchScoreLog.js";
+import { KelompokUmur } from "../models/KelompokUmurModel.js";
 import { Op } from "sequelize";
 
 const _processMatchPeserta = async (matchId, side1Id, side2Id, kategori) => {
@@ -283,6 +284,15 @@ export const getMatches = async (req, res) => {
     const matches = await Match.findAll({
       where: whereCondition, // Menggunakan filter dinamis
       include: [
+       { 
+          model: Bagan, 
+          as: "bagan",
+          // --- INI KUNCINYA: Ambil data KelompokUmur dari dalam Bagan ---
+          include: [{ 
+            model: KelompokUmur,
+            attributes: ["nama"] // Kita hanya butuh kolom 'nama'
+          }] 
+        },
         { model: Peserta, as: "peserta1", attributes: ["namaLengkap", "isSeeded"] },
         { model: Peserta, as: "peserta2", attributes: ["namaLengkap", "isSeeded"] },
         { 

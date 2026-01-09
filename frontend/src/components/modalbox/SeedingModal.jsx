@@ -3,6 +3,7 @@ import { Trash2, Plus, Info, Trophy, Star, Users, X, AlertCircle } from "lucide-
 
 export default function SeedingModal({ pesertaList, onClose, onSaved }) {
   const [seededPeserta, setSeededPeserta] = useState([]);
+  const selectedIds = seededPeserta.map(p => p.id).filter(id => id !== null);
 
   // --- 1. HITUNG KAPASITAS BAGAN ---
   // Mencari angka pangkat 2 terdekat yang lebih besar atau sama dengan jumlah peserta
@@ -57,6 +58,12 @@ export default function SeedingModal({ pesertaList, onClose, onSaved }) {
     const activeSlots = seededPeserta.filter(p => p.slot !== "");
     const slotValues = activeSlots.map(p => p.slot);
     const hasDuplicate = new Set(slotValues).size !== slotValues.length;
+
+    const isIncomplete = seededPeserta.some(p => !p.id || !p.slot);
+    if (isIncomplete) {
+      alert("⚠️ Pastikan semua baris sudah memilih Peserta dan No. Slot!");
+      return;
+    }
 
     if (hasDuplicate) {
       alert("⚠️ Ada nomor slot yang duplikat! Satu slot hanya bisa diisi satu peserta.");
@@ -119,9 +126,19 @@ export default function SeedingModal({ pesertaList, onClose, onSaved }) {
                         onChange={(e) => handleChange(index, e.target.value)}
                       >
                         <option value="">Pilih Peserta...</option>
-                        {pesertaList.map((p) => (
-                          <option key={p.id} value={p.id}>{p.namaTim || p.namaLengkap}</option>
-                        ))}
+                        {pesertaList.map((p) => {
+                            // Cek apakah peserta ini sudah dipilih di baris LAIN
+                            const isAlreadyChosen = selectedIds.includes(p.id) && seeded.id !== p.id;
+
+                            // Jika sudah dipilih, jangan tampilkan (return null atau skip)
+                            if (isAlreadyChosen) return null;
+
+                            return (
+                              <option key={p.id} value={p.id}>
+                                {p.namaTim || p.namaLengkap}
+                              </option>
+                            );
+                          })}
                       </select>
                     </div>
                     

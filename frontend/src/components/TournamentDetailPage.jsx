@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import api from '../api';
-import { Trophy, Users, GitBranch, CalendarDays, BarChart } from 'lucide-react';
+import { Trophy, Users, GitBranch, CalendarDays, BarChart, Medal, User, Users2 } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
@@ -12,11 +12,15 @@ import PesertaView from './admin/Peserta'; // Asumsi PesertaView sudah ada
 import BaganSelectorParent from './BaganSelectorParent'; // WAJIB: Komponen wrapper untuk tab Bagan
 import JadwalPage from '../pages/JadwalPage'; 
 import JuaraPage from '../pages/JuaraPage'; 
+import SkorPage from '../pages/SkorPage';
+import PesertaGanda from './admin/PesertaGanda'; // Asumsi PesertaView sudah ada
+
 
 const TABS = {
     PESERTA: 'peserta',
     BAGAN: 'bagan',
     JADWAL: 'jadwal',
+    SKOR: 'skor',  
     HASIL: 'hasil',
 };
 
@@ -25,6 +29,7 @@ const TournamentDetailPage = () => {
     const selectedTournamentId = localStorage.getItem("selectedTournament");
     const selectedTournamentName = localStorage.getItem("selectedTournamentName");
     const [activeTab, setActiveTab] = useState(TABS.PESERTA);
+    const [subTabPeserta, setSubTabPeserta] = useState('single');
     
     const renderContent = () => {
         // 🚨 Error handling jika ID turnamen tidak ada
@@ -41,7 +46,34 @@ const TournamentDetailPage = () => {
 
         switch (activeTab) {
             case TABS.PESERTA:
-                return <PesertaView tournamentId={selectedTournamentId} />;
+                return (
+                    <div className="space-y-6">
+                        {/* Sub-Navigasi internal untuk Single/Double */}
+                        <div className="flex justify-center">
+                            <div className="inline-flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+                                <button
+                                    onClick={() => setSubTabPeserta('single')}
+                                    className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${subTabPeserta === 'single' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                >
+                                    <User size={14} className="inline mr-2"/> Single
+                                </button>
+                                <button
+                                    onClick={() => setSubTabPeserta('ganda')}
+                                    className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${subTabPeserta === 'ganda' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                >
+                                    <Users2 size={14} className="inline mr-2"/> Double
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Konten berdasarkan sub-tab */}
+                        {subTabPeserta === 'single' ? (
+                            <PesertaView tournamentId={selectedTournamentId} />
+                        ) : (
+                            <PesertaGanda tournamentId={selectedTournamentId} />
+                        )}
+                    </div>
+                );
                 
             case TABS.BAGAN:
                 // 💡 PENTING: Menggunakan BaganSelectorParent untuk mengelola state Daftar vs Detail
@@ -49,6 +81,9 @@ const TournamentDetailPage = () => {
                 
             case TABS.JADWAL:
                 return <JadwalPage tournamentId={selectedTournamentId} />;
+
+            case TABS.SKOR: 
+                return <SkorPage tournamentId={selectedTournamentId} />;
                 
             case TABS.HASIL:
                 return <JuaraPage tournamentId={selectedTournamentId} />;
@@ -62,7 +97,7 @@ const TournamentDetailPage = () => {
         <>
         <Navbar/>
         <div className="font-sans bg-gray-50 min-h-screen pt-42 pb-24">
-             <div className="relative container mx-auto px-4 md:px-20">
+             <div className="relative container mx-auto">
                 
                 {/* --- JUDUL UTAMA --- */}
                 <header className="mb-10 p-6 bg-white rounded-xl shadow-lg border-t-4 border-yellow-500">
@@ -84,6 +119,7 @@ const TournamentDetailPage = () => {
                             { id: TABS.PESERTA, name: 'Peserta', icon: Users },
                             { id: TABS.BAGAN, name: 'Bagan', icon: GitBranch },
                             { id: TABS.JADWAL, name: 'Jadwal', icon: CalendarDays },
+                            { id: TABS.SKOR, name: 'Skor', icon: Medal }, 
                             { id: TABS.HASIL, name: 'Hasil Pertandingan', icon: BarChart },
                         ].map((tab) => (
                             <button

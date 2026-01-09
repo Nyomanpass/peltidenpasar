@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../api";
-import { X, CheckCircle, Upload, CreditCard, Loader2 } from "lucide-react";
+import { X, CheckCircle, Upload, CreditCard, Loader2, AlertCircle } from "lucide-react";
 
 function PesertaForm({ onSuccess }) {
   const fileInputRef = useRef(null);
@@ -49,11 +49,28 @@ function PesertaForm({ onSuccess }) {
 
   const handleTournamentChange = (e) => {
     const id = e.target.value;
+    if (!id) {
+        setSelectedTournament(null);
+        setFormData({ ...formData, tournamentId: "" });
+        return;
+    }
+
+    const detail = tournamentList.find((t) => t.id === parseInt(id));
+    
+    const deadline = getDeadline(detail.start_date);
+    const isRegistrationClosed = new Date() > deadline;
+
+    if (isRegistrationClosed) {
+        alert("Maaf, pendaftaran untuk turnamen ini sudah ditutup (Batas H-7).");
+        setSelectedTournament(null);
+        setFormData({ ...formData, tournamentId: "" }); // Reset pilihan
+        return;
+    }
+
+    setSelectedTournament(detail);
     setFormData({ ...formData, tournamentId: id, buktiBayar: null });
     setPreviewBayar(null);
-    const detail = tournamentList.find((t) => t.id === parseInt(id));
-    setSelectedTournament(detail);
-  };
+};
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -105,6 +122,82 @@ function PesertaForm({ onSuccess }) {
       setIsSubmitting(false);
     }
   };
+
+  const getDeadline = (startDate) => {
+      const date = new Date(startDate);
+      date.setDate(date.getDate() - 7);
+      return date;
+  };
+
+  // Filter turnamen yang masih buka
+  const availableTournaments = tournamentList.filter(t => {
+      const deadline = getDeadline(t.start_date);
+      return new Date() <= deadline;
+  });
+
+  // Jika Loading selesai tapi tidak ada turnamen yang pendaftarannya buka
+if (availableTournaments.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden p-6">
+        
+        {/* Dekorasi Latar Belakang */}
+        <div className="absolute top-0 -left-20 w-96 h-96 bg-blue-100 rounded-full blur-3xl opacity-50"></div>
+        <div className="absolute bottom-0 -right-20 w-96 h-96 bg-red-100 rounded-full blur-3xl opacity-50"></div>
+
+        <div className="relative w-full max-w-lg">
+          <div className="bg-white/80 backdrop-blur-xl border border-white shadow-[0_20px_50px_rgba(0,0,0,0.05)] rounded-[2.5rem] p-10 text-center">
+            
+            {/* Bagian Icon */}
+            <div className="mb-8 relative inline-block">
+              <div className="absolute inset-0 bg-red-100 rounded-3xl rotate-12 scale-110"></div>
+              <div className="relative bg-white p-6 rounded-3xl shadow-sm border border-red-50">
+                <AlertCircle size={56} className="text-red-500" />
+              </div>
+            </div>
+
+            {/* Teks Informasi */}
+            <h2 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">
+              Pendaftaran Ditutup
+            </h2>
+            
+            <div className="space-y-4 mb-10">
+              <p className="text-slate-600 leading-relaxed">
+                Mohon maaf, saat ini pendaftaran untuk semua turnamen <span className="font-bold text-slate-800">telah berakhir</span> atau sedang <span className="font-bold text-slate-800">tidak tersedia</span>.
+              </p>
+              
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <p className="text-xs text-slate-500 uppercase font-black tracking-widest mb-1">Ketentuan</p>
+                <p className="text-sm font-medium text-slate-700">Pendaftaran ditutup otomatis 3 hari (H-3) sebelum jadwal pertandingan dimulai.</p>
+              </div>
+            </div>
+
+            {/* Tombol Aksi */}
+            <div className="flex flex-col gap-3">
+              <a 
+                href="/" 
+                className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm uppercase tracking-widest hover:bg-black transition-all shadow-lg active:scale-95"
+              >
+                Kembali ke Beranda
+              </a>
+              
+              <a 
+                href="https://wa.me/62xxxxxxxxxx" // Ganti dengan nomor Admin
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full bg-white text-blue-600 py-4 rounded-2xl font-bold text-sm uppercase tracking-widest border-2 border-blue-50 hover:bg-blue-50 transition-all flex items-center justify-center gap-2"
+              >
+                Hubungi Panitia
+              </a>
+            </div>
+
+            <p className="mt-8 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+              PELTI Kota Denpasar • Persatuan Lawn Tenis Indonesia
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 font-sans min-h-screen">
@@ -170,9 +263,12 @@ function PesertaForm({ onSuccess }) {
                     required
                   >
                     <option value="">-- Pilih Turnamen Aktif --</option>
-                    {tournamentList.map((t) => (
-                      <option key={t.id} value={t.id}>{t.name}</option>
-                    ))}
+                    {tournamentList
+                      .filter(t => new Date() <= getDeadline(t.start_date)) // HANYA TAMPILKAN YANG BELUM DEADLINE
+                      .map((t) => (
+                        <option key={t.id} value={t.id}>{t.name}</option>
+                      ))
+                    }
                   </select>
                 </div>
 

@@ -43,7 +43,7 @@ const TournamentComming = () => {
     // Helper: Hitung Deadline (H-7 sebelum start_date)
     const getDeadline = (startDate) => {
         const date = new Date(startDate);
-        date.setDate(date.getDate() - 7);
+        date.setDate(date.getDate() - 3);
         return date;
     };
 
@@ -136,7 +136,7 @@ const TournamentComming = () => {
                             
                             <InfoItem 
                                 icon={<AlertCircle className="text-orange-600" />} 
-                                label="Batas Pendaftaran (H-7)" 
+                                label="Batas Pendaftaran (H-3)" 
                                 value={formatDate(deadline)} 
                                 isDeadline={true}
                             />
@@ -153,18 +153,22 @@ const TournamentComming = () => {
                         )}
                         
                         {/* Tombol Aksi */}
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <a
-                                href={isRegistrationClosed ? "#" : "/daftar-peserta"}
-                                className={`inline-flex items-center justify-center py-4 px-10 rounded-2xl font-black text-lg transition duration-300 shadow-xl ${
-                                    isRegistrationClosed 
-                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
-                                    : "bg-blue-600 text-white hover:bg-blue-700 hover:-translate-y-1 shadow-blue-200"
-                                }`}
-                            >
-                                {isRegistrationClosed ? "Pendaftaran Berakhir" : "Daftar Sekarang →"}
-                            </a>
-                        </div>
+                       <div className="flex flex-col sm:flex-row gap-4">
+                        {isRegistrationClosed ? (
+                                    // Tampilan saat TUTUP: Menggunakan <div> agar tidak bisa diklik sama sekali
+                            <div className="inline-flex items-center justify-center py-4 px-10 rounded-2xl font-black text-lg bg-gray-300 text-gray-500 cursor-not-allowed shadow-none">
+                                        Pendaftaran Berakhir
+                                    </div>
+                                ) : (
+                                    // Tampilan saat BUKA: Menggunakan <a> untuk link pendaftaran
+                                    <a
+                                        href="/daftar-peserta"
+                                        className="inline-flex items-center justify-center py-4 px-10 rounded-2xl font-black text-lg transition duration-300 shadow-xl bg-blue-600 text-white hover:bg-blue-700 hover:-translate-y-1 shadow-blue-200"
+                                    >
+                                        Daftar Sekarang →
+                                    </a>
+                                )}
+                            </div>
                     </div>
                 </div>
             </div>
