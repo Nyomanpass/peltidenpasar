@@ -4,6 +4,10 @@ import AuthProvider from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoute";
 
+// font
+import "@fontsource/poppins/400.css"; // Regular
+import "@fontsource/poppins/700.css"; // Bold
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
