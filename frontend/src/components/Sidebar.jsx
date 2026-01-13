@@ -1,4 +1,4 @@
-import { Users, Calendar, Trophy, List, ClipboardList, CheckSquare, Settings, Award, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, Calendar, Trophy, List, Monitor, ClipboardList, CheckSquare, Settings, Award, ChevronDown, ChevronUp } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../api";
@@ -65,7 +65,8 @@ function Sidebar({ isOpen }) {
     { label: "Hasil Pertandingan", path: "/admin/hasil-pertandingan", icon: <Trophy size={20} /> },
     { label: "Skor", path: "/admin/skor", icon: <ClipboardList size={20} /> },
     { label: "Tournament", path: "/admin/tournament", icon: <Award size={20} />},
-    { label: "Settings", path: "/admin/settings", icon: <Settings size={20} /> },
+    { label: "Game Settings", path: "/admin/settings", icon: <Settings size={20} /> },
+    { label: "UI Settings", path: "/admin/uisettings", icon: <Monitor size={20} /> },
   ];
 
   const wasitMenu = [

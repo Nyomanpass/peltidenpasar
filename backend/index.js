@@ -8,6 +8,7 @@ import './models/PesertaModel.js';
 import './models/JadwalModel.js'
 import "./models/index.js";
 import "./models/MatchScoreLog.js";
+import './models/NewsModel.js';
 
 
 // autentication
@@ -32,6 +33,8 @@ import lapanganRoutes from './routes/LapanganRoutes.js'
 import tournamentRoutes from './routes/TournamentRoutes.js'
 //double team
 import doubleRoutes from "./routes/DoubleRoutes.js"; 
+//berita
+import newsRoutes from "./routes/NewsRoutes.js";
 
 
 
@@ -70,6 +73,9 @@ app.use('/api', tournamentRoutes);
 
 //double team
 app.use("/api", doubleRoutes);
+
+//import berita 
+app.use("/api", newsRoutes);
 
 
 

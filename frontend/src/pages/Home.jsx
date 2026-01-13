@@ -1,22 +1,17 @@
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import FeatureSection from "../components/FeatureSection";
+import News from "../components/News";
 import Footer from "../components/Footer";
-import AboutSection from "../components/AboutSection";
-import JoinTournamentCTA from "../components/JoinTournamentCTA";
-import ContactSection from "../components/ContactSection";
-import TournamentSection from "../components/TournamentSection";
 
 function Home(){
     return(
         <>
             <Navbar/>
             <Hero/>
-            <FeatureSection/>
-            <AboutSection/>
-            <JoinTournamentCTA/>
-            <TournamentSection/>
-            <ContactSection/>
+            <div className="px-4 lg:px-25 md:px-25">
+            <News/>
+        </div>
+     
             <Footer/>
         </>
     )

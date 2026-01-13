@@ -4,6 +4,12 @@ import AuthProvider from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRoute from "./components/RoleRoute";
 
+// font
+import "@fontsource/poppins/400.css"; // Regular
+import "@fontsource/poppins/700.css"; // Bold
+
+import "./App.css";
+
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -24,6 +30,7 @@ import JuaraPage from "./pages/JuaraPage";
 import SkorPage from "./pages/SkorPage";
 import Tournament from "./pages/admin/Tournament";
 import PesertaGanda from "./components/admin/PesertaGanda"; 
+import UiSettings from "./pages/UiSettings";
 
 //landing page
 import TournamentUser from "./pages/user/TournamentUser";
@@ -46,6 +53,7 @@ export default function App() {
           <Route path="/about" element={<AboutPage/>}/>
           <Route path="/contact" element={<ContactPage/>}/>
           <Route path="/tournament-detail" element={<TournamentDetailPage/>}/>
+          
    
           <Route
             path="/admin"
@@ -69,6 +77,7 @@ export default function App() {
             <Route path="hasil-pertandingan" element={<JuaraPage/>}/>
             <Route path="skor" element={<SkorPage/>}/>
             <Route path="peserta-ganda" element={<PesertaGanda />} />
+            <Route path="uisettings" element={<UiSettings/>}/>
           </Route>
 
           <Route
