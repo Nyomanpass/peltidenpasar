@@ -15,7 +15,7 @@ const TournamentCTA = () => {
                 <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4 animate-bounce-slow" /> 
                 
                 {/* Headline Persuasif */}
-                <h2 className="text-4xl md:text-5xl text-secondary font-extrabold mb-4 leading-tight">
+                <h2 className="text-4xl md:text-5xl text-black font-extrabold mb-4 leading-tight">
                     Jangan Hanya Menjadi Penonton!
                 </h2>
                 

@@ -2,11 +2,14 @@ import { useState, useEffect } from "react";
 import { PlusCircle, Edit, Image } from "lucide-react";
 import api from "../api";
 import { format } from "date-fns";
+import { useRef } from "react";
+
 
 export default function NewsSetting() {
   const [newsList, setNewsList] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const formRef = useRef(null);
   const [formData, setFormData] = useState({
     title: "",
     desc: "",
@@ -32,6 +35,17 @@ export default function NewsSetting() {
     fetchNews();
   }, []);
 
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      desc: "",
+      image: null,
+      tanggalUpload: format(new Date(), "yyyy-MM-dd"),
+    });
+    setEditingId(null);
+    setPreviewImage(null);
+  };
+
   const openForm = (news = null) => {
     if (news) {
       setFormData({
@@ -43,14 +57,14 @@ export default function NewsSetting() {
           : format(new Date(), "yyyy-MM-dd"),
       });
       setEditingId(news.idNews);
+           setTimeout(() => {
+    formRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, 100);
     } else {
-      setFormData({
-        title: "",
-        desc: "",
-        image: null,
-        tanggalUpload: format(new Date(), "yyyy-MM-dd"),
-      });
-      setEditingId(null);
+      resetForm();
     }
     setModalOpen(true);
   };
@@ -74,9 +88,10 @@ export default function NewsSetting() {
         });
       }
 
+      resetForm();
       setModalOpen(false);
       fetchNews();
-      setCurrentPage(1); // reset ke halaman pertama
+      setCurrentPage(1);
     } catch (err) {
       console.error(err);
     }
@@ -92,11 +107,28 @@ export default function NewsSetting() {
     }
   };
 
-  // Pagination logic
+  // ======================
+  // PAGINATION (MAX 5)
+  // ======================
   const totalPages = Math.ceil(newsList.length / itemsPerPage);
+
   const paginatedNews = newsList.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
+  );
+
+  const maxButtons = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+  let endPage = startPage + maxButtons - 1;
+
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+
+  const visiblePages = Array.from(
+    { length: endPage - startPage + 1 },
+    (_, i) => startPage + i
   );
 
   return (
@@ -107,54 +139,71 @@ export default function NewsSetting() {
       </h1>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="mb-8 flex flex-col gap-4">
+      <form onSubmit={handleSubmit}  ref={formRef} className="mb-8 flex flex-col gap-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Judul</label>
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Judul
+            </label>
             <input
               type="text"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
               className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
               required
             />
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Tanggal Upload</label>
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Tanggal Upload
+            </label>
             <input
               type="date"
               value={formData.tanggalUpload}
-              onChange={(e) => setFormData({ ...formData, tanggalUpload: e.target.value })}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  tanggalUpload: e.target.value,
+                })
+              }
               className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
               required
             />
           </div>
 
           <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">Gambar</label>
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Gambar
+            </label>
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setFormData({ ...formData, image: e.target.files[0] })}
+              onChange={(e) =>
+                setFormData({ ...formData, image: e.target.files[0] })
+              }
               className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
             />
           </div>
         </div>
 
         <div className="flex flex-col mt-4">
-          <label className="text-sm font-semibold text-gray-700 mb-1">Deskripsi</label>
+          <label className="text-sm font-semibold text-gray-700 mb-1">
+            Deskripsi
+          </label>
           <textarea
             rows={3}
             value={formData.desc}
-            onChange={(e) => setFormData({ ...formData, desc: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, desc: e.target.value })
+            }
             className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
-            placeholder="Masukkan deskripsi singkat..."
             required
           />
         </div>
 
-        {/* Tombol Tambah / Update di bawah kanan */}
         <div className="flex justify-end mt-4">
           <button
             type="submit"
@@ -166,7 +215,7 @@ export default function NewsSetting() {
         </div>
       </form>
 
-      {/* Table News */}
+      {/* Table */}
       <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
         <table className="min-w-full text-sm">
           <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider">
@@ -185,15 +234,29 @@ export default function NewsSetting() {
                 <td className="px-5 py-3 font-medium text-gray-700">
                   {(currentPage - 1) * itemsPerPage + idx + 1}
                 </td>
-                <td className="px-5 py-3 font-semibold text-gray-800">{n.title}</td>
+                <td className="px-5 py-3 font-semibold text-gray-800">
+                  {n.title}
+                </td>
                 <td className="px-5 py-3 text-gray-700">
-                  {n.desc.length > 100 ? n.desc.slice(0, 100) + "..." : n.desc}
+                  {n.desc.length > 100
+                    ? n.desc.slice(0, 100) + "..."
+                    : n.desc}
                 </td>
                 <td className="px-5 py-3">
-                  {n.image ? <img src={n.image} alt="news" className="w-16 h-16 object-cover rounded" /> : "-"}
+                  {n.image ? (
+                    <img
+                      src={n.image}
+                      alt="news"
+                      className="w-16 h-16 object-cover rounded"
+                    />
+                  ) : (
+                    "-"
+                  )}
                 </td>
                 <td className="px-5 py-3 text-gray-500">
-                  {n.tanggalUpload ? format(new Date(n.tanggalUpload), "dd MMM yyyy") : "-"}
+                  {n.tanggalUpload
+                    ? format(new Date(n.tanggalUpload), "dd MMM yyyy")
+                    : "-"}
                 </td>
                 <td className="px-5 py-3 flex gap-2 justify-center">
                   <button
@@ -227,23 +290,31 @@ export default function NewsSetting() {
       {totalPages > 1 && (
         <div className="flex justify-center mt-4 gap-2">
           <button
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
             className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
           >
             Prev
           </button>
-          {Array.from({ length: totalPages }, (_, i) => (
+
+          {visiblePages.map((page) => (
             <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-4 py-2 rounded hover:bg-gray-300 ${currentPage === i + 1 ? "bg-yellow-500 text-white" : "bg-gray-200"}`}
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-4 py-2 rounded hover:bg-gray-300 ${
+                currentPage === page
+                  ? "bg-yellow-500 text-white"
+                  : "bg-gray-200"
+              }`}
             >
-              {i + 1}
+              {page}
             </button>
           ))}
+
           <button
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            onClick={() =>
+              setCurrentPage((p) => Math.min(p + 1, totalPages))
+            }
             disabled={currentPage === totalPages}
             className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
           >

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 
 // --- Ikon SVG ---
 const FacebookIcon = (props) => (
@@ -30,6 +30,7 @@ export default function Navbar() {
   const [dropdownOpen, setDropdownOpen] = useState({});
   const [showNav, setShowNav] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -44,23 +45,28 @@ export default function Navbar() {
   const activeClass = "text-amber-700 font-bold border-b-2 border-amber-700 pb-1";
   const inactiveClass = "text-gray-700 hover:text-amber-700";
 
-  // Nav items
   const navItems = [
     { name: "Home", path: "/" },
     {
       name: "Tentang Kami",
       children: [
-        { name: "Visi & Misi", path: "/about/visi-misi" },
-        { name: "Struktur Organisasi", path: "/about/struktur-organisasi" },
-        { name: "Kepengurusan", path: "/about/kepengurusan" },
-        { name: "Anggota", path: "/about/anggota" },
+        { name: "Visi & Misi", path: "/visi-misi" },
+        { name: "Struktur Organisasi", path: "/struktur-organisasi" },
+        { name: "Kepengurusan", path: "/kepengurusan" },
+        { name: "Anggota", path: "/anggota" },
         { name: "Berita", path: "/berita" },
-
       ],
     },
     { name: "Turnamen", path: "/tournament" },
+    { name: "Atlet", path: "/atlet" },
+
     { name: "Contact", path: "/contact" },
   ];
+
+  // Helper untuk parent menu agar aktif jika salah satu child aktif
+  const isParentActive = (children) => {
+    return children.some((child) => location.pathname === child.path);
+  };
 
   return (
     <header
@@ -96,7 +102,11 @@ export default function Navbar() {
           {navItems.map((item) =>
             item.children ? (
               <div key={item.name} className="relative group">
-                <span className="cursor-pointer text-sm uppercase text-gray-700 hover:text-amber-700 flex items-center gap-1">
+                <span
+                  className={`cursor-pointer text-sm uppercase flex items-center gap-1 ${
+                    isParentActive(item.children) ? "text-amber-700 font-bold" : "text-gray-700 hover:text-amber-700"
+                  }`}
+                >
                   {item.name} <DownArrow className="w-3 h-3" />
                 </span>
                 {/* Dropdown */}
@@ -105,7 +115,11 @@ export default function Navbar() {
                     <NavLink
                       key={child.name}
                       to={child.path}
-                      className="block px-5 py-3 text-sm hover:bg-amber-50 hover:text-amber-700 rounded-xl"
+                      className={({ isActive }) =>
+                        `block px-5 py-3 text-sm hover:bg-amber-50 hover:text-amber-700 rounded-xl ${
+                          isActive ? "text-amber-700 font-bold" : ""
+                        }`
+                      }
                     >
                       {child.name}
                     </NavLink>
@@ -142,7 +156,12 @@ export default function Navbar() {
                   }
                   className="w-full text-left font-semibold flex justify-between items-center"
                 >
-                  {item.name} <DownArrow className={`w-3 h-3 transform transition-transform ${dropdownOpen[item.name] ? "rotate-180" : ""}`} />
+                  {item.name}{" "}
+                  <DownArrow
+                    className={`w-3 h-3 transform transition-transform ${
+                      dropdownOpen[item.name] ? "rotate-180" : ""
+                    }`}
+                  />
                 </button>
                 {dropdownOpen[item.name] && (
                   <div className="pl-4 mt-2 flex flex-col space-y-2 text-sm">
@@ -150,7 +169,9 @@ export default function Navbar() {
                       <NavLink
                         key={child.name}
                         to={child.path}
-                        className="hover:text-amber-700"
+                        className={({ isActive }) =>
+                          `hover:text-amber-700 ${isActive ? "text-amber-700 font-bold" : ""}`
+                        }
                         onClick={() => setMenuOpen(false)}
                       >
                         {child.name}
@@ -163,7 +184,9 @@ export default function Navbar() {
               <NavLink
                 key={item.name}
                 to={item.path}
-                className="block py-2"
+                className={({ isActive }) =>
+                  `block py-2 ${isActive ? "text-amber-700 font-bold border-b-2 border-amber-700 pb-1" : ""}`
+                }
                 onClick={() => setMenuOpen(false)}
               >
                 {item.name}
