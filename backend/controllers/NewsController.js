@@ -2,10 +2,10 @@ import { News } from "../models/NewsModel.js";
 import path from "path";
 import fs from "fs";
 
-// Helper: buat URL lengkap untuk frontend
+// Helper gambar untuk frontend 
 const getFullImageUrl = (req, imagePath) => {
   if (!imagePath) return null;
-  return `${req.protocol}://${req.get("host")}/${imagePath}`;
+  return `${req.protocol}://${req.get("host")}${imagePath}`;
 };
 
 // ===================================
@@ -55,10 +55,10 @@ export const getNewsById = async (req, res) => {
 export const createNews = async (req, res) => {
   try {
     const { title, desc, tanggalUpload } = req.body;
-
     let imagePath = null;
+
     if (req.file) {
-      imagePath = `uploads/news/${req.file.filename}`; // tanpa "public/"
+      imagePath = `/uploads/news/${req.file.filename}`;
     }
 
     const newNews = await News.create({
@@ -94,11 +94,12 @@ export const updateNews = async (req, res) => {
     // Jika ada gambar baru → hapus gambar lama
     if (req.file) {
       if (news.image) {
-        const oldPath = path.join(process.cwd(), news.image); // path absolute
-        if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        const oldPath = path.join("public", news.image);
+        if (fs.existsSync(oldPath)) {
+          fs.unlinkSync(oldPath);
+        }
       }
-
-      news.image = `uploads/news/${req.file.filename}`;
+      news.image = `/uploads/news/${req.file.filename}`;
     }
 
     news.title = title;
@@ -130,8 +131,14 @@ export const deleteNews = async (req, res) => {
     }
 
     if (news.image) {
-      const filePath = path.join(process.cwd(), news.image); // path absolute
-      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      const filePath = path.join(
+        process.cwd(),
+        news.image.replace(/^\/+/, "")
+      );
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
 
     await news.destroy();
