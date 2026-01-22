@@ -9,6 +9,9 @@ import './models/JadwalModel.js'
 import "./models/index.js";
 import "./models/MatchScoreLog.js";
 import './models/NewsModel.js';
+import './models/SliderModel.js';
+import "./models/AthleteModel.js";
+import "./models/ClubModel.js";
 
 
 // autentication
@@ -35,8 +38,12 @@ import tournamentRoutes from './routes/TournamentRoutes.js'
 import doubleRoutes from "./routes/DoubleRoutes.js"; 
 //berita
 import newsRoutes from "./routes/NewsRoutes.js";
-
-
+//slider
+import sliderRoutes from "./routes/SliderRoutes.js";
+//athtlete
+import athleteRoutes from "./routes/AthleteRoutes.js";
+//club
+import clubRoutes from "./routes/ClubRoutes.js";
 
 const app = express();
 
@@ -77,6 +84,16 @@ app.use("/api", doubleRoutes);
 //import berita 
 app.use("/api", newsRoutes);
 
+//import slider
+app.use("/api", sliderRoutes);
+
+//import athlete
+app.use("/api", athleteRoutes);
+
+//import club
+app.use("/api", clubRoutes);
+
+
 
 
 
@@ -86,6 +103,8 @@ const start = async () => {
   try {
     await sequelize.authenticate();
     console.log("✅ Database connected");
+    console.log(Object.keys(sequelize.models));
+
     await sequelize.sync();
     // await sequelize.sync({ alter: true });
     app.listen(5004, () => console.log("Server berjalan di port 5004"));

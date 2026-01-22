@@ -1,42 +1,38 @@
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/Database.js";
 
-export const Slider = sequelize.define(
-  "Slider",
+
+export const Athlete = sequelize.define(
+  "Athlete",
   {
-    idSlider: {
+    id: {
       type: DataTypes.INTEGER,
       primaryKey: true,
       autoIncrement: true,
     },
-    title: {
+    name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    description: {
-      type: DataTypes.TEXT,
+    birthDate: {
+      type: DataTypes.DATEONLY,
       allowNull: false,
     },
-    ctaText: {
-      type: DataTypes.STRING,
+    gender: {
+      type: DataTypes.ENUM("Male", "Female"),
       allowNull: false,
     },
-    ctaLink: {
-      type: DataTypes.STRING,
+    category: {
+      type: DataTypes.STRING, // contoh: U-10, U-12, U-14, U-16, Open
       allowNull: false,
     },
-    image: {
+    photo: {
       type: DataTypes.STRING,
       allowNull: true,
     },
-    isActive: {
-      type: DataTypes.BOOLEAN,
-      defaultValue: true,
-    },
-    urutan: { type: DataTypes.INTEGER, allowNull: false }, 
   },
   {
-    tableName: "Sliders",
+    tableName: "athletes",
     timestamps: true,
   }
 );
