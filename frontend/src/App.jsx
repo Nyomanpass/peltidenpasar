@@ -8,12 +8,12 @@ import RoleRoute from "./components/RoleRoute";
 import "@fontsource/poppins/400.css"; // Regular
 import "@fontsource/poppins/700.css"; // Bold
 
-import "./App.css";
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import DashboardLayout from "./pages/DashboardLayout";
+
 
 import PesertaForm from "./pages/PesertaForm";
 import ScrollToTop from "./components/ScrollToTop";
@@ -32,11 +32,20 @@ import Tournament from "./pages/admin/Tournament";
 import PesertaGanda from "./components/admin/PesertaGanda"; 
 import UiSettings from "./pages/UiSettings";
 
+
 //landing page
 import TournamentUser from "./pages/user/TournamentUser";
 import AboutPage from "./pages/user/AboutPage";
 import ContactPage from "./pages/user/ContactPage";
 import TournamentDetailPage from "./components/TournamentDetailPage";
+import News from "./pages/user/News";
+import NewsDetail from "./pages/user/NewsDetail";
+import Visimisi from "./pages/user/Visimisi";
+import Struktur  from "./pages/user/Struktur";
+import Kepengurusan from "./pages/user/Kepengurusan";
+import Athlete  from "./pages/user/Athlete";
+import Club from "./pages/user/Club";
+
 
 
 export default function App() {
@@ -50,8 +59,18 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/daftar-peserta" element={<PesertaForm/>}/>
           <Route path="/tournament" element={<TournamentUser/>}/>
-          <Route path="/about" element={<AboutPage/>}/>
+          <Route path="/about" element={<AboutPage/>}a/>
           <Route path="/contact" element={<ContactPage/>}/>
+          <Route path="/berita" element={<News/>}/>
+          <Route path="/berita/:idNews" element={<NewsDetail/>}/>
+          <Route path="/visi-misi" element={<Visimisi/>}/>
+          <Route path="/struktur-organisasi" element={<Struktur/>}/>
+          <Route path="/kepengurusan" element={<Kepengurusan/>}/>
+          <Route path="/atlet" element={<Athlete/>}/>
+          <Route path="/anggota" element={<Club/>}/> 
+   
+
+
           <Route path="/tournament-detail" element={<TournamentDetailPage/>}/>
           
    

@@ -84,8 +84,8 @@ function TournamentArchive() {
                 <p className="text-primary font-bold text-lg uppercase tracking-widest mb-2">
                     REKAM JEJAK & JADWAL
                 </p>
-                <h1 className="text-4xl md:text-5xl font-extrabold text-secondary">
-                    Semua Turnamen PelTI Denpasar
+                <h1 className="text-4xl md:text-5xl font-extrabold ">
+                    Semua Turnamen Pelti Denpasar
                 </h1>
                 <div className="w-24 h-1 bg-primary mx-auto mt-4 rounded"></div>
             </div>

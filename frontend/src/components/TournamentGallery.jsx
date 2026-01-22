@@ -19,7 +19,7 @@ const TournamentGallery = () => {
                 
                 {/* Header Section */}
                 <div className="text-center mb-12">
-                    <h2 className="text-4xl font-extrabold mb-2 text-secondary">
+                    <h2 className="text-4xl font-extrabold mb-2 ">
                         Momen Terbaik Turnamen Lalu
                     </h2>
                     <p className="text-xl text-gray-700">
