@@ -103,7 +103,7 @@ const JuaraPage = () => {
 
   return (
     <div className="font-sans bg-white min-h-screen">
-      <div className="space-y-8 max-w-7xl mx-auto px-4 py-8">
+      <div className="space-y-8 mx-auto px-4 py-8">
 
         {/* --- HEADER: FILTER & PDF --- */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-sm">

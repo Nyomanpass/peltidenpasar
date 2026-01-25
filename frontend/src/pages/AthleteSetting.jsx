@@ -1,19 +1,72 @@
 import { useState, useEffect, useRef } from "react";
-import { PlusCircle, Edit, Image } from "lucide-react";
+import { PlusCircle, FileDown, Trash2, Edit, Image } from "lucide-react";
 import api from "../api";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+
 
 export default function AthleteSetting() {
   const [athleteList, setAthleteList] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
   const formRef = useRef(null);
+  const [kelompokUmurList, setKelompokUmurList] = useState([]);
+  const [selectedAthlete, setSelectedAthlete] = useState(null);
 
-  const [formData, setFormData] = useState({
-    name: "",
-    birthDate: "",
-    gender: "male",
-    category: "U-10",
-    photo: null,
+
+
+const [formData, setFormData] = useState({
+  name: "",
+  birthDate: "",
+  gender: "Male",
+  category: "",
+  phoneNumber: "",
+  address: "",
+  club: "",
+  photo: null,
+});
+
+
+const fetchKelompokUmur = async () => {
+  try {
+    const res = await api.get("/kelompok-umur"); // pastikan route ini sesuai
+    setKelompokUmurList(res.data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
+const handleExportPDF = async (athlete) => {
+  // set dulu atletnya
+  setSelectedAthlete(athlete);
+
+  // tunggu React render DOM
+  await new Promise((r) => setTimeout(r, 200));
+
+  const element = document.getElementById("athlete-card-pdf");
+  if (!element) return alert("Element PDF tidak ditemukan");
+
+  const canvas = await html2canvas(element, {
+    scale: 2,
+    backgroundColor: "#ffffff",
+    useCORS: true,
   });
+
+  const imgData = canvas.toDataURL("image/png");
+
+  const pdf = new jsPDF({
+    orientation: "portrait",
+    unit: "px",
+    format: [canvas.width, canvas.height],
+  });
+
+  pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+  pdf.save(`kartu-atlet-${athlete.name}.pdf`);
+};
+
+
+
+
 
   const [editingId, setEditingId] = useState(null);
 
@@ -37,34 +90,41 @@ export default function AthleteSetting() {
 
   useEffect(() => {
     fetchAthletes();
+    fetchKelompokUmur();
   }, []);
 
   // ======================
   // FORM HANDLER
   // ======================
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      birthDate: "",
-      gender: "male",
-      category: "U-10",
-      photo: null,
-    });
-    setEditingId(null);
-    setPreviewImage(null);
-  };
+const resetForm = () => {
+  setFormData({
+    name: "",
+    birthDate: "",
+    gender: "male",
+    category: "U-10",
+    phoneNumber: "",
+    address: "",
+    club: "",
+    photo: null,
+  });
+  setEditingId(null);
+  setPreviewImage(null);
+};
+
 
   const openForm = (athlete = null) => {
     if (athlete) {
       setFormData({
         name: athlete.name || "",
-        birthDate: athlete.birthDate
-          ? athlete.birthDate.slice(0, 10)
-          : "",
+        birthDate: athlete.birthDate ? athlete.birthDate.slice(0, 10) : "",
         gender: athlete.gender || "male",
         category: athlete.category || "U-10",
+        phoneNumber: athlete.phoneNumber || "",
+        address: athlete.address || "",
+        club: athlete.club || "",
         photo: null,
       });
+
 
       setEditingId(athlete.id);
 
@@ -131,7 +191,11 @@ const calculateAge = (birthDate) => {
     fd.append("birthDate", formData.birthDate);
     fd.append("gender", formData.gender);
     fd.append("category", formData.category);
+    fd.append("phoneNumber", formData.phoneNumber);
+    fd.append("address", formData.address);
+    fd.append("club", formData.club);
     if (formData.photo) fd.append("photo", formData.photo);
+
 
     if (editingId) {
       await api.put(`/athlete/update/${editingId}`, fd, {
@@ -259,13 +323,59 @@ const calculateAge = (birthDate) => {
               className="border border-gray-300 px-4 py-3 rounded-xl shadow-sm 
               focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none"
             >
-              {["U-10", "U-12", "U-14", "U-16", "Open"].map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="">-- Pilih Kategori --</option>
+
+              {kelompokUmurList.map((k) => (
+                <option key={k.id} value={k.nama}>
+                  {k.nama}
                 </option>
               ))}
+
             </select>
           </div>
+
+          {/* Phone Number */}
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold mb-1">No. Telp</label>
+            <input
+              type="text"
+              value={formData.phoneNumber}
+              onChange={(e) =>
+                setFormData({ ...formData, phoneNumber: e.target.value })
+              }
+              className="border border-gray-300 px-4 py-3 rounded-xl shadow-sm 
+              focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none"
+            />
+          </div>
+
+          {/* Address */}
+          <div className="flex flex-col md:col-span-2">
+            <label className="text-sm font-semibold mb-1">Alamat</label>
+            <input
+              type="text"
+              value={formData.address}
+              onChange={(e) =>
+                setFormData({ ...formData, address: e.target.value })
+              }
+              className="border border-gray-300 px-4 py-3 rounded-xl shadow-sm 
+              focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none"
+            />
+          </div>
+
+          {/* Club */}
+          <div className="flex flex-col">
+            <label className="text-sm font-semibold mb-1">Club / Pelatih</label>
+            <input
+              type="text"
+              value={formData.club}
+              onChange={(e) =>
+                setFormData({ ...formData, club: e.target.value })
+              }
+              className="border border-gray-300 px-4 py-3 rounded-xl shadow-sm 
+              focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none"
+            />
+          </div>
+
 
           {/* Photo */}
           <div className="flex flex-col">
@@ -292,85 +402,94 @@ const calculateAge = (birthDate) => {
 
       {/* TABLE */}
 
-<div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
-  <table className="min-w-full text-sm table-fixed">
-    <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider">
-      <tr>
-        <th className="px-5 py-3 text-center w-12">No</th>
-        <th className="px-5 py-3 text-left">Nama</th>
-        <th className="px-5 py-3 text-center w-32">Lahir</th>
-        <th className="px-5 py-3 text-center w-28">Gender</th>
-        <th className="px-5 py-3 text-center w-28">Kategori</th>
-        <th className="px-5 py-3 text-center w-24">Foto</th>
-        <th className="px-5 py-3 text-center w-32">Aksi</th>
-      </tr>
-    </thead>
+      <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
+        <table className="min-w-full text-sm table-fixed">
+          <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider">
+            <tr>
+              <th className="px-5 py-3 text-center w-16">No</th>
+              <th className="px-5 py-3 text-left">Nama</th>
+              <th className="px-5 py-3 text-left">Club</th>
+              <th className="px-5 py-3 text-center w-28">Kategori</th>
+              <th className="px-5 py-3 text-center w-24">Gender</th>
+              <th className="px-5 py-3 text-center w-24">Foto</th>
+              <th className="px-5 py-3 text-center w-32">Aksi</th>
+            </tr>
+          </thead>
 
-    <tbody className="divide-y divide-gray-100">
-      {paginatedData.map((a, i) => (
-        <tr key={a.id} className="hover:bg-yellow-50/50">
-          <td className="px-5 py-3 text-center">
-            {(currentPage - 1) * itemsPerPage + i + 1}
-          </td>
+          <tbody className="divide-y divide-gray-100">
+            {paginatedData.map((a, i) => (
+              <tr key={a.id} className="hover:bg-yellow-50/50">
+                <td className="px-5 py-3 text-center">
+                  {(currentPage - 1) * itemsPerPage + i + 1}
+                </td>
 
-          <td className="px-5 py-3 font-semibold text-left">
-            {a.name}
-          </td>
+                <td className="px-5 py-3 font-semibold text-left">
+                  {a.name}
+                </td>
 
-          <td className="px-5 py-3 text-center">
-            {a.birthDate?.slice(0, 10)}
-          </td>
+                <td className="px-5 py-3 text-left">
+                  {a.club || "-"}
+                </td>
 
-          <td className="px-5 py-3 text-center capitalize">
-            {a.gender}
-          </td>
+                <td className="px-5 py-3 text-center">
+                  {a.category}
+                </td>
 
-          <td className="px-5 py-3 text-center">
-            {a.category}
-          </td>
+                <td className="px-5 py-3 text-center capitalize">
+                  {a.gender}
+                </td>
 
-          <td className="px-5 py-3 text-center">
-            {a.photo ? (
-              <img
-                src={a.photo}
-                className="w-16 h-16 object-cover rounded mx-auto"
-              />
-            ) : (
-              "-"
-            )}
-          </td>
+                <td className="px-5 py-3 text-center">
+                  {a.photo ? (
+                    <img
+                      src={a.photo}
+                      className="w-14 h-14 object-cover rounded mx-auto"
+                    />
+                  ) : (
+                    "-"
+                  )}
+                </td>
 
-          <td className="px-5 py-3">
-            <div className="flex gap-2 justify-center">
-              <button
-                onClick={() => openForm(a)}
-                className="bg-yellow-500 text-white px-3 py-2 rounded-lg"
-              >
-                <Edit size={16} />
-              </button>
+                <td className="px-5 py-3">
+                  <div className="flex gap-2 justify-center">
+                    <button
+                      onClick={() => openForm(a)}
+                      className="bg-yellow-500 text-white px-3 py-2 rounded-lg"
+                      title="Edit"
+                    >
+                      <Edit size={16} />
+                    </button>
 
-              <button
-                onClick={() => handleDelete(a.id)}
-                className="bg-red-600 text-white px-3 py-2 rounded-lg"
-              >
-                <PlusCircle size={16} />
-              </button>
+                    <button
+                      onClick={() => handleDelete(a.id)}
+                      className="bg-red-600 text-white px-3 py-2 rounded-lg"
+                      title="Hapus"
+                    >
+                      <Trash2 size={16} />
+                    </button>
 
-              {a.photo && (
-                <button
-                  onClick={() => setPreviewImage(a.photo)}
-                  className="bg-blue-500 text-white px-3 py-2 rounded-lg"
-                >
-                  <Image size={16} />
-                </button>
-              )}
-            </div>
-          </td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+                    <button
+                      onClick={() => handleExportPDF(a)}
+                      className="bg-green-600 text-white px-3 py-2 rounded-lg"
+                    >
+                      <FileDown size={16} />
+                    </button>
+
+                   <button
+                      onClick={() => setPreviewImage(a.photo)}
+                      className="bg-blue-500 text-white px-3 py-2 rounded-lg"
+                      title="Preview"
+                    >
+                      <Image size={16} />
+                    </button>
+
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {/* PAGINATION */}
       {totalPages > 1 && (
@@ -392,18 +511,119 @@ const calculateAge = (birthDate) => {
       )}
 
       {/* PREVIEW */}
-      {previewImage && (
+     {previewImage && (
+  <div
+    className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+    onClick={() => setPreviewImage(null)}
+  >
+    <div
+      className="relative"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {/* BUTTON CLOSE */}
+      <button
+        onClick={() => setPreviewImage(null)}
+        className="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white 
+                   w-8 h-8 rounded-full flex items-center justify-center shadow-lg"
+      >
+        ✕
+      </button>
+
+      {/* IMAGE */}
+      <img
+        src={previewImage}
+        className="max-h-[90vh] rounded-xl shadow-2xl"
+      />
+    </div>
+  </div>
+)}
+
+
+  {selectedAthlete && (
+      <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
-          onClick={() => setPreviewImage(null)}
+          id="athlete-card-pdf"
+          style={{
+            width: "300px",
+            padding: "16px",
+            background: "#ffffff",
+            color: "#000000",
+            fontFamily: "Arial, sans-serif",
+            border: "2px solid #000",
+            borderRadius: "10px"
+          }}
         >
-          <img
-            src={previewImage}
-            className="max-h-[90vh] rounded"
-            onClick={(e) => e.stopPropagation()}
-          />
+
+          {/* FOTO */}
+          <div
+            style={{
+              height: "250px",
+              background: "#f3f4f6",
+              borderRadius: "8px",
+              overflow: "hidden",
+              marginBottom: "10px"
+            }}
+          >
+            {selectedAthlete.photo ? (
+              <img
+                src={selectedAthlete.photo}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover"
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "12px",
+                  color: "#666"
+                }}
+              >
+                Tidak ada foto
+              </div>
+            )}
+          </div>
+
+          {/* INFO */}
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "16px", fontWeight: "bold" }}>
+              {selectedAthlete.name}
+            </div>
+
+            <div style={{ fontSize: "12px", marginBottom: "6px" }}>
+              {selectedAthlete.category}
+            </div>
+
+            <div style={{ fontSize: "12px" }}>
+              Gender: {selectedAthlete.gender}
+            </div>
+            <div style={{ fontSize: "12px" }}>
+              Club: {selectedAthlete.club || "-"}
+            </div>
+            <div style={{ fontSize: "12px" }}>
+              No Telp: {selectedAthlete.phoneNumber || "-"}
+            </div>
+
+            <div
+              style={{
+                fontSize: "10px",
+                marginTop: "10px",
+                color: "#888"
+              }}
+            >
+              PELTI DENPASAR
+            </div>
+          </div>
         </div>
-      )}
+      </div>
+    )}
+
     </div>
   );
 }

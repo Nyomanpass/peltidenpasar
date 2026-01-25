@@ -10,7 +10,7 @@ export default function DashboardLayout() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar isOpen={isOpen} />
-      <div className="flex-1 md:ml-64">
+      <div className="flex-1 md:ml-72">
         <NavbarDashboard toggleSidebar={() => setIsOpen(!isOpen)}/>
         <main className="p-6 pt-28 md:pt-28">
           <Outlet />

@@ -109,11 +109,12 @@ const handleReject = async (id, message) => {
 
   return (
     <>
-      <nav className="w-full bg-white border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between 
+    <nav className="w-full bg-white border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between 
         fixed top-0 left-0 z-50
-        md:left-64 md:w-[calc(100%-16rem)]
+        md:left-72 md:w-[calc(100%-18rem)]
         transition-all duration-300">
-        
+
+
         {/* KIRI: Logo, Toggle Menu, dan Judul */}
         <div className="flex items-center gap-4">
           <button

@@ -23,7 +23,9 @@ function PesertaGanda() {
 
   const [collapsedPlayers, setCollapsedPlayers] = useState({});
 
-  
+  const [modalSearchTerm, setModalSearchTerm] = useState("");
+
+
 
   const toggleModalGroup = (id) => {
     setCollapsedPlayers(prev => ({ ...prev, [id]: !prev[id] }));
@@ -70,10 +72,15 @@ function PesertaGanda() {
     setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const pairedPlayerIds = doubleTeams.reduce((acc, team) => {
-    acc.push(team.player1Id, team.player2Id);
+  const pairedMap = doubleTeams.reduce((acc, team) => {
+    if (!acc[team.kelompokUmurId]) {
+      acc[team.kelompokUmurId] = new Set();
+    }
+    acc[team.kelompokUmurId].add(team.player1Id);
+    acc[team.kelompokUmurId].add(team.player2Id);
     return acc;
-  }, []);
+  }, {});
+
 
   const handlePasangkan = async () => {
     try {
@@ -92,6 +99,16 @@ function PesertaGanda() {
       alert(err.response?.data?.msg || "Gagal menyimpan tim");
     }
   };
+
+
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setModalSearchTerm(""); 
+    setSelectedPlayers([]);  
+    setCollapsedPlayers({}); 
+  };
+
 
   const handleDeleteTeam = async (id) => {
     if (!window.confirm("Yakin mau hapus tim ganda ini?")) return;
@@ -270,18 +287,27 @@ function PesertaGanda() {
                       <tr key={team.id} className="hover:bg-blue-50/30 transition-colors">
                         <td className="px-6 py-3 text-sm text-gray-400">{index + 1}</td>
                         <td className="px-6 py-3">
-                          <div className="flex flex-col">
-                            <span className="text-sm font-bold text-gray-800 tracking-tight">
-                              {team.Player1?.namaLengkap}
-                            </span>
+                          <div className="flex flex-col gap-1">
+                            
+                            {/* Player 1 */}
+                            <div className="flex items-center gap-2">
+                              <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                              <span className="text-sm font-bold text-gray-800 tracking-tight">
+                                {team.Player1?.namaLengkap}
+                              </span>
+                            </div>
+
+                            {/* Player 2 */}
                             <div className="flex items-center gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
                               <span className="text-sm font-bold text-gray-800 tracking-tight">
                                 {team.Player2?.namaLengkap}
                               </span>
                             </div>
+
                           </div>
                         </td>
+
                         <td className="px-6 py-3">
                           <div className="flex justify-center gap-2">
                             {isAdmin ? (
@@ -347,10 +373,27 @@ function PesertaGanda() {
 
                 {/* 2. PILIH 2 PEMAIN */}
               {/* 2. PILIH 2 PEMAIN (SISTEM CARD COLLAPSIBLE DI DALAM MODAL) */}
+               {/* 2. PILIH 2 PEMAIN (DENGAN FITUR SEARCH) */}
                 <div className="md:col-span-2 space-y-4">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block mb-4">
-                    2. Pilih 2 Pemain (Tersedia)
-                  </label>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      2. Pilih 2 Pemain (Tersedia)
+                    </label>
+                    
+                    {/* INPUT SEARCH DALAM MODAL */}
+                    {selectedTargetKU && (
+                      <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                        <input
+                          type="text"
+                          placeholder="Cari nama pemain..."
+                          className="w-full pl-9 pr-4 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-xs transition-all"
+                          value={modalSearchTerm}
+                          onChange={(e) => setModalSearchTerm(e.target.value)}
+                        />
+                      </div>
+                    )}
+                  </div>
 
                   {!selectedTargetKU ? (
                     <div className="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
@@ -360,18 +403,22 @@ function PesertaGanda() {
                   ) : (
                     <div className="space-y-4">
                       {kelompokUmur.map((group) => {
-                        // Filter peserta yang belum berpasangan
-                        const availableInGroup = (group.peserta || []).filter(p => !pairedPlayerIds.includes(p.id));
-                        
+                        const pairedInSelectedKU = pairedMap[selectedTargetKU] || new Set();
+
+                        // LOGIKA FILTER: Filter yang belum berpasangan DAN filter berdasarkan Nama
+                        const availableInGroup = (group.peserta || []).filter(p => {
+                          const matchesSearch = p.namaLengkap.toLowerCase().includes(modalSearchTerm.toLowerCase());
+                          const isNotPaired = !pairedInSelectedKU.has(p.id);
+                          return matchesSearch && isNotPaired;
+                        });
+
+                        // Jangan tampilkan kategori jika tidak ada pemain yang cocok dengan pencarian
                         if (availableInGroup.length === 0) return null;
 
-                        // Gunakan state collapsedPlayers untuk handle buka tutup per group di modal
                         const isCollapsed = collapsedPlayers[group.id];
 
                         return (
                           <div key={group.id} className="border border-gray-200 rounded-2xl overflow-hidden shadow-sm bg-white">
-                            
-                            {/* Header Kelompok Umur (Gaya Identik dengan Peserta Single) */}
                             <button 
                               type="button"
                               onClick={() => toggleModalGroup(group.id)}
@@ -386,15 +433,12 @@ function PesertaGanda() {
                               {isCollapsed ? <ChevronDown size={18} className="text-gray-400" /> : <ChevronUp size={18} className="text-gray-400" />}
                             </button>
 
-                            {/* Isi Daftar Pemain (Bisa di-hide) */}
                             {!isCollapsed && (
                               <div className="p-4 bg-white border-t border-gray-100">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   {availableInGroup.map((p) => {
                                     const targetKU = masterKU.find(m => m.id === selectedTargetKU);
                                     const umurPemain = hitungUmur(p.tanggalLahir);
-                                    
-                                    // Logika: Jika umur pemain > kategori target ganda, maka dilarang
                                     const isTooOld = targetKU && umurPemain > targetKU.umur;
                                     const isDisabled = isTooOld;
 
@@ -435,6 +479,18 @@ function PesertaGanda() {
                           </div>
                         );
                       })}
+                      
+                      {/* Pesan jika benar-benar tidak ada hasil dari search di semua kategori */}
+                      {modalSearchTerm && kelompokUmur.every(group => 
+                        !(group.peserta || []).some(p => 
+                          p.namaLengkap.toLowerCase().includes(modalSearchTerm.toLowerCase()) && 
+                          !(pairedMap[selectedTargetKU] || new Set()).has(p.id)
+                        )
+                      ) && (
+                        <div className="text-center py-10">
+                          <p className="text-gray-400 text-sm italic">Pemain "{modalSearchTerm}" tidak ditemukan atau sudah memiliki tim.</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

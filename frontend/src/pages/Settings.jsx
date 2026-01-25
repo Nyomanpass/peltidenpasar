@@ -121,7 +121,7 @@ export default function Settings() {
   return (
 <div className="font-sans bg-gray-50 min-h-screen">
 
-  <div className="space-y-12 max-w-5xl mx-auto">
+  <div className="space-y-12 mx-auto">
     
     {/* --- 1. SETTINGS KELOMPOK UMUR --- */}
     <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100">

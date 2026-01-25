@@ -132,7 +132,7 @@ function SkorPage() {
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 text-slate-900 font-sans">
       
-      <div className="max-w-6xl mx-auto mb-10">
+      <div className="mx-auto mb-10">
         <div className="mb-8">
           <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
             <Trophy className="text-yellow-500" size={32} /> HASIL PERTANDINGAN
@@ -204,7 +204,7 @@ function SkorPage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="mx-auto space-y-6">
         {isLoading ? (
           <div className="text-center py-20 font-black text-slate-300 animate-pulse uppercase tracking-[0.3em]">Memuat Riwayat...</div>
         ) : filteredMatches.length === 0 ? (

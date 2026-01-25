@@ -23,7 +23,7 @@ export default function BaganView({baganId}) {
   const role = localStorage.getItem('role')
   const tournamentId = localStorage.getItem("selectedTournament");
   const finalId = baganId || id;
-  const isRoundRobin = bagan?.Matches?.length === 6;
+  const isRoundRobin = bagan?.tipe === "roundrobin";
   const [isLocked, setIsLocked] = useState(false);
 
 
@@ -85,64 +85,84 @@ export default function BaganView({baganId}) {
 
   // Export PDF yang diperbaiki
 const handleExportPDF = async () => {
-  console.log("Cek data bagan:", bagan); // LIHAT DI CONSOLE BROWSER
-  const element = document.getElementById("bracket-container");
-  
-  if (!element || !bagan) return;
+  const bracketEl = document.getElementById("bracket-container");
+  const ketPdfEl = document.getElementById("keterangan-pdf");
+
+  if (!bracketEl || !bagan) return;
 
   try {
-    const canvas = await html2canvas(element, {
+    /* =========================
+       1️⃣ CAPTURE BRACKET (HALAMAN 1)
+    ========================= */
+    const bracketCanvas = await html2canvas(bracketEl, {
       scale: 2,
       useCORS: true,
       backgroundColor: "#ffffff"
     });
 
-    const imgData = canvas.toDataURL("image/jpeg", 1.0);
-    const imgWidthPt = element.scrollWidth * 0.75;
-    const imgHeightPt = element.scrollHeight * 0.75;
-    
-    const paddingTop = 120; 
-    const pdfWidth = imgWidthPt + 60; 
-    const pdfHeight = imgHeightPt + paddingTop + 60;
+    const bracketImg = bracketCanvas.toDataURL("image/jpeg", 1.0);
+    const bw = bracketCanvas.width * 0.75;
+    const bh = bracketCanvas.height * 0.75;
+
+    const paddingTop = 120;
+    const pdfWidth = bw + 60;
+    const pdfHeight = bh + paddingTop + 60;
 
     const pdf = new jsPDF({
-      orientation: imgWidthPt > imgHeightPt ? "l" : "p",
+      orientation: bw > bh ? "l" : "p",
       unit: "pt",
       format: [pdfWidth, pdfHeight]
     });
 
-    // --- LOGIKA PENGECEKAN DATA ---
-    // Coba ambil dari Tournament.name, jika tidak ada cek properti lain, 
-    // jika tetap tidak ada baru pakai fallback "PELTI DENPASAR"
-    const namaTurnamen = bagan.Tournament?.name || bagan.tournament_name || "PELTI DENPASAR";
+    /* =========================
+       2️⃣ HEADER
+    ========================= */
+    const namaTurnamen =
+      bagan.Tournament?.name || bagan.tournament_name || "PELTI DENPASAR";
     const namaKategori = bagan.nama || "Kategori Umum";
 
-    // 1. Nama Turnamen (Header Utama)
     pdf.setFontSize(26);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(20, 50, 100); // Warna Biru Tua
-    pdf.text(namaTurnamen.toUpperCase(), pdfWidth / 2, 50, { align: 'center' });
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(20, 50, 100);
+    pdf.text(namaTurnamen.toUpperCase(), pdfWidth / 2, 50, { align: "center" });
 
-    // 2. Kategori (Sub-header)
     pdf.setFontSize(18);
-    pdf.setFont('helvetica', 'normal');
+    pdf.setFont("helvetica", "normal");
     pdf.setTextColor(60, 60, 60);
-    pdf.text(namaKategori, pdfWidth / 2, 80, { align: 'center' });
+    pdf.text(namaKategori, pdfWidth / 2, 80, { align: "center" });
 
-    // Garis Pemisah
-    pdf.setDrawColor(200, 200, 200);
-    pdf.setLineWidth(1);
+    pdf.setDrawColor(200);
     pdf.line(50, 95, pdfWidth - 50, 95);
 
-    // 3. Masukkan Bagan
-    pdf.addImage(imgData, 'JPEG', 30, paddingTop, imgWidthPt, imgHeightPt);
+    pdf.addImage(bracketImg, "JPEG", 30, paddingTop, bw, bh);
 
-    pdf.save(`Bagan-${namaKategori.replace(/\s+/g, '-')}.pdf`);
+    /* =========================
+       3️⃣ HALAMAN 2 – KETERANGAN (AMAN)
+    ========================= */
+    if (ketPdfEl) {
+        ketPdfEl.style.display = "block";
 
-  } catch (error) {
-    console.error("Export Error:", error);
+        const canvas = await html2canvas(ketPdfEl, {
+          scale: 2,
+          backgroundColor: "#ffffff"
+        });
+
+        const w = canvas.width * 0.75;
+        const h = canvas.height * 0.75;
+
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 30, 40, w, h);
+
+        ketPdfEl.style.display = "none";
+      }
+
+    pdf.save(`Bagan-${namaKategori.replace(/\s+/g, "-")}.pdf`);
+  } catch (err) {
+    console.error("Export PDF Error:", err);
   }
 };
+
+
 
 const handleLockBagan = async () => {
   const confirmLock = window.confirm(
@@ -427,9 +447,179 @@ const handleLockBagan = async () => {
           )}
         </div>
 
+        {/* ===== KETERANGAN KHUSUS PDF (TANPA TAILWIND) ===== */}
+        <div
+          id="keterangan-pdf"
+          style={{
+            background: "#ffffff",
+            padding: "32px",
+            fontFamily: "Arial, Helvetica, sans-serif",
+            display: "none",
+            width: "100%"
+          }}
+        >
+
+          {/* JUDUL */}
+          <div style={{ marginBottom: 24 }}>
+            <h3 style={{ fontSize: 20, marginBottom: 6, color: "#1f2937" }}>
+              Keterangan Penempatan
+            </h3>
+            <p style={{ fontSize: 13, color: "#6b7280" }}>
+              Seeding & Plotting Peserta
+            </p>
+          </div>
+
+          {/* GRID 2 KOLOM */}
+          <div style={{ display: "flex", gap: 32 }}>
+            
+            {/* KOLOM SEED */}
+            <div
+              style={{
+                flex: 1,
+                border: "1px solid #fde68a",
+                background: "#fffbeb",
+                borderRadius: 12,
+                padding: 16
+              }}
+            >
+              <div style={{ marginBottom: 12 }}>
+                <strong style={{ color: "#92400e" }}>Peserta Unggulan (Seeded)</strong>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {bagan.Matches.filter(m => m.round === 1)
+                  .flatMap(m => {
+                    const arr = [];
+                    if (m.peserta1?.isSeeded) arr.push(m.peserta1.namaLengkap);
+                    if (m.peserta2?.isSeeded) arr.push(m.peserta2.namaLengkap);
+                    return arr;
+                  })
+                  .map((n, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      position: "relative",          // 🔥 WAJIB
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "8px 44px 8px 12px",   // kanan diperbesar
+                      background: "#ffffff",
+                      border: "1px solid #fde68a",
+                      borderRadius: 8,
+                      minHeight: 36
+                    }}
+                  >
+
+                     <span style={{ fontSize: 13, color: "#1f2937" }}>
+                      {n}
+                    </span>
+
+                    <span
+                      style={{
+                        position: "absolute",   // 🔥 LEPAS DARI BASELINE
+                        right: 12,
+                        top: "50%",
+                        transform: "translateY(-50%)", // 🔥 CENTER VERTIKAL FIX
+                        fontSize: 10,
+                        color: "#92400e",
+                        padding: "3px 10px",
+                        borderRadius: 999,
+                        fontWeight: "bold",
+                        lineHeight: 1,
+                        height: 18,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      SEED
+                    </span>
+
+
+
+                    </div>
+                  ))}
+              </div>
+            </div>
+
+            {/* KOLOM PLOTTING */}
+            <div
+              style={{
+                flex: 1,
+                border: "1px solid #e5e7eb",
+                background: "#f9fafb",
+                borderRadius: 12,
+                padding: 16
+              }}
+            >
+              <strong style={{ color: "#1f2937" }}>Penempatan Khusus</strong>
+              <p style={{ fontSize: 13, color: "#4b5563", marginTop: 10, lineHeight: 1.5 }}>
+                Beberapa peserta ditempatkan secara manual untuk menghindari
+                pertemuan dini antar rekan satu tim atau instansi yang sama.
+              </p>
+            </div>
+          </div>
+
+          {/* FOOTER */}
+          <div
+            style={{
+              marginTop: 32,
+              paddingTop: 12,
+              borderTop: "1px solid #e5e7eb",
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: 10,
+              color: "#6b7280"
+            }}
+          >
+            <span>PELTI DENPASAR OFFICIAL SYSTEM</span>
+            <span>{new Date().toLocaleString("id-ID")}</span>
+          </div>
+
+          {juara && (
+            <div
+              style={{
+                marginTop: 32,
+                padding: "24px",
+                borderRadius: 14,
+                border: "2px solid #facc15",
+                background: "#fffbeb",
+                textAlign: "center"
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 22,
+                  fontWeight: "bold",
+                  color: "#ca8a04",
+                  marginBottom: 6
+                }}
+              >
+                🏆 Juara
+              </div>
+
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: "#111827",
+                  marginBottom: 10
+                }}
+              >
+                {juara}
+              </div>
+            </div>
+          )}
+
+        </div>
+
+
         {/* Hanya tampil jika BUKAN Round Robin */}
         {!isRoundRobin && (
-          <div className="mt-16 border-t-2 border-gray-100 pt-8 px-6">
+           <div
+                id="keterangan-container"
+                className="mt-16 border-t-2 border-gray-100 pt-8 px-6 bg-white"
+              >
+
             <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
               <Info size={22} className="text-blue-500" /> 
               Keterangan Penempatan (Seeding & Plotting)
@@ -541,33 +731,46 @@ const handleLockBagan = async () => {
 
       {/* Loading Modal Pop-up */}
       {isSeedingLoading && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl flex flex-col items-center">
-            <svg 
-                className="animate-spin h-16 w-16 text-purple-600" 
-                xmlns="http://www.w3.org/2000/svg" 
-                fill="none" 
-                viewBox="0 0 24 24"
-            >
-              <circle 
-                className="opacity-25" 
-                cx="12" 
-                cy="12" 
-                r="10" 
-                stroke="currentColor" 
-                strokeWidth="4"
-              ></circle>
-              <path 
-                className="opacity-75" 
-                fill="currentColor" 
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              ></path>
-            </svg>
-            <p className="mt-4 text-xl font-semibold text-gray-700">Sedang melakukan pengundian...</p>
-            <p className="mt-2 text-sm text-gray-500">Mohon tunggu sebentar.</p>
-          </div>
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md">
+    
+    <div className="relative bg-white rounded-3xl px-14 py-12 shadow-[0_30px_80px_rgba(0,0,0,0.4)] flex flex-col items-center w-[420px]">
+
+      {/* LOADER BESAR */}
+      <div className="relative w-28 h-28 mb-8">
+        <div className="absolute inset-0 rounded-full border-[6px] border-yellow-400/30"></div>
+        <div className="absolute inset-0 rounded-full border-[6px] border-yellow-500 border-t-transparent animate-spin"></div>
+
+        <div className="absolute inset-4 rounded-full bg-yellow-50 flex items-center justify-center shadow-inner">
+          <span className="text-3xl">🎾</span>
         </div>
-      )}
+      </div>
+
+      {/* JUDUL */}
+      <h2 className="text-2xl font-extrabold text-gray-800 tracking-wide text-center">
+        Sedang Melakukan Pengundian
+      </h2>
+
+      {/* SUBTITLE */}
+      <p className="mt-3 text-base text-gray-500 text-center leading-relaxed max-w-sm">
+        Sistem sedang menyusun bagan pertandingan secara otomatis dan adil
+      </p>
+
+      {/* DOT PROGRESS */}
+      <div className="flex gap-2 mt-6">
+        <span className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+        <span className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+        <span className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce" />
+      </div>
+
+      {/* FOOTER */}
+      <div className="mt-8 text-xs text-gray-400 tracking-widest uppercase">
+        PELTI DENPASAR OFFICIAL SYSTEM
+      </div>
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 }

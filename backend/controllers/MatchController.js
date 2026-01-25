@@ -181,13 +181,19 @@ export const generateUndian = async (req, res) => {
     }
 
     // 5. Plotting Seeded ke slot bracket
+    // 5. Plotting peserta ke slot (seed & non-seed manual)
+    const plottedIds = new Set(); // 🔥 PENENTU UTAMA
+
     seededPeserta.forEach(p => {
       const idx = p.slot - 1;
       if (idx >= 0 && idx < bracketSize) {
-        initialSlots[idx] = Number(p.id);
+        const pid = Number(p.id);
+        initialSlots[idx] = pid;
         assignedSlots.add(idx);
+        plottedIds.add(pid); // 🔥 CEGAH DOBEL
       }
     });
+
 
     // 6. Plotting BYE
     let byeCount = bracketSize - allPeserta.length;
@@ -197,9 +203,10 @@ export const generateUndian = async (req, res) => {
     // Gunakan variabel idsYangAkanJadiSeed untuk memfilter
     const nonSeededIds = shuffle(
       allPeserta
-        .filter(p => !idsYangAkanJadiSeed.includes(Number(p.id)))
+        .filter(p => !plottedIds.has(Number(p.id))) // 🔥 FIX UTAMA
         .map(p => p.id)
     );
+
     // --- AKHIR PERBAIKAN ---
 
     let poolIdx = 0;

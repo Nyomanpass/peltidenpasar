@@ -140,7 +140,7 @@ function Tournament() {
   };
 
   return (
-  <div className="max-w-6xl mx-auto"> {/* Max width sedikit diperluas */}
+  <div className="mx-auto"> {/* Max width sedikit diperluas */}
 
     {/* --- FORM SECTION --- */}
     <div className="bg-white p-8 rounded-2xl shadow-2xl mb-10 border border-gray-100">
@@ -234,8 +234,8 @@ function Tournament() {
                     onChange={handleChange}
                     className="border border-gray-300 p-3 rounded-lg bg-white"
                 >
-                    <option value="gratis">Gratis</option>
-                    <option value="berbayar">Berbayar</option>
+                    <option value="gratis">Local</option>
+                    <option value="berbayar">Nasional</option>
                 </select>
             </div>
 

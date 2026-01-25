@@ -53,9 +53,17 @@ export const getAthleteById = async (req, res) => {
 // ======================
 export const createAthlete = async (req, res) => {
   try {
-    const { name, birthDate, gender, category } = req.body;
-    let photoPath = null;
+    const {
+      name,
+      birthDate,
+      gender,
+      category,
+      phoneNumber,
+      address,
+      club
+    } = req.body;
 
+    let photoPath = null;
     if (req.file) {
       photoPath = `/uploads/athlete/${req.file.filename}`;
     }
@@ -65,6 +73,9 @@ export const createAthlete = async (req, res) => {
       birthDate,
       gender,
       category,
+      phoneNumber,
+      address,
+      club,
       photo: photoPath,
     });
 
@@ -89,7 +100,15 @@ export const updateAthlete = async (req, res) => {
       return res.status(404).json({ message: "Athlete tidak ditemukan" });
     }
 
-    const { name, birthDate, gender, category } = req.body;
+    const {
+      name,
+      birthDate,
+      gender,
+      category,
+      phoneNumber,
+      address,
+      club
+    } = req.body;
 
     // Jika upload foto baru → hapus lama
     if (req.file) {
@@ -104,6 +123,9 @@ export const updateAthlete = async (req, res) => {
     athlete.birthDate = birthDate;
     athlete.gender = gender;
     athlete.category = category;
+    athlete.phoneNumber = phoneNumber;
+    athlete.address = address;
+    athlete.club = club;
 
     await athlete.save();
 

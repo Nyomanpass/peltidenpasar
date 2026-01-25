@@ -62,8 +62,8 @@ function Sidebar({ isOpen }) {
     { label: "Peserta", path: "/admin/peserta", icon: <Users size={20} /> },
     { label: "Bagan", path: "/admin/bagan-peserta", icon: <List size={20} /> },
     { label: "Jadwal Pertandingan", path: "/admin/jadwal-pertandingan", icon: <Calendar size={20} /> },
-    { label: "Hasil Pertandingan", path: "/admin/hasil-pertandingan", icon: <Trophy size={20} /> },
     { label: "Skor", path: "/admin/skor", icon: <ClipboardList size={20} /> },
+    { label: "Hasil Pertandingan", path: "/admin/hasil-pertandingan", icon: <Trophy size={20} /> },
     { label: "Tournament", path: "/admin/tournament", icon: <Award size={20} />},
     { label: "Game Settings", path: "/admin/settings", icon: <Settings size={20} /> },
     { label: "UI Settings", path: "/admin/uisettings", icon: <Monitor size={20} /> },
@@ -80,97 +80,105 @@ function Sidebar({ isOpen }) {
 
   return (
     <aside
-      className={`
-        fixed top-0 left-0 h-screen w-64 bg-secondary shadow-xl z-50
-        border-r border-gray-200
-        transform transition-transform duration-300 ease-in-out
-        ${isOpen ? "translate-x-0" : "-translate-x-full"} 
-        md:translate-x-0
-      `}
-    >
-      <nav className="px-4 mt-3">
-        {/* --- BLOK PEMILIHAN TOURNAMENT (GAYA MENU ACCORDION) --- */}
-        <div className="mb-6">
-          <button
-            onClick={() => setIsTournamentListOpen(!isTournamentListOpen)}
-            className="flex items-center justify-between w-full p-3 rounded-lg text-white font-bold hover:bg-primary/80 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <List size={20} className="text-white" />
-              <span className="text-md">Pilih Tournament</span>
-            </div>
-            {isTournamentListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </button>
+  className={`
+    fixed top-0 left-0 h-screen w-72 bg-secondary shadow-xl z-50
+    border-r border-gray-200
+    flex flex-col
+    transform transition-transform duration-300 ease-in-out
+    ${isOpen ? "translate-x-0" : "-translate-x-full"} 
+    md:translate-x-0
+  `}
+>
+  {/* ===== SCROLL AREA ===== */}
+  <nav className="px-4 mt-3 flex-1 overflow-y-auto">
 
-          {isTournamentListOpen && (
-            <ul className="mt-1 space-y-1 bg-white/20 rounded-lg p-2"> 
-
-
-              {/* Daftar Tournament Aktif */}
-              {tournaments.map((t) => (
-                <li key={t.id}>
-                  <button
-                    onClick={() => handleTournamentSelect(t)}
-                    className={`
-                      w-full text-left p-3 rounded-md text-sm transition-colors 
-                      ${selectedTournament === t.id 
-                        ? "bg-primary/80 text-white" 
-                        : "text-gray-200 hover:bg-primary/80"}
-                    `}
-                  >
-                    {t.name}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+    {/* ===============================
+        BLOK PILIH TOURNAMENT (ACCORDION)
+    =============================== */}
+    <div className="mb-6">
+      <button
+        onClick={() => setIsTournamentListOpen(!isTournamentListOpen)}
+        className="
+          flex items-center justify-between w-full p-3 rounded-lg
+          text-white font-bold
+          hover:bg-primary/80 transition-colors
+        "
+      >
+        <div className="flex items-center gap-3">
+          <List size={20} className="text-white" />
+          <span className="text-md">Pilih Tournament</span>
         </div>
-        {/* --- END BLOK PEMILIHAN TOURNAMENT BARU --- */}
-       {/* Menu List Utama */}
-      <ul className="space-y-1 mt-6 border-t border-white pt-4">
-        {menuItems.map((item) => {
-          // LOGIKA PENGECEKAN AKTIF
-          const currentPath = location.pathname;
-          
-          // 1. Cek apakah path sama persis
-          const isExact = currentPath === item.path;
-          
-          // 2. Cek untuk sub-halaman Peserta
-          const isPesertaDetail = item.label === "Peserta" && (
-            currentPath.includes("detail-peserta") || 
-            currentPath.includes("peserta-ganda") // <--- Tambahkan ini agar menu Peserta aktif saat di Peserta Ganda
-          );
-          
-          // 3. Cek untuk sub-halaman Bagan
-          const isBaganView = item.label === "Bagan" && currentPath.includes("bagan-view");
+        {isTournamentListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+      </button>
 
-          // Gabungkan semua kondisi
-          const isActive = isExact || isPesertaDetail || isBaganView;
-
-          return (
-            <li key={item.path}>
-              <Link
-                to={item.path}
+      {isTournamentListOpen && (
+        <ul
+          className="
+            mt-2 space-y-1 bg-black/20 rounded-lg p-2
+            max-h-56 overflow-y-auto
+          "
+        >
+          {tournaments.map((t) => (
+            <li key={t.id}>
+              <button
+                onClick={() => handleTournamentSelect(t)}
                 className={`
-                  flex items-center gap-4 mb-5 p-3 rounded-lg text-md font-medium
+                  w-full text-left p-3 rounded-md text-sm
                   transition-all duration-150
-                  ${isActive
-                    ? "bg-primary/80 text-white shadow-md" 
-                    : "text-white hover:bg-white/30 hover:text-white"}
+                  ${selectedTournament === t.id
+                    ? "bg-primary text-white font-bold"
+                    : "text-gray-200 hover:bg-primary/80 hover:pl-4"}
                 `}
               >
-                <span className="text-white">
-                  {item.icon}
-                </span>
-                {item.label}
-              </Link>
+                {t.name}
+              </button>
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      )}
+    </div>
 
-      </nav>
-    </aside>
+    {/* ===============================
+        MENU UTAMA
+    =============================== */}
+    <ul className="space-y-1 mt-6 border-t border-white/30 pt-4">
+      {menuItems.map((item) => {
+        const currentPath = location.pathname;
+
+        const isExact = currentPath === item.path;
+
+        const isPesertaDetail =
+          item.label === "Peserta" &&
+          (currentPath.includes("detail-peserta") ||
+           currentPath.includes("peserta-ganda"));
+
+        const isBaganView =
+          item.label === "Bagan" && currentPath.includes("bagan-view");
+
+        const isActive = isExact || isPesertaDetail || isBaganView;
+
+        return (
+          <li key={item.path}>
+            <Link
+              to={item.path}
+              className={`
+                flex items-center gap-4 mb-3 p-3 rounded-lg text-md font-medium
+                transition-all duration-150
+                ${isActive
+                  ? "bg-primary/80 text-white shadow-md"
+                  : "text-white hover:bg-white/30 hover:text-white"}
+              `}
+            >
+              <span className="text-white">{item.icon}</span>
+              {item.label}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  </nav>
+</aside>
+
   );
 }
 
