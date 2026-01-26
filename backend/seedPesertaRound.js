@@ -12,11 +12,12 @@ const seedPesertaRound = async () => {
       "Siti Aminah", 
       "Dewi Lestari", 
       "Siska Amelia", 
-      "Indah Permata"
+      "Indah Permata",
+      "Rina Suryani"  
     ];
 
     const dataPeserta = [];
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       const randomWA = "0813" + Math.floor(10000000 + Math.random() * 90000000);
       
       dataPeserta.push({
@@ -24,7 +25,7 @@ const seedPesertaRound = async () => {
         nomorWhatsapp: randomWA,
         tanggalLahir: "2007-05-20", // Contoh tanggal lahir
         kelompokUmurId: 2,          // Target ID 2
-        tournamentId: 10,   
+        tournamentId: 1,   
         fotoKartu: "wanita-ktp.jpg",
         buktiBayar: "wanita-bukti.jpg",
         status: "verified",

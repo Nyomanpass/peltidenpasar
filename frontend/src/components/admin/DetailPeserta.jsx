@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api";
-import { ArrowLeft, User, Phone, Calendar, Users, FileText, CheckCircle, X, Bell, XCircle, Send } from "lucide-react";
+import { ArrowLeft, User, Phone, Calendar, Users, FileText, CheckCircle, X, Bell, XCircle, Send, Pencil } from "lucide-react";
 
 export default function DetailPeserta() {
   const { id } = useParams();
@@ -15,13 +15,54 @@ export default function DetailPeserta() {
   // State baru untuk fitur Tolak
   const [isRejecting, setIsRejecting] = useState(false);
   const [rejectMessage, setRejectMessage] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({});
+  const [newFotoKartu, setNewFotoKartu] = useState(null);
+  const [newBuktiBayar, setNewBuktiBayar] = useState(null);
+  const [previewFotoKartu, setPreviewFotoKartu] = useState(null);
+  const [previewBuktiBayar, setPreviewBuktiBayar] = useState(null);
+  const [kelompokUmurList, setKelompokUmurList] = useState([]);
+
+
+
+
 
   const BASE_URL = "http://localhost:5004";
 
   useEffect(() => {
     fetchPesertaDetail();
     fetchPendingTotal();
+    fetchKelompokUmur();
   }, [id]);
+
+  useEffect(() => {
+    if (peserta) {
+      setFormData({
+        namaLengkap: peserta.namaLengkap,
+        nomorWhatsapp: peserta.nomorWhatsapp,
+        tanggalLahir: peserta.tanggalLahir,
+        kelompokUmurId: peserta.kelompokUmurId,
+      });
+    }
+  }, [peserta]);
+
+  useEffect(() => {
+    if (peserta) {
+      setPreviewFotoKartu(`${BASE_URL}/${peserta.fotoKartu}`);
+      setPreviewBuktiBayar(`${BASE_URL}/${peserta.buktiBayar}`);
+    }
+  }, [peserta]);
+
+
+  const fetchKelompokUmur = async () => {
+  try {
+    const res = await api.get("/kelompok-umur");
+    setKelompokUmurList(res.data);
+  } catch (err) {
+    console.error("Gagal ambil kelompok umur", err);
+  }
+};
+
 
   const fetchPesertaDetail = async () => {
     try {
@@ -40,6 +81,37 @@ export default function DetailPeserta() {
       setPendingCount(res.data.length);
     } catch (err) { console.error(err); }
   };
+
+  const handleUpdate = async () => {
+    try {
+      const form = new FormData();
+      form.append("namaLengkap", formData.namaLengkap);
+      form.append("nomorWhatsapp", formData.nomorWhatsapp);
+      form.append("tanggalLahir", formData.tanggalLahir);
+      form.append("kelompokUmurId", formData.kelompokUmurId);
+
+      if (newFotoKartu) {
+        form.append("fotoKartu", newFotoKartu);
+      }
+
+      if (newBuktiBayar) {
+        form.append("buktiBayar", newBuktiBayar);
+      }
+
+      await api.put(`/peserta/${id}`, form, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      alert("Peserta berhasil diupdate");
+      setIsEditing(false);
+      fetchPesertaDetail();
+    } catch (err) {
+      console.error(err);
+      alert("Gagal update peserta");
+    }
+  };
+
+
 
   // HANDLER VERIFIKASI (SETUJU)
   const handleVerify = async () => {
@@ -112,17 +184,40 @@ export default function DetailPeserta() {
         <div className={`h-4 ${peserta.status === 'verified' ? 'bg-green-500' : peserta.status === 'rejected' ? 'bg-red-500' : 'bg-yellow-500'}`}></div>
 
         <div className="p-8">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-4xl font-extrabold text-gray-900">{peserta.namaLengkap}</h1>
-              <p className="text-gray-500">Status: <span className="font-bold">{peserta.status.toUpperCase()}</span></p>
-            </div>
-            <div className={`px-6 py-2 rounded-full font-bold text-sm border shadow-sm ${
-              peserta.status === 'verified' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-            }`}>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl font-extrabold text-gray-900">
+              {peserta.namaLengkap}
+            </h1>
+            <p className="text-gray-500">
+              Status: <span className="font-bold">{peserta.status.toUpperCase()}</span>
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {/* Badge Status */}
+            <div
+              className={`px-6 py-2 rounded-full font-bold text-sm border shadow-sm ${
+                peserta.status === "verified"
+                  ? "bg-green-50 text-green-700 border-green-200"
+                  : peserta.status === "rejected"
+                  ? "bg-red-50 text-red-700 border-red-200"
+                  : "bg-yellow-50 text-yellow-700 border-yellow-200"
+              }`}
+            >
               {peserta.status.toUpperCase()}
             </div>
+
+            {/* Button Edit */}
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 transition text-white px-4 py-2 rounded-xl shadow-md font-semibold"
+            >
+              <Pencil size={18} />
+              Edit
+            </button>
           </div>
+        </div>
 
           <div className="grid md:grid-cols-2 gap-8">
             {/* KOLOM KIRI: DATA PRIBADI & AKSI */}
@@ -177,8 +272,143 @@ export default function DetailPeserta() {
               </div>
             </div>
           </div>
+          
         </div>
       </div>
+              {isEditing && (
+  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+    <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100 w-full max-w-3xl relative animate-in fade-in zoom-in">
+
+      {/* HEADER */}
+      <h1 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-blue-500/40 pb-3 flex items-center gap-2">
+        Edit Data Peserta
+      </h1>
+
+      {/* CLOSE */}
+      <button
+        onClick={() => setIsEditing(false)}
+        className="absolute top-4 right-4 bg-red-600 hover:bg-red-700 transition text-white px-3 py-1 rounded-lg shadow-md"
+      >
+        ✕
+      </button>
+
+      {/* FORM */}
+      <div className="grid md:grid-cols-2 gap-6">
+
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold text-gray-700 mb-1">Nama Lengkap</label>
+          <input
+            value={formData.namaLengkap}
+            onChange={(e)=>setFormData({...formData, namaLengkap:e.target.value})}
+            className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 outline-none shadow-sm"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold text-gray-700 mb-1">Nomor Whatsapp</label>
+          <input
+            value={formData.nomorWhatsapp}
+            onChange={(e)=>setFormData({...formData, nomorWhatsapp:e.target.value})}
+            className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 outline-none shadow-sm"
+          />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold text-gray-700 mb-1">Tanggal Lahir</label>
+          <input
+            type="date"
+            value={formData.tanggalLahir}
+            onChange={(e)=>setFormData({...formData, tanggalLahir:e.target.value})}
+            className="border border-gray-300 px-4 py-3 rounded-xl shadow-sm"
+          />
+        </div>
+
+      <div className="flex flex-col">
+        <label className="text-sm font-semibold text-gray-700 mb-1">
+          Kelompok Umur
+        </label>
+        <select
+          value={formData.kelompokUmurId}
+          onChange={(e)=>setFormData({...formData, kelompokUmurId: e.target.value})}
+          className="border border-gray-300 px-4 py-3 rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500/70"
+        >
+          <option value="">-- Pilih Kelompok Umur --</option>
+          {kelompokUmurList.map((ku) => (
+            <option key={ku.id} value={ku.id}>
+              {ku.nama}
+            </option>
+          ))}
+        </select>
+      </div>
+
+
+      </div>
+
+      {/* PREVIEW FILE */}
+      <div className="grid md:grid-cols-2 gap-6 mt-8">
+
+        <div>
+          <p className="text-sm font-bold text-gray-700 mb-2">Foto Kartu</p>
+          <div className="border rounded-xl p-3 bg-gray-50 shadow-inner">
+            <img
+              src={previewFotoKartu}
+              className="w-full h-48 object-contain rounded"
+            />
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e)=>{
+              setNewFotoKartu(e.target.files[0]);
+              setPreviewFotoKartu(URL.createObjectURL(e.target.files[0]));
+            }}
+            className="mt-3"
+          />
+        </div>
+
+        <div>
+          <p className="text-sm font-bold text-gray-700 mb-2">Bukti Pembayaran</p>
+          <div className="border rounded-xl p-3 bg-gray-50 shadow-inner">
+            <img
+              src={previewBuktiBayar}
+              className="w-full h-48 object-contain rounded"
+            />
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e)=>{
+              setNewBuktiBayar(e.target.files[0]);
+              setPreviewBuktiBayar(URL.createObjectURL(e.target.files[0]));
+            }}
+            className="mt-3"
+          />
+        </div>
+
+      </div>
+
+      {/* BUTTON */}
+      <div className="flex justify-end gap-3 mt-10">
+        <button
+          onClick={() => setIsEditing(false)}
+          className="bg-gray-300 hover:bg-gray-400 transition px-6 py-3 rounded-xl font-semibold"
+        >
+          Batal
+        </button>
+
+        <button
+          onClick={handleUpdate}
+          className="bg-blue-600 hover:bg-blue-700 transition text-white px-6 py-3 rounded-xl shadow-lg font-semibold"
+        >
+          Simpan Perubahan
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+
+
     </div>
   );
 }

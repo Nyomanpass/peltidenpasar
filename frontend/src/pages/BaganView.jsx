@@ -733,37 +733,41 @@ const handleLockBagan = async () => {
       {isSeedingLoading && (
   <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md">
     
-    <div className="relative bg-white rounded-3xl px-14 py-12 shadow-[0_30px_80px_rgba(0,0,0,0.4)] flex flex-col items-center w-[420px]">
+    <div className="relative bg-white rounded-[2.5rem] px-20 py-16 shadow-[0_30px_80px_rgba(0,0,0,0.45)] flex flex-col items-center w-[900px] h-[680px]">
 
       {/* LOADER BESAR */}
-      <div className="relative w-28 h-28 mb-8">
-        <div className="absolute inset-0 rounded-full border-[6px] border-yellow-400/30"></div>
-        <div className="absolute inset-0 rounded-full border-[6px] border-yellow-500 border-t-transparent animate-spin"></div>
+      <div className="relative w-36 h-36 mb-12">
+        <div className="absolute inset-0 rounded-full border-[8px] border-yellow-400/30"></div>
+        <div className="absolute inset-0 rounded-full border-[8px] border-yellow-500 border-t-transparent animate-spin"></div>
 
-        <div className="absolute inset-4 rounded-full bg-yellow-50 flex items-center justify-center shadow-inner">
-          <span className="text-3xl">🎾</span>
+        <div className="absolute inset-6 rounded-full bg-yellow-50 flex items-center justify-center shadow-inner">
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="w-20 h-20 object-contain"
+          />
         </div>
       </div>
 
       {/* JUDUL */}
-      <h2 className="text-2xl font-extrabold text-gray-800 tracking-wide text-center">
+      <h2 className="text-4xl font-extrabold text-gray-800 tracking-wide text-center">
         Sedang Melakukan Pengundian
       </h2>
 
       {/* SUBTITLE */}
-      <p className="mt-3 text-base text-gray-500 text-center leading-relaxed max-w-sm">
+      <p className="mt-5 text-lg text-gray-500 text-center leading-relaxed max-w-xl">
         Sistem sedang menyusun bagan pertandingan secara otomatis dan adil
       </p>
 
       {/* DOT PROGRESS */}
-      <div className="flex gap-2 mt-6">
-        <span className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-        <span className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-        <span className="w-3 h-3 bg-yellow-400 rounded-full animate-bounce" />
+      <div className="flex gap-3 mt-10">
+        <span className="w-4 h-4 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
+        <span className="w-4 h-4 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
+        <span className="w-4 h-4 bg-yellow-400 rounded-full animate-bounce" />
       </div>
 
       {/* FOOTER */}
-      <div className="mt-8 text-xs text-gray-400 tracking-widest uppercase">
+      <div className="mt-12 text-sm text-gray-400 tracking-[0.3em] uppercase">
         PELTI DENPASAR OFFICIAL SYSTEM
       </div>
     </div>
