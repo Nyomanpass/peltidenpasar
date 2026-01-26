@@ -1,5 +1,5 @@
 import express from "express";
-import { updateWinner, setMatchPeserta, generateUndian, getMatches, getJuara, updateMatchPoint, getMatchDetailHistory, getMatchLog, undoLastPoint, getMatchLogs} from "../controllers/MatchController.js";
+import { updateWinner, setMatchPeserta, generateUndian, getMatches, getJuara, updateMatchPoint, getMatchDetailHistory, getMatchLog, undoLastPoint, getMatchLogs, setScoreRuleToMatch, getMatchById} from "../controllers/MatchController.js";
 
 const router = express.Router();
 
@@ -16,5 +16,8 @@ router.get('/history/:matchId', getMatchDetailHistory);
 router.get('/match-log/:id', getMatchLog);
 router.delete('/undo-point/:id', undoLastPoint);
 router.get("/match-logs/:matchId", getMatchLogs); // Untuk SkorPage
+router.patch("/matches/:id/set-rule", setScoreRuleToMatch);
+router.get("/matches/:id", getMatchById);
+
 
 export default router;

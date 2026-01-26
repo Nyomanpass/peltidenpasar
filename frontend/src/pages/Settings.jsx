@@ -1,7 +1,8 @@
 // src/pages/Settings.jsx
 import { useEffect, useState } from "react";
 import api from "../api";
-import { Edit, Trash2, PlusCircle, Users, MapPin } from "lucide-react";
+import { Edit, Trash2, PlusCircle, Users, MapPin, XCircle, CheckCircle,  Eye, EyeOff } from "lucide-react";
+import SettingScoreRule from "../components/admin/SettingScoreRule";
 
 export default function Settings() {
   // ================= Kelompok Umur =================
@@ -9,6 +10,75 @@ export default function Settings() {
   const [namaUmur, setNamaUmur] = useState("");
   const [umur, setUmur] = useState(""); 
   const [editingUmurId, setEditingUmurId] = useState(null);
+  const [wasit, setWasit] = useState([]);
+  const [namaWasit, setNamaWasit] = useState("");
+  const [emailWasit, setEmailWasit] = useState("");
+  const [passwordWasit, setPasswordWasit] = useState("");
+  const [editingWasitId, setEditingWasitId] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+
+
+
+  const fetchWasit = async () => {
+    const res = await api.get("/wasit");
+    setWasit(res.data);
+  };
+
+
+  const handleSubmitWasit = async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      name: namaWasit,
+      email: emailWasit,
+    };
+
+    // kalau password diisi → ikut dikirim
+    if (passwordWasit) {
+      payload.password = passwordWasit;
+    }
+
+    if (editingWasitId) {
+      // UPDATE
+      await api.put(`/wasit/${editingWasitId}`, payload);
+    } else {
+      // CREATE
+      await api.post("/wasit", {
+        ...payload,
+        password: passwordWasit,
+      });
+    }
+
+    setNamaWasit("");
+    setEmailWasit("");
+    setPasswordWasit("");
+    setEditingWasitId(null);
+    fetchWasit();
+  };
+
+
+  const updateStatus = async (id, status) => {
+    await api.put(`/wasit/${id}/status`, { status });
+    fetchWasit();
+  };
+
+  const deleteWasit = async (id) => {
+    await api.delete(`/wasit/${id}`);
+    fetchWasit();
+  };
+
+  const handleEditWasit = (w) => {
+    setNamaWasit(w.name);
+    setEmailWasit(w.email);
+    setPasswordWasit(""); 
+    setEditingWasitId(w.id);
+  };
+
+
+
+
+
+
 
   const fetchKelompokUmur = async () => {
     try {
@@ -116,6 +186,7 @@ export default function Settings() {
   useEffect(() => {
     fetchKelompokUmur();
     fetchLapangan();
+    fetchWasit();
   }, []);
 
   return (
@@ -331,6 +402,174 @@ export default function Settings() {
         </table>
       </div>
     </div>
+
+
+      {/* --- SETTINGS WASIT --- */}
+      <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100 mt-10">
+        <h1 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3 flex items-center gap-2">
+          <Users size={24} className="text-blue-600"/> Settings Akun Wasit
+        </h1>
+
+        {/* Form Wasit */}
+        <form onSubmit={handleSubmitWasit} className="mb-8 flex flex-wrap gap-4 items-end">
+          <div className="flex flex-col flex-grow">
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Nama Wasit
+            </label>
+            <input
+              type="text"
+              value={namaWasit}
+              onChange={(e) => setNamaWasit(e.target.value)}
+              placeholder="Nama lengkap wasit"
+              className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
+              required
+            />
+          </div>
+
+          <div className="flex flex-col flex-grow">
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Email Wasit
+            </label>
+            <input
+              type="email"
+              value={emailWasit}
+              onChange={(e) => setEmailWasit(e.target.value)}
+              placeholder="Email lengkap wasit"
+              className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
+              required
+            />
+          </div>
+
+          <div className="flex flex-col flex-grow">
+            <label className="text-sm font-semibold text-gray-700 mb-1">
+              Password
+            </label>
+
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={passwordWasit}
+                onChange={(e) => setPasswordWasit(e.target.value)}
+                placeholder="Minimal 8 karakter"
+                className="border border-gray-300 px-4 py-3 pr-12 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
+                required
+              />
+
+              {/* Icon Mata */}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+          </div>
+
+
+            <div className="flex gap-3">
+              {editingWasitId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingWasitId(null);
+                    setNamaWasit("");
+                    setEmailWasit("");
+                    setPasswordWasit("");
+                  }}
+                  className="bg-gray-500 hover:bg-gray-600 transition text-white px-5 py-3 rounded-xl shadow-md font-semibold"
+                >
+                  Batal
+                </button>
+              )}
+
+              <button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 transition text-white px-5 py-3 rounded-xl shadow-lg font-semibold flex items-center gap-2"
+              >
+                
+                {editingWasitId ? <Edit size={18}/> : <PlusCircle size={18}/>}
+                {editingWasitId ? "Update" : "Tambah"}
+              </button>
+            </div>
+
+        </form>
+
+        {/* Table Wasit */}
+        <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider">
+              <tr>
+                <th className="px-5 py-3 text-left">ID</th>
+                <th className="px-5 py-3 text-left">Nama</th>
+                <th className="px-5 py-3 text-left">Email</th>
+                <th className="px-5 py-3 text-left">Status</th>
+                <th className="px-5 py-3 text-center">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {wasit.map((w) => (
+                <tr key={w.id} className="hover:bg-yellow-50/50 transition">
+                  <td className="px-5 py-3 font-medium text-gray-700">{w.id}</td>
+                  <td className="px-5 py-3 font-semibold text-gray-800">{w.name}</td>
+                  <td className="px-5 py-3 text-gray-600">{w.email}</td>
+                  <td className="px-5 py-3">
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold
+                      ${w.status === "verified" && "bg-green-100 text-green-700"}
+                      ${w.status === "pending" && "bg-yellow-100 text-yellow-700"}
+                      ${w.status === "rejected" && "bg-red-100 text-red-700"}
+                    `}>
+                      {w.status}
+                    </span>
+                  </td>
+                  <td className="px-5 py-3 flex gap-3 justify-center">
+                    <button
+                      onClick={() => updateStatus(w.id, "verified")}
+                      className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg shadow-md transition"
+                      title="Verifikasi"
+                    >
+                     <CheckCircle size={16} />
+                    </button>
+                    <button
+                      onClick={() => updateStatus(w.id, "rejected")}
+                      className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg shadow-md transition"
+                      title="Tolak"
+                    >
+                      <XCircle size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleEditWasit(w)}
+                      className="flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg shadow-md transition"
+                      title="Edit"
+                    >
+                        <Edit size={16} />
+                    </button>
+
+                    <button
+                      onClick={() => deleteWasit(w.id)}
+                      className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg shadow-md transition"
+                      title="Hapus"
+                    >
+                      <Trash2 size={16}/>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+
+              {wasit.length === 0 && (
+                <tr>
+                  <td colSpan="5" className="text-center py-5 text-gray-500 italic bg-white">
+                    Tidak ada data wasit.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <SettingScoreRule/>
+
   </div>
 </div>
 

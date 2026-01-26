@@ -44,6 +44,10 @@ import sliderRoutes from "./routes/SliderRoutes.js";
 import athleteRoutes from "./routes/AthleteRoutes.js";
 //club
 import clubRoutes from "./routes/ClubRoutes.js";
+//wasit
+import wasitRoutes from "./routes/WasitRoutes.js";
+//aturan skor
+import scoreRuleRoutes from "./routes/ScoreRuleRoutes.js";
 
 const app = express();
 
@@ -92,6 +96,12 @@ app.use("/api", athleteRoutes);
 
 //import club
 app.use("/api", clubRoutes);
+
+//import wasit
+app.use("/api", wasitRoutes);
+
+//import aturan skor
+app.use("/api", scoreRuleRoutes);
 
 
 

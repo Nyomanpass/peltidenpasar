@@ -5,6 +5,8 @@ import { Jadwal } from "../models/JadwalModel.js";
 import { DoubleTeam } from "../models/DoubleTeamModel.js";
 import { MatchScoreLog } from "../models/MatchScoreLog.js";
 import { KelompokUmur } from "../models/KelompokUmurModel.js";
+import { ScoreRule } from "../models/ScoreRuleModel.js";
+
 import { Op } from "sequelize";
 
 const _processMatchPeserta = async (matchId, side1Id, side2Id, kategori) => {
@@ -744,4 +746,29 @@ export const getMatchLogs = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+export const setScoreRuleToMatch = async (req, res) => {
+  const { id } = req.params; // id match
+  const { scoreRuleId } = req.body;
+
+  const match = await Match.findByPk(id);
+  if (!match) return res.status(404).json({ msg: "Match tidak ditemukan" });
+
+  match.scoreRuleId = scoreRuleId;
+  await match.save();
+
+  res.json(match);
+};
+
+
+
+export const getMatchById = async (req, res) => {
+  const match = await Match.findByPk(req.params.id, {
+    include: [{ model: ScoreRule, as: "scoreRule" }]
+  });
+
+  res.json(match);
+};
+
 

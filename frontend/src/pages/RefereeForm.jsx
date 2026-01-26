@@ -21,6 +21,10 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const points = ["0", "15", "30", "40", "Ad"];
 
+  const [scoreRule, setScoreRule] = useState(null);
+  const targetSetWin = scoreRule ? Math.ceil(scoreRule.jumlahSet / 2) : null;
+
+
   useEffect(() => {
     const fetchLastScore = async () => {
       try {
@@ -43,23 +47,60 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
     fetchLastScore();
   }, [match.id]);
 
+  useEffect(() => {
+    api.get(`/matches/${match.id}`).then(res => {
+      setScoreRule(res.data.scoreRule);
+    });
+  }, [match.id]);
+
+
 const handlePoint = async (player) => {
   let nP1 = p1Point, nP2 = p2Point, nG1 = p1Game, nG2 = p2Game;
   let nSetW1 = setMenangP1, nSetW2 = setMenangP2, nSetKe = currentSet;
   let isGameEnd = false;
   let isMatchFinished = false;
   let logKeterangan = `Point: ${nP1}-${nP2}`; // Default keterangan
+  
+  if (!scoreRule) return;
 
-  const isTieBreakMode = nG1 === 6 && nG2 === 6;
+  const {
+    jumlahSet,
+    gamePerSet,
+    tieBreakPoint,
+    finalTieBreakPoint,
+    useDeuce
+  } = scoreRule;
+
+  const isTieBreakMode = nG1 === gamePerSet && nG2 === gamePerSet;
+
 
   // --- 1. LOGIKA POIN ---
-  if (isTieBreakMode) {
-    let tP1 = parseInt(nP1) || 0; let tP2 = parseInt(nP2) || 0;
-    if (player === 1) tP1++; else tP2++;
-    nP1 = tP1.toString(); nP2 = tP2.toString();
-    logKeterangan = `Tiebreak: ${nP1}-${nP2}`;
-    if ((tP1 >= 7 && tP1 - tP2 >= 2) || (tP2 >= 7 && tP2 - tP1 >= 2)) isGameEnd = true;
-  } else {
+ if (isTieBreakMode) {
+  let tP1 = parseInt(nP1) || 0; 
+  let tP2 = parseInt(nP2) || 0;
+
+  if (player === 1) tP1++; 
+  else tP2++;
+
+  nP1 = tP1.toString(); 
+  nP2 = tP2.toString();
+
+  logKeterangan = `Tiebreak: ${nP1}-${nP2}`;
+
+  // ⬇️ INI YANG BARU (ambil dari scoreRule)
+  const tbTarget = (nSetKe === jumlahSet && finalTieBreakPoint)
+    ? finalTieBreakPoint
+    : tieBreakPoint;
+
+  if (
+    (tP1 >= tbTarget && tP1 - tP2 >= 2) ||
+    (tP2 >= tbTarget && tP2 - tP1 >= 2)
+  ) {
+    isGameEnd = true;
+  }
+} else {
+  if (useDeuce) {
+    // pakai deuce (tenis)
     if (player === 1) {
       if (nP1 === "40" && nP2 < "40") isGameEnd = true;
       else if (nP1 === "Ad") isGameEnd = true;
@@ -71,8 +112,19 @@ const handlePoint = async (player) => {
       else if (nP2 === "40" && nP1 === "Ad") nP1 = "40";
       else nP2 = points[points.indexOf(nP2) + 1];
     }
-    logKeterangan = `Point: ${nP1}-${nP2}`;
+  } else {
+    // tanpa deuce (40 langsung menang)
+    if (player === 1) {
+      if (nP1 === "40") isGameEnd = true;
+      else nP1 = points[points.indexOf(nP1) + 1];
+    } else {
+      if (nP2 === "40") isGameEnd = true;
+      else nP2 = points[points.indexOf(nP2) + 1];
+    }
   }
+
+  logKeterangan = `Point: ${nP1}-${nP2}`;
+}
 
   // --- 2. LOGIKA GAME & SET ---
   if (isGameEnd) {
@@ -80,16 +132,31 @@ const handlePoint = async (player) => {
     nP1 = "0"; nP2 = "0"; // Reset Point untuk log berikutnya
     logKeterangan = `Game: ${nG1}-${nG2}`;
 
-    let isSetFinished = false;
-    if ((nG1 === 6 && nG2 <= 4) || (nG2 === 6 && nG1 <= 4)) isSetFinished = true;
-    else if (nG1 === 7 || nG2 === 7) isSetFinished = true;
+   let isSetFinished = false;
+
+    // Menang normal (misal 6–0 s/d 6–4, atau sesuai gamePerSet)
+    if (
+      (nG1 === gamePerSet && nG2 <= gamePerSet - 2) ||
+      (nG2 === gamePerSet && nG1 <= gamePerSet - 2)
+    ) {
+      isSetFinished = true;
+    }
+
+    // Menang lewat tiebreak (misal 7–6 jika gamePerSet = 6)
+    else if (
+      nG1 === gamePerSet + 1 ||
+      nG2 === gamePerSet + 1
+    ) {
+      isSetFinished = true;
+    }
+
 
     if (isSetFinished) {
       if (nG1 > nG2) nSetW1++; else nSetW2++;
       
-      if (nSetW1 === 2 || nSetW2 === 2) {
+      if (nSetW1 === targetSetWin || nSetW2 === targetSetWin) {
         isMatchFinished = true;
-        logKeterangan = "Match Ended"; // Ini yang akan muncul di database
+        logKeterangan = "Match Ended";
       } else {
         logKeterangan = `Set ${nSetKe} Ended`; // Penanda akhir set
         
@@ -187,20 +254,38 @@ const handlePoint = async (player) => {
     <div className="fixed inset-0 bg-slate-950 z-[1000] text-white overflow-y-auto">
         {/* Indikator Status Game */}
         <div className="text-center mb-4 h-4">
-            {p1Game === 5 && p2Game === 5 && (
+            {scoreRule && p1Game === scoreRule.gamePerSet - 1 && p2Game === scoreRule.gamePerSet - 1 && (
               <span className="text-yellow-500 font-bold text-[10px] uppercase tracking-widest">
-                Deuce Games (Must win 7-5)
+                Deuce Games
               </span>
             )}
-            {p1Game === 6 && p2Game === 6 && (
-              <span className="text-orange-500 font-bold text-[10px] uppercase tracking-widest animate-pulse">
-                Tie Break Round
-              </span>
-            )}
+
+            {scoreRule && p1Game === scoreRule.gamePerSet && p2Game === scoreRule.gamePerSet && (
+                <span className="text-orange-500 font-bold text-[10px] uppercase tracking-widest animate-pulse">
+                  Tie Break Round
+                </span>
+              )}
+
         </div>
       <div className="max-w-xl mx-auto p-6">
         <button onClick={onBack} className="flex items-center gap-2 text-slate-400 mb-6"><ChevronLeft/> Kembali</button>
-        
+        {scoreRule && (
+          <div className="mb-4 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-center">
+            <p className="text-[10px] uppercase tracking-widest text-slate-400">
+              Aturan Skor
+            </p>
+            <p className="text-sm font-bold text-yellow-400">
+              {scoreRule.name}
+            </p>
+            <p className="text-[10px] text-slate-500 mt-1">
+              {scoreRule.jumlahSet} Set · {scoreRule.gamePerSet} Game/Set · 
+              {scoreRule.useDeuce ? " Deuce" : " No Deuce"} · 
+              TB {scoreRule.tieBreakPoint}
+              {scoreRule.finalTieBreakPoint && ` / Final TB ${scoreRule.finalTieBreakPoint}`}
+            </p>
+          </div>
+        )}
+
         {/* Scoreboard Set */}
         <div className="flex justify-between mb-4 px-4 py-2 bg-slate-900 rounded-xl border border-slate-800">
             <span className="text-xs font-bold text-slate-500 uppercase">Set Score</span>
@@ -213,9 +298,12 @@ const handlePoint = async (player) => {
         <div className="bg-slate-900 rounded-3xl p-8 border border-slate-800 shadow-2xl mb-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-blue-600 px-4 py-1 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest">Set {currentSet}</div>
           
-          {p1Game === 6 && p2Game === 6 && (
-            <div className="bg-orange-600 text-[10px] font-bold py-1 px-3 rounded-full w-fit mx-auto mb-4 tracking-widest uppercase">Tie Break</div>
-          )}
+              {scoreRule && p1Game === scoreRule.gamePerSet && p2Game === scoreRule.gamePerSet && (
+              <div className="bg-orange-600 text-[10px] font-bold py-1 px-3 rounded-full w-fit mx-auto mb-4 tracking-widest uppercase">
+                Tie Break
+              </div>
+            )}
+
 
           <div className="grid grid-cols-2 gap-8 text-center">
             <div>

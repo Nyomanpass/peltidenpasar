@@ -42,6 +42,12 @@ const JadwalPage = () => {
 
   const [filterBaganKategori, setFilterBaganKategori] = useState("all");
 
+  const [showRuleModal, setShowRuleModal] = useState(false);
+  const [scoreRules, setScoreRules] = useState([]);
+  const [selectedRule, setSelectedRule] = useState("");
+  const [pendingJadwal, setPendingJadwal] = useState(null);
+
+
   const uniqueTanggal = [...new Set(jadwal.map(j => j.tanggal))].sort(
   (a, b) => new Date(a) - new Date(b)
   );
@@ -90,6 +96,11 @@ useEffect(() => {
       setMatches([]);
     }
   }, [selectedBaganId]);
+
+  useEffect(() => {
+    api.get("/score-rules").then(res => setScoreRules(res.data));
+  }, []);
+
 
   useEffect(() => {
     const reloadAll = () => {
@@ -762,12 +773,23 @@ const fetchBagan = async () => {
 
                   {/* JIKA STATUS BERLANGSUNG: Munculkan tombol Buka Wasit */}
                   {j.status === 'berlangsung' && (
-                    <button
-                      onClick={() => openRefereePanel(j)} // MEMANGGIL FUNGSI WASIT
-                      className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 font-bold text-sm flex items-center justify-center gap-2 shadow-lg"
+                      <button
+                      onClick={() => {
+                        setPendingJadwal(j);
+                        setShowRuleModal(true);
+                      }}
+                      className="
+                        px-3 py-1.5 
+                        bg-indigo-600 hover:bg-indigo-700 
+                        text-white text-xs font-semibold 
+                        rounded-md 
+                        transition
+                      "
+
                     >
-                      <Layout size={16}/> BUKA PANEL WASIT
+                      BUKA PANEL WASIT
                     </button>
+
                   )}
 
                   {/* JIKA ADMIN: Masih bisa akses modal manual jika diperlukan */}
@@ -800,7 +822,78 @@ const fetchBagan = async () => {
       onSaved={handleWinnerSaved}
     />
   )}
+
+
+
+{showRuleModal && (
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999]">
+    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-gray-200 p-6 animate-in zoom-in duration-200">
+      
+      {/* HEADER */}
+      <h2 className="text-xl font-bold text-gray-800 mb-1">
+        Pilih Aturan Skor
+      </h2>
+      <p className="text-sm text-gray-500 mb-4">
+        Tentukan sistem perhitungan skor sebelum pertandingan dimulai.
+      </p>
+
+      {/* SELECT */}
+      <div className="mb-4">
+        <label className="block text-sm font-semibold text-gray-700 mb-1">
+          Aturan Skor
+        </label>
+        <select
+          value={selectedRule}
+          onChange={(e) => setSelectedRule(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">-- Pilih Rule --</option>
+          {scoreRules.map(r => (
+            <option key={r.id} value={r.id}>
+              {r.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* ACTION */}
+      <div className="flex gap-3 mt-6">
+        <button
+          onClick={() => setShowRuleModal(false)}
+          className="w-1/2 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-xl font-semibold transition"
+        >
+          Batal
+        </button>
+
+        <button
+          disabled={!selectedRule}
+          onClick={async () => {
+            await api.patch(`/matches/${pendingJadwal.match.id}/set-rule`, {
+              scoreRuleId: selectedRule
+            });
+
+            setShowRuleModal(false);
+            openRefereePanel(pendingJadwal);
+          }}
+          className={`w-1/2 py-2 rounded-xl font-semibold transition text-white
+            ${selectedRule 
+              ? "bg-blue-600 hover:bg-blue-700" 
+              : "bg-blue-300 cursor-not-allowed"
+            }`}
+        >
+          Mulai Match
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+
+
 </div>
+
+
+
   );
 };
 

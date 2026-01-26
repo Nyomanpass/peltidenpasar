@@ -32,8 +32,8 @@ const seedPesertaSpesifik = async () => {
         nomorWhatsapp: randomWA,
         // Tanggal lahir disetel ke tahun 2012 agar tepat 14 tahun di 2026
         tanggalLahir: `${tahunLahir}-05-20`, 
-        kelompokUmurId: 3, // Sesuai permintaan Anda
-        tournamentId: 10,  // Sesuai permintaan Anda
+        kelompokUmurId: 1, // Sesuai permintaan Anda
+        tournamentId: 1,  // Sesuai permintaan Anda
         fotoKartu: "dummy-ktp.jpg",
         buktiBayar: "dummy-bukti.jpg",
         status: "verified",

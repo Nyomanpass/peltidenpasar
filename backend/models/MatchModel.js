@@ -5,6 +5,8 @@ import { Peserta } from "./PesertaModel.js";
 import { Tournament } from "./TournamentModel.js";
 import { DoubleTeam } from "./DoubleTeamModel.js"; // <--- Import DoubleTeam
 
+
+
 export const Match = sequelize.define("Match", {
   id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
   round: { type: DataTypes.INTEGER, allowNull: false },
@@ -30,6 +32,10 @@ export const Match = sequelize.define("Match", {
   set3P2: { type: DataTypes.INTEGER, defaultValue: 0 },
 
   nextMatchId: { type: DataTypes.INTEGER, allowNull: true },
+  scoreRuleId: { 
+    type: DataTypes.INTEGER, 
+    allowNull: true 
+  },
   status: { type: DataTypes.ENUM("belum","berlangsung","selesai"), defaultValue: "belum" },
   tournamentId: { type: DataTypes.INTEGER, allowNull: false },
   baganId: { type: DataTypes.INTEGER, allowNull: false },
@@ -51,3 +57,4 @@ Match.belongsTo(Peserta, { as: "winner", foreignKey: "winnerId" });
 Match.belongsTo(DoubleTeam, { as: "doubleTeam1", foreignKey: "doubleTeam1Id" });
 Match.belongsTo(DoubleTeam, { as: "doubleTeam2", foreignKey: "doubleTeam2Id" });
 Match.belongsTo(DoubleTeam, { as: "winnerDouble", foreignKey: "winnerDoubleId" });
+
