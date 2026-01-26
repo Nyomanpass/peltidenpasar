@@ -18,7 +18,7 @@ export default function BaganView({baganId}) {
   const [modalType, setModalType] = useState(null);
   const [allPeserta, setAllPeserta] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSeedingLoading, setIsSeedingLoading] = useState(false); // State baru untuk loading pengundian
+  const [isSeedingLoading, setIsSeedingLoading] = useState(false); 
   const [byeSlotsCount, setByeSlotsCount] = useState(0);
   const role = localStorage.getItem('role')
   const tournamentId = localStorage.getItem("selectedTournament");

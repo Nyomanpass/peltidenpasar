@@ -24,6 +24,14 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
   const [scoreRule, setScoreRule] = useState(null);
   const targetSetWin = scoreRule ? Math.ceil(scoreRule.jumlahSet / 2) : null;
 
+  const [server, setServer] = useState(1); 
+  const [serveCount, setServeCount] = useState(2); 
+
+  const [setScores, setSetScores] = useState([]);
+
+
+
+
 
   useEffect(() => {
     const fetchLastScore = async () => {
@@ -152,6 +160,11 @@ const handlePoint = async (player) => {
 
 
     if (isSetFinished) {
+      setSetScores(prev => [
+        ...prev,
+        { set: nSetKe, p1: nG1, p2: nG2 }
+      ]);
+
       if (nG1 > nG2) nSetW1++; else nSetW2++;
       
       if (nSetW1 === targetSetWin || nSetW2 === targetSetWin) {
@@ -268,7 +281,7 @@ const handlePoint = async (player) => {
 
         </div>
       <div className="max-w-xl mx-auto p-6">
-        <button onClick={onBack} className="flex items-center gap-2 text-slate-400 mb-6"><ChevronLeft/> Kembali</button>
+       
         {scoreRule && (
           <div className="mb-4 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-center">
             <p className="text-[10px] uppercase tracking-widest text-slate-400">
@@ -287,13 +300,35 @@ const handlePoint = async (player) => {
         )}
 
         {/* Scoreboard Set */}
-        <div className="flex justify-between mb-4 px-4 py-2 bg-slate-900 rounded-xl border border-slate-800">
-            <span className="text-xs font-bold text-slate-500 uppercase">Set Score</span>
-            <div className="flex gap-4 font-black text-orange-500">
-                <span>P1: {setMenangP1}</span>
-                <span>P2: {setMenangP2}</span>
-            </div>
-        </div>
+<div className="mb-3 px-4 py-2 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between">
+  
+  {/* LABEL KIRI */}
+  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+    Set Score
+  </span>
+
+  {/* SKOR SET KANAN */}
+  <div className="flex gap-4 items-center text-sm font-black text-orange-400">
+    {setScores.length === 0 && (
+      <span className="text-[10px] text-slate-500 italic font-medium">
+        Belum ada set
+      </span>
+    )}
+
+    {setScores.map(s => (
+      <span key={s.set} className="whitespace-nowrap">
+        <span className="text-slate-400 text-[10px] mr-1">
+          Set {s.set}:
+        </span>
+        {s.p1}-{s.p2}
+      </span>
+    ))}
+  </div>
+
+</div>
+
+
+
 
         <div className="bg-slate-900 rounded-3xl p-8 border border-slate-800 shadow-2xl mb-6 relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-blue-600 px-4 py-1 rounded-bl-xl text-[10px] font-bold uppercase tracking-widest">Set {currentSet}</div>
@@ -305,24 +340,99 @@ const handlePoint = async (player) => {
             )}
 
 
-          <div className="grid grid-cols-2 gap-8 text-center">
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase font-bold mb-4 h-8 leading-tight">{match.peserta1?.namaLengkap || match.doubleTeam1?.namaTim}</p>
-              <div className="text-8xl font-black mb-4">{p1Point}</div>
-              <div className="text-xl font-bold text-blue-500">Games: {p1Game}</div>
-            </div>
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase font-bold mb-4 h-8 leading-tight">{match.peserta2?.namaLengkap || match.doubleTeam2?.namaTim}</p>
-              <div className="text-8xl font-black mb-4">{p2Point}</div>
-              <div className="text-xl font-bold text-red-500">Games: {p2Game}</div>
-            </div>
-          </div>
+            <div className="grid grid-cols-2 gap-8">
+
+  {/* PLAYER 1 */}
+  <div className="flex items-center gap-3">
+
+    {/* SERVICE INDICATOR */}
+    <div className="w-8 flex justify-center">
+      {server === 1 && (
+        <div className="flex flex-col gap-1">
+          {Array.from({ length: serveCount }).map((_, i) => (
+            <div
+              key={i}
+              className="w-3 h-3 rounded-full bg-yellow-400 shadow animate-pulse"
+            />
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* PLAYER INFO */}
+    <div className="flex-1 text-center">
+      <p className="text-sm font-extrabold uppercase tracking-wide mb-6">
+        {match.peserta1?.namaLengkap || match.doubleTeam1?.namaTim}
+      </p>
+      <div className="text-4xl md:text-8xl font-black mb-2">{p1Point}</div>
+      <div className="text-lg font-bold text-blue-500">Games: {p1Game}</div>
+    </div>
+  </div>
+
+  {/* PLAYER 2 */}
+  <div className="flex items-center gap-3 flex-row-reverse">
+
+    {/* SERVICE INDICATOR */}
+    <div className="w-8 flex justify-center">
+      {server === 2 && (
+        <div className="flex flex-col gap-1">
+          {Array.from({ length: serveCount }).map((_, i) => (
+            <div
+              key={i}
+              className="w-3 h-3 rounded-full bg-yellow-400 shadow animate-pulse"
+            />
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* PLAYER INFO */}
+    <div className="flex-1 text-center">
+      <p className="text-sm font-extrabold uppercase tracking-wide mb-6">
+        {match.peserta2?.namaLengkap || match.doubleTeam2?.namaTim}
+      </p>
+      <div className="text-4xl md:text-8xl font-black mb-2">{p2Point}</div>
+      <div className="text-lg font-bold text-red-500">Games: {p2Game}</div>
+    </div>
+  </div>
+
+</div>
+
+
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <button onClick={() => handlePoint(1)} className="h-40 bg-blue-600 rounded-3xl text-3xl font-black shadow-lg active:scale-95 transition">+ P1</button>
           <button onClick={() => handlePoint(2)} className="h-40 bg-red-600 rounded-3xl text-3xl font-black shadow-lg active:scale-95 transition">+ P2</button>
         </div>
+
+        <div className="grid grid-cols-2 gap-4 mt-4">
+  <button
+    onClick={() => {
+      if (serveCount === 2) {
+        setServeCount(1); // fault pertama
+      } else {
+        // double fault → pindah server
+        setServeCount(2);
+        setServer(server === 1 ? 2 : 1);
+      }
+    }}
+    className="bg-yellow-500 text-black py-3 rounded-2xl font-bold shadow active:scale-95 transition"
+  >
+    FAULT (SERVE)
+  </button>
+
+  <button
+    onClick={() => {
+      setServer(server === 1 ? 2 : 1);
+      setServeCount(2);
+    }}
+    className="bg-orange-600 text-white py-3 rounded-2xl font-bold shadow active:scale-95 transition"
+  >
+    PINDAH SERVICE
+  </button>
+</div>
+
 
         <button onClick={handleUndo} className="w-full mt-6 flex items-center justify-center gap-2 bg-slate-800 text-slate-400 py-4 rounded-2xl text-sm font-bold border border-slate-700 active:scale-95 transition">
           <History size={18}/> UNDO POIN TERAKHIR
