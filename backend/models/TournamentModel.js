@@ -42,6 +42,12 @@ export const Tournament = sequelize.define("Tournament", {
     allowNull: false
   },
 
+  level: {
+    type: DataTypes.ENUM("local", "nasional", "internasional"),
+    defaultValue: "local",
+    allowNull: false
+  },
+
   // 2. Nominal Biaya Pendaftaran (Gunakan INTEGER untuk angka saja)
   nominal: {
     type: DataTypes.INTEGER,

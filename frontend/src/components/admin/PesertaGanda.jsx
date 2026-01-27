@@ -121,20 +121,14 @@ function PesertaGanda() {
   };
 
   const hitungUmur = (tanggalLahir) => {
-    if (!tanggalLahir) return 0;
-    
-    const lahir = new Date(tanggalLahir);
-    const hariIni = new Date(); // Tahun 2026 berdasarkan waktu sistem
-    
-    let umur = hariIni.getFullYear() - lahir.getFullYear();
-    const bulan = hariIni.getMonth() - lahir.getMonth();
-    
-    // Cek apakah ulang tahunnya sudah lewat di tahun ini atau belum
-    if (bulan < 0 || (bulan === 0 && hariIni.getDate() < lahir.getDate())) {
-      umur--;
-    }
-    return umur;
-  };
+  if (!tanggalLahir) return 0;
+
+  const tahunLahir = new Date(tanggalLahir).getFullYear();
+  const tahunSekarang = new Date().getFullYear();
+
+  return tahunSekarang - tahunLahir;
+};
+
 
   if (loading) return <div className="p-20 text-center font-bold">Memuat data...</div>;
 

@@ -6,6 +6,8 @@ import api from "../api";
 function Sidebar({ isOpen }) {
   const location = useLocation();
   const role = localStorage.getItem("role");
+  const [openTournamentMenu, setOpenTournamentMenu] = useState(false);
+
 
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState(
@@ -57,17 +59,26 @@ function Sidebar({ isOpen }) {
 
 
   // Catatan: Saya mengubah ukuran icon menjadi 18px agar seragam dan lebih proporsional di sidebar
-  const adminMenu = [
-    // { label: "Verifikasi Admin", path: "/admin/verify", icon: <CheckSquare size={20} /> },
-    { label: "Peserta", path: "/admin/peserta", icon: <Users size={20} /> },
-    { label: "Bagan", path: "/admin/bagan-peserta", icon: <List size={20} /> },
-    { label: "Jadwal Pertandingan", path: "/admin/jadwal-pertandingan", icon: <Calendar size={20} /> },
-    { label: "Skor", path: "/admin/skor", icon: <ClipboardList size={20} /> },
-    { label: "Hasil Pertandingan", path: "/admin/hasil-pertandingan", icon: <Trophy size={20} /> },
-    { label: "Tournament", path: "/admin/tournament", icon: <Award size={20} />},
-    { label: "Game Settings", path: "/admin/settings", icon: <Settings size={20} /> },
-    { label: "UI Settings", path: "/admin/uisettings", icon: <Monitor size={20} /> },
-  ];
+const adminMenu = [
+  { label: "Peserta", path: "/admin/peserta", icon: <Users size={20} /> },
+  { label: "Bagan", path: "/admin/bagan-peserta", icon: <List size={20} /> },
+  { label: "Jadwal Pertandingan", path: "/admin/jadwal-pertandingan", icon: <Calendar size={20} /> },
+  { label: "Skor", path: "/admin/skor", icon: <ClipboardList size={20} /> },
+  { label: "Hasil Pertandingan", path: "/admin/hasil-pertandingan", icon: <Trophy size={20} /> },
+
+  {
+    label: "Tournament",
+    icon: <Award size={20} />,
+    children: [
+      { label: "Local", path: "/admin/tournament?level=local" },
+      { label: "Nasional", path: "/admin/tournament?level=nasional" },
+      { label: "Internasional", path: "/admin/tournament?level=internasional" },
+    ],
+  },
+
+  { label: "Game Settings", path: "/admin/settings", icon: <Settings size={20} /> },
+  { label: "UI Settings", path: "/admin/uisettings", icon: <Monitor size={20} /> },
+];
 
   const wasitMenu = [
     { label: "Peserta", path: "/wasit/peserta", icon: <Users size={20} /> },
@@ -141,41 +152,109 @@ function Sidebar({ isOpen }) {
     {/* ===============================
         MENU UTAMA
     =============================== */}
-    <ul className="space-y-1 mt-6 border-t border-white/30 pt-4">
-      {menuItems.map((item) => {
-        const currentPath = location.pathname;
+   <ul className="space-y-1 mt-6 border-t border-white/30 pt-4">
+  {menuItems.map((item) => {
+    const currentPath = location.pathname;
 
-        const isExact = currentPath === item.path;
+    // ===== JIKA ITEM PUNYA SUBMENU (TOURNAMENT) =====
+    if (item.children) {
+      const isTournamentActive = currentPath.includes("/admin/tournament");
 
-        const isPesertaDetail =
-          item.label === "Peserta" &&
-          (currentPath.includes("detail-peserta") ||
-           currentPath.includes("peserta-ganda"));
-
-        const isBaganView =
-          item.label === "Bagan" && currentPath.includes("bagan-view");
-
-        const isActive = isExact || isPesertaDetail || isBaganView;
-
-        return (
-          <li key={item.path}>
-            <Link
-              to={item.path}
-              className={`
-                flex items-center gap-4 mb-3 p-3 rounded-lg text-md font-medium
-                transition-all duration-150
-                ${isActive
-                  ? "bg-primary/80 text-white shadow-md"
-                  : "text-white hover:bg-white/30 hover:text-white"}
-              `}
-            >
-              <span className="text-white">{item.icon}</span>
+      return (
+        <li key={item.label}>
+          <button
+            onClick={() => setOpenTournamentMenu(!openTournamentMenu)}
+            className={`
+              flex items-center justify-between w-full mb-3 p-3 rounded-lg text-md font-medium
+              transition-all
+              ${isTournamentActive
+                ? "bg-primary text-white shadow-md"
+                : "text-white hover:bg-white/30"}
+            `}
+          >
+            <div className="flex items-center gap-4">
+              {item.icon}
               {item.label}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
+            </div>
+            {openTournamentMenu ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
+
+          {openTournamentMenu && (
+            <ul className="ml-6 space-y-1">
+              {item.children.map((sub) => {
+                const isSubActive = location.search.includes(
+                  sub.path.split("?")[1]
+                );
+
+                return (
+                  <li key={sub.path}>
+                  <Link
+                    to={sub.path}
+                    className={`
+                      flex items-center gap-2 px-3 py-2 text-sm transition-all
+                      ${isSubActive
+                        ? "text-yellow-400 font-bold"
+                        : "text-gray-300 hover:text-white"}
+                    `}
+                  >
+                    {/* TITIK SELALU ADA */}
+                    <span
+                      className={`
+                        w-2 h-2 rounded-full
+                        ${isSubActive ? "bg-yellow-400" : "bg-gray-200"}
+                      `}
+                    />
+                    {sub.label}
+                  </Link>
+                </li>
+              );
+
+              })}
+            </ul>
+          )}
+        </li>
+      );
+    }
+
+    // ===== MENU BIASA =====
+    const isExact = currentPath === item.path;
+
+    // khusus Bagan (list + detail)
+    const isBaganActive =
+      item.label === "Bagan" &&
+      (currentPath.startsWith("/admin/bagan-peserta") ||
+      currentPath.startsWith("/admin/bagan-view"));
+
+    // khusus Peserta (kalau mau sekalian aman)
+    const isPesertaActive =
+      item.label === "Peserta" &&
+      (currentPath.startsWith("/admin/peserta") ||
+      currentPath.startsWith("/admin/detail-peserta"));
+
+    const isActive = isExact || isBaganActive || isPesertaActive;
+
+
+    return (
+      <li key={item.path}>
+        <Link
+        to={item.path}
+        className={`
+          flex items-center gap-4 mb-3 p-3 rounded-lg text-md font-medium
+          transition-all duration-150
+          ${isActive
+            ? "bg-primary text-white shadow-md"
+            : "text-white hover:bg-white/30 hover:text-white"}
+        `}
+      >
+
+          {item.icon}
+          {item.label}
+        </Link>
+      </li>
+    );
+  })}
+</ul>
+
   </nav>
 </aside>
 

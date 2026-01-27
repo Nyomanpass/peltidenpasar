@@ -28,6 +28,8 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
   const [serveCount, setServeCount] = useState(2); 
 
   const [setScores, setSetScores] = useState([]);
+  const [showMenu, setShowMenu] = useState(false);
+
 
 
 
@@ -61,6 +63,27 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
     });
   }, [match.id]);
 
+  const handleResetMatch = async () => {
+  if (!window.confirm("Reset semua skor ke awal?")) return;
+
+  try {
+    await api.delete(`/reset-match/${match.id}`);
+
+    setP1Point("0");
+    setP2Point("0");
+    setP1Game(0);
+    setP2Game(0);
+    setCurrentSet(1);
+    setSetMenangP1(0);
+    setSetMenangP2(0);
+    setSetScores([]);
+
+    alert("Match berhasil di-reset");
+  } catch (err) {
+    alert("Gagal reset match");
+    console.error(err);
+  }
+};
 
 const handlePoint = async (player) => {
   let nP1 = p1Point, nP2 = p2Point, nG1 = p1Game, nG2 = p2Game;
@@ -195,6 +218,9 @@ const handlePoint = async (player) => {
     }
   }
 
+
+
+
   // Tentukan WinnerId jika selesai
   const isDouble = !!match.doubleTeam1Id; // Cek kategori
   let winnerId = null;
@@ -280,8 +306,42 @@ const handlePoint = async (player) => {
               )}
 
         </div>
-      <div className="max-w-xl mx-auto p-6">
-       
+        <div className="max-w-xl mx-auto p-6 relative">
+
+              {/* MENU ⋮ */}
+<div className="absolute top-3 right-3">
+  <button
+    onClick={() => setShowMenu(!showMenu)}
+    className="text-white text-2xl font-bold px-2"
+  >
+    ⋮
+  </button>
+
+  {showMenu && (
+    <div className="absolute right-0 mt-2 bg-slate-900 border border-slate-700 rounded-xl shadow-lg w-40 z-50">
+      <button
+        onClick={() => {
+          setShowMenu(false);
+          handleUndo();
+        }}
+        className="w-full text-left px-4 py-2 hover:bg-slate-800 text-sm"
+      >
+        🔄 Undo Point
+      </button>
+
+      <button
+        onClick={() => {
+          setShowMenu(false);
+          handleResetMatch();
+        }}
+        className="w-full text-left px-4 py-2 hover:bg-slate-800 text-red-400 text-sm"
+      >
+        ♻️ Reset Match
+      </button>
+    </div>
+  )}
+</div>
+
         {scoreRule && (
           <div className="mb-4 px-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-center">
             <p className="text-[10px] uppercase tracking-widest text-slate-400">

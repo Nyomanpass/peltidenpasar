@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from "react";
 import api from "../../api";
 import { Edit, Trash2, Upload, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
+
 
 function Tournament() {
   const [tournaments, setTournaments] = useState([]);
   const [preview, setPreview] = useState(null);
   const BASE_URL = "http://localhost:5004";
+
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const level = query.get("level"); 
+
 
   const [form, setForm] = useState({
     name: "",
@@ -14,27 +21,45 @@ function Tournament() {
     location: "",
     description: "",
     status: "nonaktif",
-    poster: null, // ubah ke null (bukan string)
-    type: "gratis", // Tambahkan ini
-    nominal: "",    // Tambahkan ini
-    bank_info: "",  // Tambahkan ini
+    poster: null, 
+    type: "gratis", 
+    level: level || "",
+    nominal: "",    
+    bank_info: "",  
   });
+
   const [editingId, setEditingId] = useState(null);
   
+  useEffect(() => {
+    if (level) {
+      setForm((prev) => ({
+        ...prev,
+        level: level,
+      }));
+    }
+  }, [level]);
+
+
 
   // 🔹 Ambil semua turnamen
   useEffect(() => {
     fetchTournaments();
-  }, []);
+  }, [level]);
 
   const fetchTournaments = async () => {
     try {
-      const res = await api.get("/tournaments");
+      let url = "/tournaments";
+      if (level) {
+        url += `?level=${level}`;
+      }
+
+      const res = await api.get(url);
       setTournaments(res.data);
     } catch (err) {
       console.error("Gagal ambil data:", err);
     }
   };
+
 
   // 🔹 Handle input teks
   const handleChange = (e) => {
@@ -63,6 +88,7 @@ function Tournament() {
       formData.append("description", form.description);
       formData.append("status", form.status);
       formData.append("type", form.type);
+      formData.append("level", form.level); 
       formData.append("nominal", form.nominal);
       formData.append("bank_info", form.bank_info);
 
@@ -110,6 +136,7 @@ function Tournament() {
       status: t.status,
       poster: null,
       type: t.type || "gratis",
+      level: t.level || level || "", 
       nominal: t.nominal || 0,
       bank_info: t.bank_info || ""
     });
@@ -132,6 +159,7 @@ function Tournament() {
       status: "nonaktif",
       poster: null,
       type: "gratis",
+      level: level || "",   
       nominal: 0,
       bank_info: ""
     });
@@ -147,6 +175,16 @@ function Tournament() {
         <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3">
             {editingId ? "✏️ Edit Detail Turnamen" : "➕ Tambah Turnamen Baru"}
         </h2>
+
+        {level && (
+          <div className="mb-4 flex items-center gap-2">
+            <span className="text-sm text-gray-500">Kategori Turnamen:</span>
+            <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-bold uppercase">
+              {level}
+            </span>
+          </div>
+        )}
+
 
         <form onSubmit={handleSubmit} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             
@@ -234,8 +272,8 @@ function Tournament() {
                     onChange={handleChange}
                     className="border border-gray-300 p-3 rounded-lg bg-white"
                 >
-                    <option value="gratis">Local</option>
-                    <option value="berbayar">Nasional</option>
+                    <option value="gratis">Gratis</option>
+                    <option value="berbayar">Berbayar</option>
                 </select>
             </div>
 

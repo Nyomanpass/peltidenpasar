@@ -773,10 +773,16 @@ const fetchBagan = async () => {
 
                   {/* JIKA STATUS BERLANGSUNG: Munculkan tombol Buka Wasit */}
                   {j.status === 'berlangsung' && (
-                      <button
+                    <button
                       onClick={() => {
-                        setPendingJadwal(j);
-                        setShowRuleModal(true);
+                        // ✅ JIKA SUDAH ADA RULE → LANGSUNG BUKA WASIT
+                        if (j.match.scoreRuleId) {
+                          openRefereePanel(j);
+                        } else {
+                          // ❗ JIKA BELUM ADA RULE → BARU PILIH RULE
+                          setPendingJadwal(j);
+                          setShowRuleModal(true);
+                        }
                       }}
                       className="
                         px-3 py-1.5 
@@ -785,12 +791,11 @@ const fetchBagan = async () => {
                         rounded-md 
                         transition
                       "
-
                     >
                       BUKA PANEL WASIT
                     </button>
-
                   )}
+
 
                   {/* JIKA ADMIN: Masih bisa akses modal manual jika diperlukan */}
                   {role === 'admin' && j.status !== 'selesai' && (

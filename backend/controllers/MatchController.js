@@ -772,3 +772,35 @@ export const getMatchById = async (req, res) => {
 };
 
 
+// RESET SEMUA SKOR MATCH
+export const resetMatchScore = async (req, res) => {
+  try {
+    const { id } = req.params; // matchId
+
+    // 1. Hapus semua log skor match ini
+    await MatchScoreLog.destroy({
+      where: { matchId: id }
+    });
+
+    // 2. Reset data match
+    await Match.update(
+      {
+        score1: 0,
+        score2: 0,
+        winnerId: null,
+        winnerDoubleId: null,
+        status: "berlangsung"
+      },
+      {
+        where: { id }
+      }
+    );
+
+    res.status(200).json({ message: "Match berhasil di-reset" });
+  } catch (error) {
+    console.error("Reset match error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
