@@ -151,7 +151,7 @@ export default function NewsDetail() {
               {newsLain.map((item) => (
                 <Link
                   key={item.idNews}
-                  to={`/news/${item.idNews}`}
+                  to={`/berita/${item.idNews}`}
                   className="flex gap-4 bg-white p-4 rounded-xl shadow-sm hover:shadow-md transition"
                 >
                   <div className="w-24 h-20 rounded-lg overflow-hidden flex-shrink-0">
