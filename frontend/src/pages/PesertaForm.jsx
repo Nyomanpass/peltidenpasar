@@ -1,10 +1,17 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../api";
 import { X, CheckCircle, Upload, CreditCard, Loader2, AlertCircle } from "lucide-react";
+import { useLocation } from "react-router-dom";
+
 
 function PesertaForm({ onSuccess }) {
   const fileInputRef = useRef(null);
   const buktiBayarRef = useRef(null);
+  
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const tournamentNameFromUrl = query.get("tournament");
+
 
   const [formData, setFormData] = useState({
     namaLengkap: "",
@@ -38,14 +45,38 @@ function PesertaForm({ onSuccess }) {
   };
 
   const fetchTournament = async () => {
-    try {
-      const res = await api.get('/tournaments');
-      const activeTournaments = res.data.filter((t) => t.status === "aktif");
-      setTournamentList(activeTournaments);
-    } catch (err) {
-      console.error("Fetch tournament error:", err);
+  try {
+    const res = await api.get("/tournaments");
+    const activeTournaments = res.data.filter(t => t.status === "aktif");
+    setTournamentList(activeTournaments);
+
+    // ✅ AUTO PILIH DARI URL (BERDASARKAN NAME)
+    if (tournamentNameFromUrl) {
+      const decodedName = decodeURIComponent(tournamentNameFromUrl);
+
+      const found = activeTournaments.find(
+        (t) => t.name === decodedName
+      );
+
+      if (found) {
+        const deadline = getDeadline(found.start_date);
+        const isClosed = new Date() > deadline;
+
+        if (!isClosed) {
+          setSelectedTournament(found);
+          setFormData(prev => ({
+            ...prev,
+            tournamentId: found.id.toString()
+          }));
+        }
+      }
     }
-  };
+
+  } catch (err) {
+    console.error("Fetch tournament error:", err);
+  }
+};
+
 
   const handleTournamentChange = (e) => {
     const id = e.target.value;
@@ -61,7 +92,7 @@ function PesertaForm({ onSuccess }) {
     const isRegistrationClosed = new Date() > deadline;
 
     if (isRegistrationClosed) {
-        alert("Maaf, pendaftaran untuk turnamen ini sudah ditutup (Batas H-7).");
+        alert("Maaf, pendaftaran untuk turnamen ini sudah ditutup (Batas H-3).");
         setSelectedTournament(null);
         setFormData({ ...formData, tournamentId: "" }); // Reset pilihan
         return;
@@ -125,7 +156,9 @@ function PesertaForm({ onSuccess }) {
 
   const getDeadline = (startDate) => {
       const date = new Date(startDate);
-      date.setDate(date.getDate() - 7);
+      date.setDate(date.getDate() - 3);
+        // set ke akhir hari (23:59:59)
+      date.setHours(23, 59, 59, 999);
       return date;
   };
 

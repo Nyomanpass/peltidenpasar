@@ -41,7 +41,10 @@ export const getPesertaByStatus = async (req, res) => {
 export const getPesertaById = async (req, res) => {
   try {
     const data = await Peserta.findByPk(req.params.id, {
-      include: { model: KelompokUmur, as: "kelompokUmur", attributes: ["id", "nama"] },
+      include: [
+        { model: KelompokUmur, as: "kelompokUmur", attributes: ["id", "nama"] },
+        { model: Tournament, as: "tournament", attributes: ["id", "name"] } // ✅ FIX
+      ],
     });
     if (!data) return res.status(404).json({ message: "Peserta tidak ditemukan" });
     res.json(data);

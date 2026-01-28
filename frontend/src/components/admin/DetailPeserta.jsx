@@ -25,8 +25,6 @@ export default function DetailPeserta() {
 
 
 
-
-
   const BASE_URL = "http://localhost:5004";
 
   useEffect(() => {
@@ -189,9 +187,13 @@ export default function DetailPeserta() {
             <h1 className="text-4xl font-extrabold text-gray-900">
               {peserta.namaLengkap}
             </h1>
-            <p className="text-gray-500">
-              Status: <span className="font-bold">{peserta.status.toUpperCase()}</span>
+            <p className="text-gray-500 mt-1">
+              Turnamen: <span className="font-semibold text-gray-800">
+                {peserta.tournament?.name || "-"}
+              </span>
             </p>
+
+           
           </div>
 
           <div className="flex items-center gap-3">
@@ -224,6 +226,8 @@ export default function DetailPeserta() {
             <div className="space-y-6">
               <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2"><User size={20} className="text-blue-500" /> Data Pribadi</h2>
               <div className="grid gap-3">
+               
+
                 <InfoRow label="Whatsapp" value={peserta.nomorWhatsapp} icon={<Phone size={16}/>} />
                 <InfoRow label="Tgl Lahir" value={new Date(peserta.tanggalLahir).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })} icon={<Calendar size={16}/>} />
                 <InfoRow label="Kelompok Umur" value={peserta.kelompokUmur?.nama || "Umum"} icon={<Users size={16}/>} />

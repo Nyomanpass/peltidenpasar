@@ -22,12 +22,19 @@ export const uploadPoster = multer({ storage });
 // ✅ Get all tournaments
 export const getTournaments = async (req, res) => {
   try {
-    const tournaments = await Tournament.findAll();
-    res.status(200).json(tournaments);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    const where = {};
+
+    if (req.query.level) {
+      where.level = req.query.level;
+    }
+
+    const data = await Tournament.findAll({ where });
+    res.json(data);
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
   }
 };
+
 
 // ✅ Get one tournament by ID
 export const getTournamentById = async (req, res) => {
@@ -43,8 +50,21 @@ export const getTournamentById = async (req, res) => {
 // ✅ Create tournament (dengan upload poster)
 export const createTournament = async (req, res) => {
   try {
-    // Tambahkan type, nominal, dan bank_info di sini
-    const { name, start_date, end_date, location, description, status, type, nominal, bank_info } = req.body;
+    const {
+      name,
+      start_date,
+      end_date,
+      location,
+      description,
+      status,
+      type,
+      level,        // ✅ AMBIL LEVEL
+      nominal,
+      bank_info
+    } = req.body;
+
+    console.log("LEVEL DITERIMA:", level); // debug
+
     const poster = req.file ? req.file.path : null;
 
     const newTournament = await Tournament.create({
@@ -55,8 +75,8 @@ export const createTournament = async (req, res) => {
       description,
       status,
       poster,
-      // Masukkan ke database
       type: type || "gratis",
+      level: level || "local",   // ✅ SIMPAN LEVEL
       nominal: nominal || 0,
       bank_info: bank_info || null
     });
@@ -67,16 +87,26 @@ export const createTournament = async (req, res) => {
   }
 };
 
+
 // ✅ Update tournament (update data + poster baru jika diupload)
 export const updateTournament = async (req, res) => {
   try {
     const tournament = await Tournament.findByPk(req.params.id);
     if (!tournament) return res.status(404).json({ message: "Tournament not found" });
 
-    // Tambahkan field baru di destructuring
-    const { name, start_date, end_date, location, description, status, type, nominal, bank_info } = req.body;
+    const {
+      name,
+      start_date,
+      end_date,
+      location,
+      description,
+      status,
+      type,
+      level,      // ✅ AMBIL LEVEL
+      nominal,
+      bank_info
+    } = req.body;
 
-    // Logika ganti file poster tetap sama
     if (req.file) {
       if (tournament.poster && fs.existsSync(tournament.poster)) {
         fs.unlinkSync(tournament.poster);
@@ -92,8 +122,8 @@ export const updateTournament = async (req, res) => {
       description: description || tournament.description,
       status: status || tournament.status,
       poster: tournament.poster,
-      // Update data baru
       type: type || tournament.type,
+      level: level || tournament.level,   // ✅ UPDATE LEVEL
       nominal: (nominal !== undefined) ? nominal : tournament.nominal,
       bank_info: (bank_info !== undefined) ? bank_info : tournament.bank_info
     });
@@ -103,6 +133,7 @@ export const updateTournament = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 // ✅ Delete tournament
 export const deleteTournament = async (req, res) => {

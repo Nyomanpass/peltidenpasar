@@ -7,6 +7,7 @@ import { Lapangan } from '../models/LapanganModel.js';
 import { Bagan } from '../models/BaganModel.js';
 import { Op } from 'sequelize'; // Import operator Sequelize
 import { DoubleTeam } from '../models/DoubleTeamModel.js';
+import { MatchScoreLog } from '../models/MatchScoreLog.js';
 
 
 export const getJadwal = async (req, res) => {
@@ -183,84 +184,160 @@ export const updateStatusJadwal = async (req, res) => {
   }
 };
 
+
 export const deleteJadwal = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const deletedRows = await Jadwal.destroy({
-      where: { id }
+    // 1. Cari jadwal + match-nya
+    const jadwal = await Jadwal.findByPk(id, {
+      include: [{ model: Match, as: "match" }]
     });
 
-    if (deletedRows === 0) {
+    if (!jadwal) {
       return res.status(404).json({ message: "Jadwal tidak ditemukan." });
     }
 
-    res.status(200).json({ message: "Jadwal berhasil dihapus." });
+    // 2. RESET MATCH ke kondisi awal
+    if (jadwal.match) {
+
+      const matchId = jadwal.match.id;
+
+      await MatchScoreLog.destroy({
+        where: { matchId }
+      });
+
+
+      await jadwal.match.update({
+        status: "belum",
+        score1: null,
+        score2: null,
+
+        set1P1: 0,
+        set1P2: 0,
+        set2P1: 0,
+        set2P2: 0,
+        set3P1: 0,
+        set3P2: 0,
+
+        winnerId: null,
+        winnerDoubleId: null,
+        scoreRuleId: null
+      });
+    }
+
+    // 3. Hapus jadwal
+    await jadwal.destroy();
+
+    res.status(200).json({
+      message: "Jadwal dihapus & match berhasil direset."
+    });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Gagal menghapus jadwal." });
   }
 };
 
+
 export const updateJadwal = async (req, res) => {
   try {
     const { id } = req.params;
     const { matchId, lapanganId, waktuMulai, tanggal } = req.body;
 
-    // 1. Cari jadwal yang akan di-update
+    // ===============================
+    // 1. CARI JADWAL
+    // ===============================
     const jadwal = await Jadwal.findByPk(id);
     if (!jadwal) {
       return res.status(404).json({ error: "Jadwal tidak ditemukan." });
     }
 
-    // Tentukan nilai baru untuk waktuMulai, waktuSelesai, dan tanggal
-    const updatedTanggal = tanggal || jadwal.tanggal;
-    const updatedWaktuMulai = waktuMulai ? new Date(waktuMulai) : jadwal.waktuMulai;
-    
-    // Hitung waktuSelesai secara otomatis HANYA JIKA waktuMulai diupdate
-    const updatedWaktuSelesai = waktuMulai
-      ? new Date(updatedWaktuMulai.getTime() + 60 * 60 * 1000) // Tambah 1 jam
-      : jadwal.waktuSelesai; // Gunakan waktuSelesai yang lama
+    const oldMatchId = jadwal.matchId;
 
-    // 2. Validasi Ketersediaan Match
-    if (matchId && matchId !== jadwal.matchId) {
-        const existingJadwalForMatch = await Jadwal.findOne({
-          where: {
-            matchId: matchId,
-            id: { [Op.ne]: id },
-            status: { [Op.ne]: 'selesai' }
-          }
+    // ===============================
+    // 2. CEK KONDISI RESET MATCH
+    // ===============================
+    const isMatchChanged =
+      matchId && Number(matchId) !== Number(oldMatchId);
+
+    const wasRunning =
+      jadwal.status === "berlangsung" || jadwal.status === "aktif";
+
+    if (isMatchChanged || wasRunning) {
+      const oldMatch = await Match.findByPk(oldMatchId);
+
+      if (oldMatch) {
+        // 🧹 HAPUS SCORE LOG
+        await MatchScoreLog.destroy({
+          where: { matchId: oldMatchId }
         });
-        if (existingJadwalForMatch) {
-          return res.status(400).json({ error: "Match ini sudah dijadwalkan di jadwal lain." });
-        }
-  
+
+        // 🔄 RESET MATCH LAMA
+        await oldMatch.update({
+          status: "belum",
+          score1: null,
+          score2: null,
+          set1P1: 0,
+          set1P2: 0,
+          set2P1: 0,
+          set2P2: 0,
+          set3P1: 0,
+          set3P2: 0,
+          winnerId: null,
+          winnerDoubleId: null,
+          scoreRuleId: null
+        });
+      }
+
+      // VALIDASI MATCH BARU (kalau diganti)
+      if (isMatchChanged) {
         const newMatch = await Match.findByPk(matchId);
         if (!newMatch || newMatch.status !== "belum") {
-          return res.status(400).json({ error: "Match baru tidak valid untuk dijadwalkan." });
+          return res.status(400).json({
+            error: "Match baru tidak valid untuk dijadwalkan."
+          });
         }
+      }
     }
-  
-    // 3. Validasi Bentrok Lapangan dengan logika yang lebih sederhana
+
+    // ===============================
+    // 3. HITUNG WAKTU
+    // ===============================
+    const updatedTanggal = tanggal || jadwal.tanggal;
+
+    const updatedWaktuMulai = waktuMulai
+      ? new Date(waktuMulai)
+      : jadwal.waktuMulai;
+
+    const updatedWaktuSelesai = waktuMulai
+      ? new Date(updatedWaktuMulai.getTime() + 60 * 60 * 1000)
+      : jadwal.waktuSelesai;
+
+    // ===============================
+    // 4. CEK BENTROK LAPANGAN
+    // ===============================
     const overlappingJadwal = await Jadwal.findOne({
-        where: {
-          id: { [Op.ne]: id }, // Jangan bandingkan dengan jadwal yang sedang di-update
-          lapanganId: lapanganId || jadwal.lapanganId,
-          tanggal: updatedTanggal,
-          [Op.and]: [
-            // Cek apakah ada jadwal lain yang dimulai sebelum jadwal baru selesai
-            { waktuMulai: { [Op.lt]: updatedWaktuSelesai } },
-            // DAN apakah ada jadwal lain yang selesai setelah jadwal baru dimulai
-            { waktuSelesai: { [Op.gt]: updatedWaktuMulai } },
-          ]
-        }
+      where: {
+        id: { [Op.ne]: id },
+        lapanganId: lapanganId || jadwal.lapanganId,
+        tanggal: updatedTanggal,
+        [Op.and]: [
+          { waktuMulai: { [Op.lt]: updatedWaktuSelesai } },
+          { waktuSelesai: { [Op.gt]: updatedWaktuMulai } },
+        ]
+      }
     });
 
     if (overlappingJadwal) {
-      return res.status(400).json({ error: "Lapangan sudah terpakai pada waktu yang Anda pilih." });
+      return res.status(400).json({
+        error: "Lapangan sudah terpakai pada waktu tersebut."
+      });
     }
 
-    // 4. Update dan simpan jadwal baru
+    // ===============================
+    // 5. UPDATE JADWAL
+    // ===============================
     await jadwal.update({
       matchId: matchId || jadwal.matchId,
       lapanganId: lapanganId || jadwal.lapanganId,
@@ -270,9 +347,12 @@ export const updateJadwal = async (req, res) => {
       status: "aktif"
     });
 
-    res.status(200).json({ message: "Jadwal berhasil diperbarui.", jadwal });
+    res.json({
+      message: "Jadwal berhasil diperbarui & match disinkronkan."
+    });
+
   } catch (error) {
-    console.error(error);
+    console.error("updateJadwal error:", error);
     res.status(500).json({ error: error.message });
   }
 };
