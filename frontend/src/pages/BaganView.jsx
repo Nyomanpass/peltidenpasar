@@ -5,6 +5,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import api from "../api"; // Mengimpor instans axios dari file api.js
 import { CheckCircle, Info, Star, Users } from "lucide-react";
+import AlertMessage from "../components/AlertMessage";
 
 // Modal
 import PesertaModal from "../components/modalbox/PesertaModal";
@@ -25,6 +26,11 @@ export default function BaganView({baganId}) {
   const finalId = baganId || id;
   const isRoundRobin = bagan?.tipe === "roundrobin";
   const [isLocked, setIsLocked] = useState(false);
+
+  const [alertType, setAlertType] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+  const [showLockConfirm, setShowLockConfirm] = useState(false);
+
 
 
 
@@ -165,27 +171,22 @@ const handleExportPDF = async () => {
 
 
 const handleLockBagan = async () => {
-  const confirmLock = window.confirm(
-    "⚠️ PERINGATAN: Setelah dikunci, pengundian tidak dapat diulang kembali. Pastikan bagan sudah benar!"
-  );
-  
-  if (!confirmLock) return;
-
   try {
     setIsLoading(true);
-    // Mengirim perintah ke backend
-    await api.patch(`/bagan/${finalId}/lock`); 
-    
-    // Refresh data bagan agar bagan.isLocked terupdate di UI
-    await loadBagan(); 
-    alert("✅ Bagan telah resmi dikunci!");
+    await api.patch(`/bagan/${finalId}/lock`);
+    await loadBagan();
+
+    setAlertType("success");
+    setAlertMessage("Bagan berhasil dikunci dan tidak bisa diubah lagi.");
   } catch (error) {
-    console.error(error);
-    alert("Gagal mengunci bagan: " + error.message);
+    setAlertType("error");
+    setAlertMessage("Gagal mengunci bagan.");
   } finally {
     setIsLoading(false);
+    setShowLockConfirm(false);
   }
 };
+
 
   // Lakukan pengundian menggunakan axios
   const handleUndian = async (seededPeserta, byeSlots) => {
@@ -284,11 +285,12 @@ const handleLockBagan = async () => {
             {/* Tombol Kunci: HANYA tampil jika BELUM dikunci */}
             {!bagan.isLocked && (
               <button
-                onClick={handleLockBagan}
-                className="px-8 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition-all flex items-center gap-2"
+                onClick={() => setShowLockConfirm(true)}
+                className="px-8 py-3 bg-red-600 text-white font-bold rounded-xl"
               >
                 Kunci Bagan 🔒
               </button>
+
             )}
 
             {/* Tombol Export PDF: Selalu Tampil */}
@@ -773,6 +775,43 @@ const handleLockBagan = async () => {
     </div>
   </div>
 )}
+
+
+{showLockConfirm && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
+    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 animate-in zoom-in">
+      
+      <h2 className="text-xl font-bold text-gray-800 mb-2">
+        Kunci Bagan?
+      </h2>
+      <p className="text-sm text-gray-500 mb-5">
+        Setelah dikunci, bagan tidak bisa diundi ulang atau diubah.
+      </p>
+
+      <div className="flex gap-3 justify-end">
+        <button
+          onClick={() => setShowLockConfirm(false)}
+          className="px-4 py-2 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+        >
+          Batal
+        </button>
+
+        <button
+          onClick={handleLockBagan}
+          className="px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700"
+        >
+          Ya, Kunci
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+<AlertMessage
+  type={alertType}
+  message={alertMessage}
+  onClose={() => setAlertMessage("")}
+/>
 
 
     </div>

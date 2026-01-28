@@ -5,6 +5,7 @@ import { Edit, Trash2, Calendar, Clock, PlusCircle, CheckCircle, XCircle, Layout
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import JadwalPDF from './JadwalPDF';
 import RefereeForm from './RefereeForm';
+import AlertMessage from '../components/AlertMessage';
 
 const JadwalPage = () => {
   const [jadwal, setJadwal] = useState([]);
@@ -212,8 +213,6 @@ const fetchBagan = async () => {
     setSelectedLapangan('');
     setTanggal('');
     setWaktuMulai('');
-    setSuccess('');
-    setError('');
   };
   
   const handleSubmit = async (e) => {
@@ -332,14 +331,24 @@ const fetchBagan = async () => {
     return !isAlreadyScheduled;
   });
   
-  const groupedJadwal = jadwal.reduce((acc, currentJadwal) => {
-    const lapanganName = currentJadwal.lapangan?.nama || 'Lapangan Tidak Dikenal';
+const groupedJadwal = [...jadwal]
+  .sort((a, b) => {
+    // 1. Urutkan berdasarkan lapangan
+    if (a.lapanganId !== b.lapanganId) {
+      return a.lapanganId - b.lapanganId;
+    }
+    // 2. Jika lapangan sama, urutkan berdasarkan waktu
+    return new Date(a.waktuMulai) - new Date(b.waktuMulai);
+  })
+  .reduce((acc, currentJadwal) => {
+    const lapanganName = currentJadwal.lapangan?.nama || "Lapangan Tidak Dikenal";
     if (!acc[lapanganName]) {
       acc[lapanganName] = [];
     }
     acc[lapanganName].push(currentJadwal);
     return acc;
   }, {});
+
 
   const lapanganList = Object.keys(groupedJadwal);
 
@@ -380,16 +389,18 @@ const fetchBagan = async () => {
 <div className="font-sans min-h-screen">
 
   {/* Notifikasi */}
-  {error && (
-    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-4 shadow-md">
-      {error}
-    </div>
-  )}
-  {success && (
-    <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4 shadow-md">
-      {success}
-    </div>
-  )}
+<AlertMessage
+  type="success"
+  message={success}
+  onClose={() => setSuccess("")}
+/>
+
+<AlertMessage
+  type="error"
+  message={error}
+  onClose={() => setError("")}
+/>
+
 
   
   {/* --- BAGIAN FORM: ADMIN --- */}
