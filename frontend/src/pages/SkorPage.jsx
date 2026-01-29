@@ -130,15 +130,28 @@ function SkorPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4 md:p-8 text-slate-900 font-sans">
+    <div className="min-h-screen">
       
       <div className="mx-auto mb-10">
-        <div className="mb-8">
-          <h1 className="text-3xl font-black tracking-tight flex items-center gap-3">
-            <Trophy className="text-yellow-500" size={32} /> HASIL PERTANDINGAN
-          </h1>
-          <p className="text-slate-500 font-medium mt-1 uppercase text-[10px] tracking-[0.2em]">Tournament Score Archive</p>
-        </div>
+      {/* --- HEADER UTAMA --- */}
+<div className="mb-8 border-b pb-4">
+  <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div>
+      <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+        Skor Pertandingan
+      </h1>
+      <p className="text-md text-yellow-600 font-semibold mt-1">
+        Tournament: {localStorage.getItem("selectedTournamentName") || "Belum Memilih"}
+      </p>
+    </div>
+
+    {/* TOOLBAR KANAN (optional, kalau mau taruh search cepat) */}
+    <div className="flex items-center gap-3">
+      {/* bisa kosong atau isi nanti */}
+    </div>
+  </div>
+</div>
+
 
         {/* Panel Filter Grid - Sekarang 4 Kolom */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100">

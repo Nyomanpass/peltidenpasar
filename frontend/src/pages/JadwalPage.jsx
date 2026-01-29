@@ -386,7 +386,7 @@ const groupedJadwal = [...jadwal]
   }
 
   return (
-<div className="font-sans min-h-screen">
+<div className="h-screen">
 
   {/* Notifikasi */}
 <AlertMessage
@@ -401,14 +401,23 @@ const groupedJadwal = [...jadwal]
   onClose={() => setError("")}
 />
 
+{/* --- HEADER UTAMA --- */}
+<div className="mb-8 border-b pb-4">
+  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+    Jadwal Pertandingan
+  </h1>
+  <p className="text-md text-yellow-600 font-semibold mt-1">
+    Tournament: {selectedTournamentName || "Belum Memilih"}
+  </p>
+</div>
 
   
   {/* --- BAGIAN FORM: ADMIN --- */}
    {role === "admin" && (
     
   <div className="bg-white p-8 rounded-2xl shadow-2xl mb-10 border border-gray-100">
-    <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3">
-      {editingJadwalId ? '✏️ Update Jadwal Pertandingan' : '➕ Buat Jadwal Baru'}
+    <h2 className="text-2xl font-bold mb-6 text-gray-800 pb-3">
+      {editingJadwalId ? 'Update Jadwal Pertandingan' : 'Buat Jadwal Baru'}
     </h2>
     
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -416,8 +425,7 @@ const groupedJadwal = [...jadwal]
       {/* Pilihan Bagan (Custom Chip/Tag Selection) */}
      {/* --- FILTER KATEGORI BAGAN --- */}
 <div>
-  <label className="block text-sm font-bold text-gray-700 mb-2">Pilih Bagan Pertandingan:</label>
-  
+ 
   {/* Tab Filter (Semua / Single / Double) */}
   <div className="flex gap-2 mb-3 bg-gray-100 p-1 rounded-xl w-fit border border-gray-200">
     <button

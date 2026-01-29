@@ -55,7 +55,7 @@ export default function App() {
       <ScrollToTop/>
         <Routes>
           <Route index element={<Home />} />
-          <Route path="/register" element={<Register/>}/>
+          {/* <Route path="/register" element={<Register/>}/> */}
           <Route path="/login" element={<Login />} />
           <Route path="/daftar-peserta" element={<PesertaForm/>}/>
           <Route path="/tournament" element={<TournamentUser/>}/>
