@@ -37,6 +37,7 @@ const JuaraPage = () => {
             baganId: bagan.id,
             baganNama: bagan.nama,
             kategori: bagan.kategori ? bagan.kategori.toLowerCase().trim() : "single", 
+            kelompokUmurId: bagan.kelompokUmurId, // ✅ TAMBAHKAN INI
             winners: winnersResponse.data || {}, // Di sini data klasemen disimpan
           };
         } catch (err) {
@@ -44,6 +45,7 @@ const JuaraPage = () => {
             baganId: bagan.id,
             baganNama: bagan.nama,
             kategori: bagan.kategori ? bagan.kategori.toLowerCase().trim() : "single",
+            kelompokUmurId: bagan.kelompokUmurId, // ✅ TAMBAHKAN INI
             winners: null,
           };
         }
@@ -204,7 +206,9 @@ const JuaraPage = () => {
             <p className="text-lg text-gray-600">Tidak ada data juara untuk kategori {filterKategori}.</p>
           </div>
         ) : (
-          filteredWinners.map((data) => {
+         filteredWinners
+            .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId)
+            .map((data) => {
             const winners = data.winners;
             return (
               <div key={data.baganId} className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 mb-10">

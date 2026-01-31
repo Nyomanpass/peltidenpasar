@@ -91,12 +91,22 @@ export default function BaganView({baganId}) {
 
   // Export PDF yang diperbaiki
 const handleExportPDF = async () => {
-  const bracketEl = document.getElementById("bracket-container");
+  const bracketEl = document.getElementById(
+    isRoundRobin ? "roundrobin-pdf" : "bracket-container"
+  );
+
   const ketPdfEl = document.getElementById("keterangan-pdf");
 
   if (!bracketEl || !bagan) return;
 
   try {
+    // 🔥 TAMBAHAN: tampilkan dulu kalau round robin
+    if (isRoundRobin) {
+      bracketEl.style.display = "block";
+    }
+
+    await new Promise(r => setTimeout(r, 100)); // tunggu render
+
     /* =========================
        1️⃣ CAPTURE BRACKET (HALAMAN 1)
     ========================= */
@@ -107,8 +117,14 @@ const handleExportPDF = async () => {
     });
 
     const bracketImg = bracketCanvas.toDataURL("image/jpeg", 1.0);
-    const bw = bracketCanvas.width * 0.75;
-    const bh = bracketCanvas.height * 0.75;
+
+    // ❌ JANGAN pakai *0.75
+    const bw = bracketCanvas.width;
+    const bh = bracketCanvas.height;
+
+    if (!bw || !bh) {
+      throw new Error("Canvas kosong (width/height = 0)");
+    }
 
     const paddingTop = 120;
     const pdfWidth = bw + 60;
@@ -124,49 +140,58 @@ const handleExportPDF = async () => {
        2️⃣ HEADER
     ========================= */
     const namaTurnamen =
-      bagan.Tournament?.name || bagan.tournament_name || "PELTI DENPASAR";
+    bagan.Tournament?.name || bagan.tournament_name || "PELTI DENPASAR";
     const namaKategori = bagan.nama || "Kategori Umum";
 
-    pdf.setFontSize(26);
+    pdf.setFontSize(36);
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(20, 50, 100);
-    pdf.text(namaTurnamen.toUpperCase(), pdfWidth / 2, 50, { align: "center" });
+    pdf.text(namaTurnamen.toUpperCase(), pdfWidth / 2, 60, { align: "center" });
 
-    pdf.setFontSize(18);
+    pdf.setFontSize(24);
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(60, 60, 60);
-    pdf.text(namaKategori, pdfWidth / 2, 80, { align: "center" });
+    pdf.text(namaKategori, pdfWidth / 2, 100, { align: "center" });
 
     pdf.setDrawColor(200);
-    pdf.line(50, 95, pdfWidth - 50, 95);
+    pdf.line(50, 120, pdfWidth - 50, 120);
 
     pdf.addImage(bracketImg, "JPEG", 30, paddingTop, bw, bh);
 
     /* =========================
-       3️⃣ HALAMAN 2 – KETERANGAN (AMAN)
+       3️⃣ HALAMAN 2 – KETERANGAN
     ========================= */
-    if (ketPdfEl) {
-        ketPdfEl.style.display = "block";
+    if (ketPdfEl && !isRoundRobin) {
+      ketPdfEl.style.display = "block";
+      await new Promise(r => setTimeout(r, 100));
 
-        const canvas = await html2canvas(ketPdfEl, {
-          scale: 2,
-          backgroundColor: "#ffffff"
-        });
+      const canvas = await html2canvas(ketPdfEl, {
+        scale: 2,
+        backgroundColor: "#ffffff"
+      });
 
-        const w = canvas.width * 0.75;
-        const h = canvas.height * 0.75;
+      const w = canvas.width;
+      const h = canvas.height;
 
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 30, 40, w, h);
+      pdf.addPage();
+      pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 30, 40, w, h);
 
-        ketPdfEl.style.display = "none";
-      }
+      ketPdfEl.style.display = "none";
+    }
 
     pdf.save(`Bagan-${namaKategori.replace(/\s+/g, "-")}.pdf`);
+
+    // 🔥 sembunyikan lagi
+    if (isRoundRobin) {
+      bracketEl.style.display = "none";
+    }
+
   } catch (err) {
     console.error("Export PDF Error:", err);
+    alert("Gagal export PDF: " + err.message);
   }
 };
+
 
 
 
@@ -252,6 +277,42 @@ const handleLockBagan = async () => {
   const finalMatch = bagan.Matches.find((m) => m.round === finalRound);
 
   let juara = null;
+
+  let juaraRR = null;
+
+if (isRoundRobin) {
+  const klasemen = {};
+  let semuaSelesai = true;
+
+  bagan.Matches.forEach(m => {
+    const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
+    const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
+    const wId = isDouble ? m.winnerDoubleId : m.winnerId;
+
+    // ⛔ kalau ada match belum ada pemenang
+    if (!wId) semuaSelesai = false;
+
+    if (!p1 || !p2) return;
+
+    [p1, p2].forEach(p => {
+      if (!klasemen[p.id]) {
+        klasemen[p.id] = { peserta: p, poin: 0 };
+      }
+    });
+
+    if (wId === p1.id) klasemen[p1.id].poin += 3;
+    if (wId === p2.id) klasemen[p2.id].poin += 3;
+  });
+
+  if (semuaSelesai) {
+    const ranking = Object.values(klasemen).sort((a,b)=>b.poin-a.poin);
+    juaraRR = ranking[0]?.peserta || null;
+  } else {
+    juaraRR = null; // ❗ BELUM ADA JUARA
+  }
+}
+
+  
   if (finalMatch) {
     if (isDouble && finalMatch.winnerDoubleId) {
       const winner = finalMatch.winnerDoubleId === finalMatch.doubleTeam1Id ? finalMatch.doubleTeam1 : finalMatch.doubleTeam2;
@@ -260,6 +321,20 @@ const handleLockBagan = async () => {
       juara = finalMatch.winnerId === finalMatch.peserta1Id ? finalMatch.peserta1?.namaLengkap : finalMatch.peserta2?.namaLengkap;
     }
   }
+
+  const thStyle = {
+    border: "1px solid #d1d5db",
+    padding: "8px",
+    fontSize: 12,
+    textAlign: "left"
+  };
+
+  const tdStyle = {
+    border: "1px solid #e5e7eb",
+    padding: "8px",
+    fontSize: 12
+  };
+
 
   return (
     <div className="bg-gray-50 min-h-screen w-full">
@@ -577,7 +652,7 @@ const handleLockBagan = async () => {
             <span>{new Date().toLocaleString("id-ID")}</span>
           </div>
 
-          {juara && (
+          {(isRoundRobin ? juaraRR : juara) && (
             <div
               style={{
                 marginTop: 32,
@@ -607,12 +682,91 @@ const handleLockBagan = async () => {
                   marginBottom: 10
                 }}
               >
-                {juara}
+                {isRoundRobin
+                ? (isDouble
+                    ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
+                    : juaraRR?.namaLengkap)
+                : juara}
+
               </div>
             </div>
           )}
 
         </div>
+
+        {/* ===== ROUND ROBIN PDF (KHUSUS EXPORT) ===== */}
+        <div
+          id="roundrobin-pdf"
+          style={{
+            background: "#ffffff",
+            padding: "32px",
+            fontFamily: "Arial, Helvetica, sans-serif",
+            display: "none",
+            width: "100%"
+          }}
+        >
+          <h2 style={{ fontSize: 20, marginBottom: 12, color: "#1f2937" }}>
+            Badan Pertandingan Round Robin
+          </h2>
+
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#f3f4f6" }}>
+                <th style={thStyle}>No</th>
+                <th style={thStyle}>Peserta 1</th>
+                <th style={thStyle}>VS</th>
+                <th style={thStyle}>Peserta 2</th>
+                <th style={thStyle}>Skor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bagan.Matches.map((m, i) => (
+                <tr key={m.id}>
+                  <td style={tdStyle}>{i + 1}</td>
+                  <td style={tdStyle}>
+                    {isDouble
+                      ? m.doubleTeam1?.namaTim
+                      : m.peserta1?.namaLengkap}
+                  </td>
+                  <td style={tdStyle}>VS</td>
+                  <td style={tdStyle}>
+                    {isDouble
+                      ? m.doubleTeam2?.namaTim
+                      : m.peserta2?.namaLengkap}
+                  </td>
+                  <td style={tdStyle}>
+                    {m.score1 ?? 0} - {m.score2 ?? 0}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {(isRoundRobin ? juaraRR : juara) && (
+            <div
+              style={{
+                marginTop: 32,
+                padding: 20,
+                border: "2px solid #facc15",
+                borderRadius: 12,
+                background: "#fffbeb",
+                textAlign: "center"
+              }}
+            >
+              <div style={{ fontSize: 20, fontWeight: "bold", color: "#ca8a04" }}>
+                🏆 Juara
+              </div>
+              <div style={{ fontSize: 16, marginTop: 6 }}>
+                {isRoundRobin
+                  ? (isDouble
+                      ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
+                      : juaraRR?.namaLengkap)
+                  : juara}
+              </div>
+            </div>
+          )}
+        </div>
+
 
 
         {/* Hanya tampil jika BUKAN Round Robin */}
@@ -701,7 +855,12 @@ const handleLockBagan = async () => {
             <h2 className="text-3xl font-bold text-yellow-600 animate-bounce">
               🏆 Juara
             </h2>
-            <p className="text-2xl font-semibold text-gray-900 mt-2">{juara}</p>
+            <p className="text-2xl font-semibold text-gray-900 mt-2">{isRoundRobin
+              ? (isDouble
+                  ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
+                  : juaraRR?.namaLengkap)
+              : juara}
+            </p>
           </div>
         )}
       </div>

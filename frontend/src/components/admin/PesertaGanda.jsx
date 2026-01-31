@@ -5,6 +5,7 @@ import {
   Users, Search, UserPlus, CheckCircle2, Users2, 
   User, ChevronDown, ChevronUp, X, Eye, Trash2 
 } from "lucide-react";
+import AlertMessage from "../AlertMessage";
 
 function PesertaGanda() {
   const location = useLocation();
@@ -24,6 +25,18 @@ function PesertaGanda() {
   const [collapsedPlayers, setCollapsedPlayers] = useState({});
 
   const [modalSearchTerm, setModalSearchTerm] = useState("");
+
+
+  const [alert, setAlert] = useState({
+    show: false,
+    type: "success",
+    message: "",
+  });
+
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    teamId: null,
+  });
 
 
 
@@ -91,12 +104,21 @@ function PesertaGanda() {
         kelompokUmurId: parseInt(selectedTargetKU) 
       };
       await api.post("/double-teams", payload);
-      alert("Tim ganda berhasil dibuat!");
+      setAlert({
+        show: true,
+        type: "success",
+        message: "Tim ganda berhasil dibuat",
+      });
+
       setSelectedPlayers([]);
       setIsModalOpen(false);
       fetchData(); 
     } catch (err) {
-      alert(err.response?.data?.msg || "Gagal menyimpan tim");
+      setAlert({
+        show: true,
+        type: "error",
+        message: err.response?.data?.msg || "Gagal menyimpan tim",
+      });
     }
   };
 
@@ -110,15 +132,27 @@ function PesertaGanda() {
   };
 
 
-  const handleDeleteTeam = async (id) => {
-    if (!window.confirm("Yakin mau hapus tim ganda ini?")) return;
-    try {
-      await api.delete(`/double-teams/${id}`);
-      fetchData();
-    } catch (err) {
-      alert("Gagal menghapus tim");
-    }
-  };
+const handleDeleteTeam = async () => {
+  try {
+    await api.delete(`/double-teams/${confirmDelete.teamId}`);
+
+    setAlert({
+      show: true,
+      type: "success",
+      message: "Tim ganda berhasil dihapus",
+    });
+
+    setConfirmDelete({ show: false, teamId: null });
+    fetchData();
+  } catch (err) {
+    setAlert({
+      show: true,
+      type: "error",
+      message: "Gagal menghapus tim",
+    });
+  }
+};
+
 
   const hitungUmur = (tanggalLahir) => {
   if (!tanggalLahir) return 0;
@@ -315,9 +349,9 @@ function PesertaGanda() {
                         <td className="px-6 py-3">
                           <div className="flex justify-center gap-2">
                             {isAdmin ? (
-                              <button 
-                                onClick={() => handleDeleteTeam(team.id)} 
-                                className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                             <button 
+                                onClick={() => setConfirmDelete({ show: true, teamId: team.id })}
+                                className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg"
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -360,7 +394,7 @@ function PesertaGanda() {
                 {/* 1. KATEGORI TARGET */}
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">1. Kategori Target</label>
-                  <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {masterKU.map(ku => (
                       <button
                         key={ku.id}
@@ -375,8 +409,6 @@ function PesertaGanda() {
                   </div>
                 </div>
 
-                {/* 2. PILIH 2 PEMAIN */}
-              {/* 2. PILIH 2 PEMAIN (SISTEM CARD COLLAPSIBLE DI DALAM MODAL) */}
                {/* 2. PILIH 2 PEMAIN (DENGAN FITUR SEARCH) */}
                 <div className="md:col-span-2 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -515,6 +547,36 @@ function PesertaGanda() {
            </div>
         </div>
       )}
+      {alert.show && (
+        <AlertMessage
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert({ show: false, type: "success", message: "" })}
+        />
+      )}
+
+    {confirmDelete.show && (
+      <AlertMessage
+        type="warning"
+        message="Yakin mau menghapus tim ganda ini?"
+        onClose={() => setConfirmDelete({ show: false, teamId: null })}
+      >
+        <button
+          onClick={() => setConfirmDelete({ show: false, teamId: null })}
+          className="px-5 py-2 rounded-xl bg-gray-200 font-bold hover:bg-gray-300 transition"
+        >
+          Batal
+        </button>
+        <button
+          onClick={handleDeleteTeam}
+          className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+        >
+          Hapus
+        </button>
+      </AlertMessage>
+    )}
+
+
     </div>
   );
 }

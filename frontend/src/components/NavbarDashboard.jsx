@@ -53,7 +53,6 @@ function NavbarDashboard({ toggleSidebar }) {
     try {
       await api.put(`/peserta/${id}/verify`, { status: "verified" });
       fetchPendingUsers();
-      alert("Peserta berhasil diverifikasi!");
     } catch (error) {
       console.error(error);
     }
@@ -66,7 +65,7 @@ const handleReject = async (id, message) => {
     const user = pendingUsers.find(p => p.id === id);
     
     if (!user) {
-      alert("Data peserta tidak ditemukan di list.");
+     
       return;
     }
 
@@ -91,11 +90,11 @@ const handleReject = async (id, message) => {
 
     // 4. Refresh list (karena data sudah dihapus di backend, list akan otomatis berkurang)
     fetchPendingUsers();
-    alert("Peserta ditolak, pesan WA terkirim, dan data dihapus.");
+   
 
   } catch (error) {
     console.error(error);
-    alert("Gagal memproses penolakan.");
+  
   }
 };
   

@@ -361,75 +361,94 @@ function shuffle(array) {
 // 🔹 Helper untuk menempatkan BYE
 function placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta) {
   const bracketSize = initialSlots.length;
-  const totalMatches = bracketSize / 2;
+  const blockSize = 4; // 1 blok = 4 slot
+  const totalBlocks = Math.ceil(bracketSize / blockSize);
 
-  // 1. PRIORITAS: Berikan BYE KHUSUS untuk yang isSeeded === true
+  // ===============================
+  // 1. BYE untuk SEED (prioritas)
+  // ===============================
+  const blocksWithBye = new Set();
+
   for (const seed of seededPeserta) {
     if (byeSlotsCount <= 0) break;
-    if (seed.isSeeded) {
-      const slotIndex = seed.slot - 1;
-      const opponentIndex = slotIndex % 2 === 0 ? slotIndex + 1 : slotIndex - 1;
-      
-      if (!assignedSlots.has(opponentIndex)) {
-        initialSlots[opponentIndex] = null; // BYE
-        assignedSlots.add(opponentIndex);
-        byeSlotsCount--;
-      }
+    if (!seed.isSeeded) continue;
+
+    const slotIndex = seed.slot - 1;
+    const opponentIndex = slotIndex % 2 === 0 ? slotIndex + 1 : slotIndex - 1;
+    const blockIndex = Math.floor(slotIndex / blockSize);
+
+    if (!assignedSlots.has(opponentIndex)) {
+      initialSlots[opponentIndex] = null; // BYE
+      assignedSlots.add(opponentIndex);
+      blocksWithBye.add(blockIndex);
+      byeSlotsCount--;
     }
   }
 
   if (byeSlotsCount <= 0) return;
 
-  // 2. SEBAR SISA BYE: ACAK TAPI JANGAN BERDEKATAN
-  // Cari semua pasangan match (pair) yang masih kosong total (dua-duanya belum diisi)
-  let availablePairs = [];
-  for (let i = 0; i < bracketSize; i += 2) {
-    if (!assignedSlots.has(i) && !assignedSlots.has(i + 1)) {
-      availablePairs.push(i); // Simpan index awal match (0, 2, 4, dst)
+  // ===============================
+  // 2. Cari blok yang BELUM punya BYE
+  // ===============================
+  let candidateBlocks = [];
+  for (let b = 0; b < totalBlocks; b++) {
+    if (!blocksWithBye.has(b)) {
+      candidateBlocks.push(b);
     }
   }
 
-  // Acak urutan pasangan agar tidak selalu dari atas
-  availablePairs = shuffle(availablePairs);
+  // Acak blok agar tidak selalu dari atas
+  candidateBlocks = shuffle(candidateBlocks);
 
-  // Tentukan jarak minimal (Gap). 
-  // Misal: Jika ada 16 match, usahakan jarak antar BYE minimal 2 match.
-  const gapMin = totalMatches <= 8 ? 1 : 2; 
-  let lastUsedMatchIndex = -gapMin - 1;
-  let finalSelectedPairs = [];
-
-  // Ambil pasangan dengan filter jarak
-  for (let i = 0; i < availablePairs.length; i++) {
-    const currentMatchIndex = availablePairs[i] / 2; // Match ke-berapa (0, 1, 2...)
-    
-    // Cek apakah jarak dari match sebelumnya cukup jauh
-    if (Math.abs(currentMatchIndex - lastUsedMatchIndex) >= gapMin) {
-      finalSelectedPairs.push(availablePairs[i]);
-      lastUsedMatchIndex = currentMatchIndex;
-    }
-    
-    // Jika sudah cukup untuk memenuhi sisa BYE, berhenti
-    if (finalSelectedPairs.length >= byeSlotsCount) break;
-  }
-
-  // Jika setelah difilter jarak ternyata kurang (karena terlalu renggang), 
-  // ambil sisa pasangan apa saja yang tersedia agar BYE tetap habis
-  if (finalSelectedPairs.length < byeSlotsCount) {
-    const remaining = availablePairs.filter(p => !finalSelectedPairs.includes(p));
-    finalSelectedPairs = [...finalSelectedPairs, ...remaining.slice(0, byeSlotsCount - finalSelectedPairs.length)];
-  }
-
-  // Masukkan BYE ke dalam slot yang sudah dipilih secara acak & renggang
-  for (let pairStart of finalSelectedPairs) {
+  // ===============================
+  // 3. Taruh BYE di blok yang kosong
+  // ===============================
+  for (const blockIndex of candidateBlocks) {
     if (byeSlotsCount <= 0) break;
-    
-    // Pilih slot 1 atau slot 2 dalam match tersebut secara acak
-    const slotPilihan = pairStart + (Math.random() < 0.5 ? 0 : 1);
-    initialSlots[slotPilihan] = null;
-    assignedSlots.add(slotPilihan);
+
+    const start = blockIndex * blockSize;
+    const end = Math.min(start + blockSize, bracketSize);
+
+    let possibleSlots = [];
+    for (let i = start; i < end; i++) {
+      const pairIndex = i % 2 === 0 ? i + 1 : i - 1;
+      if (!assignedSlots.has(i) && !assignedSlots.has(pairIndex)) {
+        possibleSlots.push(i);
+      }
+    }
+
+    if (possibleSlots.length > 0) {
+      const slot = possibleSlots[Math.floor(Math.random() * possibleSlots.length)];
+      initialSlots[slot] = null;
+      assignedSlots.add(slot);
+      blocksWithBye.add(blockIndex);
+      byeSlotsCount--;
+    }
+  }
+
+  if (byeSlotsCount <= 0) return;
+
+  // ===============================
+  // 4. SISA BYE (kalau masih ada)
+  // ===============================
+  let fallbackSlots = [];
+  for (let i = 0; i < bracketSize; i++) {
+    const pairIndex = i % 2 === 0 ? i + 1 : i - 1;
+    if (!assignedSlots.has(i) && !assignedSlots.has(pairIndex)) {
+      fallbackSlots.push(i);
+    }
+  }
+
+  fallbackSlots = shuffle(fallbackSlots);
+
+  for (const slot of fallbackSlots) {
+    if (byeSlotsCount <= 0) break;
+    initialSlots[slot] = null;
+    assignedSlots.add(slot);
     byeSlotsCount--;
   }
 }
+
 
 
 

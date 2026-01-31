@@ -321,6 +321,7 @@ const confirmDeleteBagan = async () => {
           ));
       })()}
   </div>
+  
   <ConfirmModal
     show={showConfirm}
     title="Hapus Bagan"
