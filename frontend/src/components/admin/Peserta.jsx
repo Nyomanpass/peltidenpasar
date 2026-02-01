@@ -15,6 +15,12 @@ function Peserta() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    pesertaId: null,
+  });
+
+
   
 
   // State untuk melacak tournament yang dipilih (agar memicu re-render)
@@ -83,17 +89,27 @@ function Peserta() {
     }));
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Yakin mau hapus peserta ini?")) return;
+
+  const handleDelete = (id) => {
+    setConfirmDelete({
+      show: true,
+      pesertaId: id,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
     try {
-      await api.delete(`/peserta/${id}`);
+      await api.delete(`/peserta/${confirmDelete.pesertaId}`);
       setSuccess("Peserta berhasil dihapus");
-      fetchPeserta(); // Ambil data ulang setelah hapus
+      fetchPeserta();
     } catch (err) {
       console.error("Error delete:", err);
       setError("Gagal menghapus peserta");
+    } finally {
+      setConfirmDelete({ show: false, pesertaId: null });
     }
   };
+
 
   // --- 5. RENDER LOGIC ---
   if (loading) {
@@ -304,6 +320,28 @@ function Peserta() {
         </div>
       );
     })()}
+
+    {confirmDelete.show && (
+        <AlertMessage
+          type="warning"
+          message="Yakin mau menghapus peserta ini?"
+          onClose={() => setConfirmDelete({ show: false, pesertaId: null })}
+        >
+          <button
+            onClick={() => setConfirmDelete({ show: false, pesertaId: null })}
+            className="px-5 py-2 rounded-xl bg-gray-200 font-bold hover:bg-gray-300 transition"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleConfirmDelete}
+            className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+          >
+            Hapus
+          </button>
+        </AlertMessage>
+      )}
+
     </div>
   );
 }

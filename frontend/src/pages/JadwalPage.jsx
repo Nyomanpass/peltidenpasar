@@ -52,13 +52,20 @@ const JadwalPage = () => {
 
   const [showForm, setShowForm] = useState(true); 
 
+  const [manualWinnerMatch, setManualWinnerMatch] = useState(null);
 
 
   const uniqueTanggal = [...new Set(jadwal.map(j => j.tanggal))].sort(
   (a, b) => new Date(a) - new Date(b)
   );
 
-  // Set tanggal filter otomatis hanya jika belum ada yang dipilih
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    jadwalId: null,
+  });
+
+
+
 // --- GANTI DENGAN KODE INI ---
 useEffect(() => {
   if (uniqueTanggal.length > 0 && !selectedTanggalFilter) {
@@ -309,21 +316,26 @@ const fetchBagan = async () => {
     }
   };
 
-  const handleDeleteJadwal = async (jadwalId) => {
-    const isConfirmed = window.confirm("Apakah Anda yakin ingin menghapus jadwal ini?");
-    if (!isConfirmed) {
-      return;
-    }
+  const handleDeleteJadwal = (jadwalId) => {
+    setConfirmDelete({
+      show: true,
+      jadwalId: jadwalId,
+    });
+  };
 
+  const confirmDeleteJadwal = async () => {
     try {
-      await api.delete(`/jadwal/${jadwalId}`);
-      setSuccess('Jadwal berhasil dihapus.');
+      await api.delete(`/jadwal/${confirmDelete.jadwalId}`);
+      setSuccess("Jadwal berhasil dihapus.");
       fetchJadwal();
     } catch (err) {
-      console.error('Error:', err);
-      setError(err.response?.data?.message || 'Gagal menghapus jadwal.');
+      setError("Gagal menghapus jadwal.");
+    } finally {
+      setConfirmDelete({ show: false, jadwalId: null });
     }
   };
+
+
 
 
   const filteredMatches = matches.filter((m) => {
@@ -392,14 +404,13 @@ const groupedJadwal = [...jadwal]
   }
 
   return (
-<div className="h-screen">
-
-  {/* Notifikasi */}
-<AlertMessage
-  type="success"
-  message={success}
-  onClose={() => setSuccess("")}
-/>
+    <div className="min-h-screen">
+      {/* Notifikasi */}
+      <AlertMessage
+        type="success"
+        message={success}
+        onClose={() => setSuccess("")}
+      />
 
 <AlertMessage
   type="error"
@@ -619,7 +630,6 @@ const groupedJadwal = [...jadwal]
     )}
   </div>
 )}
-  {/* --- BAGIAN FILTER TANGGAL --- */}
 
   
   {/* --- BAGIAN FILTER DAN DOWNLOAD PDF --- */}
@@ -663,42 +673,44 @@ const groupedJadwal = [...jadwal]
     </div>
 
     {/* --- BAGIAN TOMBOL EXPORT PDF --- */}
-<div className="flex items-center md:border-l border-gray-100 md:pl-6">
-  {!readyToDownload ? (
-    // Tampilan awal: Tombol biasa (Sangat Ringan, tidak bikin filter macet)
-    <button
-      onClick={() => setReadyToDownload(true)}
-      className="flex items-center gap-2 py-2 px-6 rounded-xl font-bold text-sm bg-red-600 text-white hover:bg-red-700 transition shadow-lg"
-    >
-      <Layout size={18}/> SIAPKAN PDF
-    </button>
-  ) : (
-    // Tampilan setelah diklik: Baru memanggil PDFDownloadLink
-    <PDFDownloadLink
-      document={
-        <JadwalPDF 
-          jadwal={selectedTanggalFilter 
-            ? jadwal.filter(j => j.tanggal === selectedTanggalFilter) 
-            : jadwal
-          } 
-          lapanganList={[...new Set(jadwal.map(j => j.lapangan?.nama))].filter(Boolean)} 
-          selectedTanggal={selectedTanggalFilter}
-          tournamentName={selectedTournamentName}
-        />
-      }
-      fileName={`Jadwal_${selectedTournamentName || 'Turnamen'}.pdf`}
-      className="flex items-center gap-2 py-2 px-6 rounded-xl font-bold text-sm bg-green-600 text-white hover:bg-green-700 transition shadow-lg"
-    >
-      {({ loading }) => (
-        loading ? 'Sedang Memproses...' : (
-          <span onClick={() => setTimeout(() => setReadyToDownload(false), 2000)}>
-            ✅ KLIK UNTUK DOWNLOAD
-          </span>
-        )
+      {role === "admin" && (
+        <div className="flex items-center md:border-l border-gray-100 md:pl-6">
+          {!readyToDownload ? (
+            // Tampilan awal: Tombol biasa (Sangat Ringan, tidak bikin filter macet)
+            <button
+              onClick={() => setReadyToDownload(true)}
+              className="flex items-center gap-2 py-2 px-6 rounded-xl font-bold text-sm bg-red-600 text-white hover:bg-red-700 transition shadow-lg"
+            >
+              <Layout size={18}/> SIAPKAN PDF
+            </button>
+          ) : (
+            // Tampilan setelah diklik: Baru memanggil PDFDownloadLink
+            <PDFDownloadLink
+              document={
+                <JadwalPDF 
+                  jadwal={selectedTanggalFilter 
+                    ? jadwal.filter(j => j.tanggal === selectedTanggalFilter) 
+                    : jadwal
+                  } 
+                  lapanganList={[...new Set(jadwal.map(j => j.lapangan?.nama))].filter(Boolean)} 
+                  selectedTanggal={selectedTanggalFilter}
+                  tournamentName={selectedTournamentName}
+                />
+              }
+              fileName={`Jadwal_${selectedTournamentName || 'Turnamen'}.pdf`}
+              className="flex items-center gap-2 py-2 px-6 rounded-xl font-bold text-sm bg-green-600 text-white hover:bg-green-700 transition shadow-lg"
+            >
+              {({ loading }) => (
+                loading ? 'Sedang Memproses...' : (
+                  <span onClick={() => setTimeout(() => setReadyToDownload(false), 2000)}>
+                    ✅ KLIK UNTUK DOWNLOAD
+                  </span>
+                )
+              )}
+            </PDFDownloadLink>
+          )}
+        </div>
       )}
-    </PDFDownloadLink>
-  )}
-</div>
   </div>
 </div>
 
@@ -735,7 +747,7 @@ const groupedJadwal = [...jadwal]
       </thead>
 
       <tbody className="divide-y divide-transparent">
-        {/* --- PERBAIKAN DI SINI: FILTER JAM BERDASARKAN TANGGAL TERPILIH --- */}
+       
         {[...new Set(
           jadwal
             .filter(j => !selectedTanggalFilter || j.tanggal === selectedTanggalFilter) // Filter jadwal sesuai tanggal dulu
@@ -761,7 +773,7 @@ const groupedJadwal = [...jadwal]
                   <td key={lap} className="py-3 align-top min-w-[210px]">
                     {match ? (
                       <div className="h-full bg-white border border-gray-100 rounded-[1.8rem] p-5 shadow-md hover:shadow-2xl hover:border-yellow-400 hover:-translate-y-1 transition-all duration-300 relative group/card overflow-hidden">
-                        {/* --- KODE KONTEN CARD TETAP SAMA SEPERTI MILIKMU --- */}
+                       
                         {role === "admin" && (
                           <div className="absolute top-4 right-4 z-30">
                             <button
@@ -773,6 +785,17 @@ const groupedJadwal = [...jadwal]
                             {openMenuId === match.id && (
                               <div className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 min-w-[130px] overflow-hidden animate-in fade-in zoom-in duration-200">
                                 <button onClick={() => { handleEditClick(match); setOpenMenuId(null); }} className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-yellow-50 text-[11px] font-extrabold text-gray-700 border-b border-gray-50">Edit</button>
+                                {match.status !== "selesai" && (
+                                  <button
+                                    onClick={() => {
+                                      setManualWinnerMatch(match.match);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-blue-50 text-[11px] font-extrabold text-blue-600 border-b border-gray-50"
+                                  >
+                                    Input Pemenang
+                                  </button>
+                                )}
                                 <button onClick={() => { handleDeleteJadwal(match.id); setOpenMenuId(null); }} className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-red-50 text-[11px] font-extrabold text-red-600">Hapus</button>
                               </div>
                             )}
@@ -805,14 +828,34 @@ const groupedJadwal = [...jadwal]
                                   <span className="text-sm font-black text-gray-900 bg-gray-100 px-2 py-0.5 rounded-lg">{match.match.score1} - {match.match.score2}</span>
                                 )}
                              </div>
-                            {(match.status === "terjadwal" || match.status === "belum" || match.status === "aktif") && (
-                              <button onClick={() => handleUpdateStatus(match.id, "berlangsung")} className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-[10px] font-black rounded-xl py-2.5 transition-all shadow-md shadow-yellow-100 flex items-center justify-center gap-2">
-                                <CheckCircle size={14}/> MULAI SEKARANG
-                              </button>
-                            )}
-                            {match.status === "berlangsung" && (
-                              <button onClick={() => match.match.scoreRuleId ? openRefereePanel(match) : (setPendingJadwal(match), setShowRuleModal(true))} className="w-full bg-indigo-600 text-white text-[10px] font-black rounded-xl py-2.5 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">⚖ BUKA PANEL WASIT</button>
-                            )}
+                              {role === "admin" && (
+                                <>
+                                  {(match.status === "terjadwal" ||
+                                    match.status === "belum" ||
+                                    match.status === "aktif") && (
+                                    <button
+                                      onClick={() => handleUpdateStatus(match.id, "berlangsung")}
+                                      className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-[10px] font-black rounded-xl py-2.5 transition-all shadow-md shadow-yellow-100 flex items-center justify-center gap-2"
+                                    >
+                                      <CheckCircle size={14} /> MULAI SEKARANG
+                                    </button>
+                                  )}
+
+                                  {match.status === "berlangsung" && (
+                                    <button
+                                      onClick={() =>
+                                        match.match.scoreRuleId
+                                          ? openRefereePanel(match)
+                                          : (setPendingJadwal(match), setShowRuleModal(true))
+                                      }
+                                      className="w-full bg-indigo-600 text-white text-[10px] font-black rounded-xl py-2.5 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                                    >
+                                      BUKA PANEL WASIT
+                                    </button>
+                                  )}
+                                </>
+                              )}
+
                           </div>
                         </div>
                       </div>
@@ -911,6 +954,39 @@ const groupedJadwal = [...jadwal]
 
     </div>
   </div>
+)}
+
+{confirmDelete.show && (
+  <AlertMessage
+    type="warning"
+    message="Apakah Anda yakin ingin menghapus jadwal ini?"
+    onClose={() => setConfirmDelete({ show: false, jadwalId: null })}
+  >
+    <button
+      onClick={() => setConfirmDelete({ show: false, jadwalId: null })}
+      className="px-5 py-2 rounded-xl bg-gray-200 font-bold hover:bg-gray-300 transition"
+    >
+      Batal
+    </button>
+
+    <button
+      onClick={confirmDeleteJadwal}
+      className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+    >
+      Hapus
+    </button>
+  </AlertMessage>
+)}
+
+{manualWinnerMatch && (
+  <WinnerModal
+    match={manualWinnerMatch}
+    onClose={() => setManualWinnerMatch(null)}
+    onSaved={() => {
+      setManualWinnerMatch(null);
+      fetchJadwal(); // refresh tabel
+    }}
+  />
 )}
 
 

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trash2, Eye, PlusCircle, Layout, Filter, Users } from "lucide-react";
 import AlertMessage from "../components/AlertMessage";
-import ConfirmModal from "../components/ConfirmModal";
+
 
 import api from "../api"; 
 
@@ -18,8 +18,12 @@ export default function BaganPage({onSelectBagan}) {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [baganToDelete, setBaganToDelete] = useState(null);
+
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    baganId: null,
+  });
+
 
   
 
@@ -97,22 +101,24 @@ const fetchBagan = async () => {
 
 
   // --- DELETE BAGAN ---
-const handleDeleteBagan = (baganId) => {
-  setBaganToDelete(baganId);
-  setShowConfirm(true);
-};
+
+  const handleDeleteBagan = (baganId) => {
+    setConfirmDelete({ show: true, baganId });
+  };
+
+
+  
 
 const confirmDeleteBagan = async () => {
   try {
-    await api.delete(`/bagan/${baganToDelete}`);
+    await api.delete(`/bagan/${confirmDelete.baganId}`);
     setSuccess("Bagan berhasil dihapus!");
     fetchBagan();
   } catch (err) {
     console.error("Gagal menghapus bagan:", err);
     setError("Gagal menghapus bagan.");
   } finally {
-    setShowConfirm(false);
-    setBaganToDelete(null);
+    setConfirmDelete({ show: false, baganId: null });
   }
 };
 
@@ -295,9 +301,8 @@ const confirmDeleteBagan = async () => {
                       {role === "admin" && (
                         <button
                         onClick={(e) => {
-                            e.stopPropagation();
-                            setBaganToDelete(bagan.id); // simpan ID bagan
-                            setShowConfirm(true);       // tampilkan popup konfirmasi
+                          e.stopPropagation();
+                          handleDeleteBagan(bagan.id);
                         }}
                         className="flex items-center justify-center gap-1 bg-red-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-700 transition"
                         title="Hapus Bagan"
@@ -322,13 +327,29 @@ const confirmDeleteBagan = async () => {
       })()}
   </div>
   
-  <ConfirmModal
-    show={showConfirm}
-    title="Hapus Bagan"
-    message="Apakah Anda yakin ingin menghapus bagan ini?"
-    onConfirm={confirmDeleteBagan}
-    onCancel={() => setShowConfirm(false)}
-    />
+ {confirmDelete.show && (
+  <AlertMessage
+    type="warning"
+    message="Yakin mau menghapus bagan ini?"
+    onClose={() => setConfirmDelete({ show: false, baganId: null })}
+  >
+    <div className="flex gap-3 justify-center mt-4">
+      <button
+        onClick={() => setConfirmDelete({ show: false, baganId: null })}
+        className="px-5 py-2 rounded-xl bg-gray-200 font-bold hover:bg-gray-300 transition"
+      >
+        Batal
+      </button>
+      <button
+        onClick={confirmDeleteBagan}
+        className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+      >
+        Hapus
+      </button>
+    </div>
+  </AlertMessage>
+)}
+
 
 </div>
   );

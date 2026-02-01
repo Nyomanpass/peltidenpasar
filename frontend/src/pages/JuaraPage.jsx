@@ -9,10 +9,11 @@ const JuaraPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterKategori, setFilterKategori] = useState("all");
-  // State untuk mencegah PDF crash (Eo is not a function)
+
   const [readyPDF, setReadyPDF] = useState(false);
 
   const [tName, setTName] = useState(localStorage.getItem("selectedTournamentName") || "TURNAMEN"); 
+  const role = localStorage.getItem('role');
 
   const fetchAllData = async () => {
     try {
@@ -37,15 +38,15 @@ const JuaraPage = () => {
             baganId: bagan.id,
             baganNama: bagan.nama,
             kategori: bagan.kategori ? bagan.kategori.toLowerCase().trim() : "single", 
-            kelompokUmurId: bagan.kelompokUmurId, // ✅ TAMBAHKAN INI
-            winners: winnersResponse.data || {}, // Di sini data klasemen disimpan
+            kelompokUmurId: bagan.kelompokUmurId, 
+            winners: winnersResponse.data || {},
           };
         } catch (err) {
           return {
             baganId: bagan.id,
             baganNama: bagan.nama,
             kategori: bagan.kategori ? bagan.kategori.toLowerCase().trim() : "single",
-            kelompokUmurId: bagan.kelompokUmurId, // ✅ TAMBAHKAN INI
+            kelompokUmurId: bagan.kelompokUmurId, 
             winners: null,
           };
         }
@@ -63,25 +64,25 @@ const JuaraPage = () => {
   };
 
   useEffect(() => {
-    // Fungsi yang akan dipanggil saat turnamen berubah
+    
     const handleTournamentChange = () => {
       console.log("Turnamen berubah, memuat ulang data juara...");
       fetchAllData();
     };
 
-    // Jalankan pertama kali saat komponen mount
+
     fetchAllData();
 
-    // Dengar event 'tournament-changed'
+
     window.addEventListener("tournament-changed", handleTournamentChange);
 
-    // Bersihkan listener saat komponen tidak lagi dipakai
+ 
     return () => {
       window.removeEventListener("tournament-changed", handleTournamentChange);
     };
   }, []);
 
-  // Reset tombol PDF setiap kali filter berubah agar tidak crash
+
   useEffect(() => {
     setReadyPDF(false);
   }, [filterKategori]);
@@ -118,14 +119,9 @@ const JuaraPage = () => {
               Tournament: {localStorage.getItem("selectedTournamentName") || "Belum Memilih"}
             </p>
           </div>
-
-          {/* TOOLBAR KANAN (optional, kalau mau taruh search cepat) */}
-          <div className="flex items-center gap-3">
-            {/* bisa kosong atau isi nanti */}
-          </div>
         </div>
       </div>
-        {/* --- FILTER KATEGORI & PDF BUTTON --- */}
+        
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
   
   {/* FILTER KATEGORI */}
@@ -165,38 +161,42 @@ const JuaraPage = () => {
   </div>
 
   {/* TOMBOL PDF */}
-  {filteredWinners.length > 0 && (
-    <div className="flex items-center">
-      {!readyPDF ? (
-        <button 
-          key="btn-siapkan"
-          onClick={() => setReadyPDF(true)}
-          className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"
-        >
-          <FileText size={20} /> Siapkan PDF {filterKategori !== 'all' ? filterKategori : ''}
-        </button>
-      ) : (
-        <PDFDownloadLink
-          key="btn-download"
-          document={<JuaraPDF winnersData={filteredWinners} tournamentName={tName} />}
-          fileName={`Juara_${tName}_${filterKategori}.pdf`}
-          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"
-          onClick={() => {
-            setTimeout(() => {
-              setReadyPDF(false);
-            }, 3000);
-          }}
-        >
-          {({ loading }) => (
-            <>
-              <Trophy size={20} />
-              {loading ? "Menyusun..." : "Download Sekarang (Klik)"}
-            </>
-          )}
-        </PDFDownloadLink>
-      )}
-    </div>
-  )}
+  
+{role === "admin" && filteredWinners.length > 0 && (
+  <div className="flex items-center">
+    {!readyPDF ? (
+      <button 
+        key="btn-siapkan"
+        onClick={() => setReadyPDF(true)}
+        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"
+      >
+        <FileText size={20} /> 
+        Siapkan PDF {filterKategori !== 'all' ? filterKategori : ''}
+      </button>
+    ) : (
+      <PDFDownloadLink
+        key="btn-download"
+        document={<JuaraPDF winnersData={filteredWinners} tournamentName={tName} />}
+        fileName={`Juara_${tName}_${filterKategori}.pdf`}
+        className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"
+        onClick={() => {
+          setTimeout(() => {
+            setReadyPDF(false);
+          }, 3000);
+        }}
+      >
+        {({ loading }) => (
+          <>
+            <Trophy size={20} />
+            {loading ? "Menyusun..." : "Download Sekarang (Klik)"}
+          </>
+        )}
+      </PDFDownloadLink>
+    )}
+  </div>
+)}
+
+
 </div>
 
 

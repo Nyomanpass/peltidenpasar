@@ -59,7 +59,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/daftar-peserta" element={<PesertaForm/>}/>
           <Route path="/tournament" element={<TournamentUser/>}/>
-          <Route path="/about" element={<AboutPage/>}a/>
+          <Route path="/about" element={<AboutPage/>}/>
           <Route path="/contact" element={<ContactPage/>}/>
           <Route path="/berita" element={<News/>}/>
           <Route path="/berita/:idNews" element={<NewsDetail/>}/>

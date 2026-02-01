@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../api";
 
-function Sidebar({ isOpen }) {
+function Sidebar({ isOpen, isCollapsed }) {
   const location = useLocation();
   const role = localStorage.getItem("role");
   const [openTournamentMenu, setOpenTournamentMenu] = useState(false);
@@ -90,23 +90,25 @@ const adminMenu = [
   const menuItems = role === "admin" ? adminMenu : wasitMenu;
 
   return (
-    <aside
-  className={`
-    fixed top-0 left-0 h-screen w-72 bg-secondary shadow-xl z-50
-    border-r border-gray-200
-    flex flex-col
-    transform transition-transform duration-300 ease-in-out
-    ${isOpen ? "translate-x-0" : "-translate-x-full"} 
-    md:translate-x-0
-  `}
->
+  <aside
+    className={`
+      fixed top-0 left-0 h-screen ${isCollapsed ? "w-20" : "w-72"}
+      bg-secondary shadow-xl
+      z-[1000]
+      overflow-visible
+      border-r border-gray-200
+      flex flex-col
+      transform transition-transform duration-300 ease-in-out
+      ${isOpen ? "translate-x-0" : "-translate-x-full"} 
+      md:translate-x-0
+    `}
+  >
   {/* ===== SCROLL AREA ===== */}
-  <nav className="px-4 mt-3 flex-1 overflow-y-auto">
-
+  <nav className="px-4 mt-3 flex-1 overflow-visible relative">
     {/* ===============================
         BLOK PILIH TOURNAMENT (ACCORDION)
     =============================== */}
-    <div className="mb-6">
+    <div className={`mb-6 ${isCollapsed ? "hidden" : ""}`}>
       <button
         onClick={() => setIsTournamentListOpen(!isTournamentListOpen)}
         className="
@@ -117,7 +119,7 @@ const adminMenu = [
       >
         <div className="flex items-center gap-3">
           <List size={20} className="text-white" />
-          <span className="text-md">Pilih Tournament</span>
+          {!isCollapsed && <span className="text-md">Pilih Tournament</span>}
         </div>
         {isTournamentListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
       </button>
@@ -152,69 +154,95 @@ const adminMenu = [
     {/* ===============================
         MENU UTAMA
     =============================== */}
-   <ul className="space-y-1 mt-6 border-t border-white/30 pt-4">
+   <ul className="space-y-1 mt-6 border-t border-white/30 pt-4 overflow-y-auto max-h-[70vh]">
   {menuItems.map((item) => {
     const currentPath = location.pathname;
 
     // ===== JIKA ITEM PUNYA SUBMENU (TOURNAMENT) =====
-    if (item.children) {
-      const isTournamentActive = currentPath.includes("/admin/tournament");
+if (item.children) {
+  const isTournamentActive = currentPath.includes("/admin/tournament");
 
-      return (
-        <li key={item.label}>
-          <button
-            onClick={() => setOpenTournamentMenu(!openTournamentMenu)}
-            className={`
-              flex items-center justify-between w-full mb-3 p-3 rounded-lg text-md font-medium
-              transition-all
-              ${isTournamentActive
-                ? "bg-primary text-white shadow-md"
-                : "text-white hover:bg-white/30"}
-            `}
-          >
-            <div className="flex items-center gap-4">
-              {item.icon}
-              {item.label}
-            </div>
-            {openTournamentMenu ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-          </button>
+  // ======================
+  // MODE COLLAPSED (kecil) → LANGSUNG KE LOCAL
+  // ======================
+  if (isCollapsed) {
+    return (
+      <li key={item.label}>
+        <Link
+          to="/admin/tournament?level=local"
+          className={`
+            flex items-center justify-center p-3 mb-3 rounded-lg
+            transition-all
+            ${isTournamentActive
+              ? "bg-primary text-white"
+              : "text-white hover:bg-white/30"}
+          `}
+          title="Tournament (Local)"
+        >
+          {item.icon}
+        </Link>
+      </li>
+    );
+  }
 
-          {openTournamentMenu && (
-            <ul className="ml-6 space-y-1">
-              {item.children.map((sub) => {
-                const isSubActive = location.search.includes(
-                  sub.path.split("?")[1]
-                );
+  // ======================
+  // MODE NORMAL (besar) → ACCORDION
+  // ======================
+  return (
+    <li key={item.label}>
+      <button
+        onClick={() => setOpenTournamentMenu(!openTournamentMenu)}
+        className={`
+          flex items-center justify-between w-full mb-3 p-3 rounded-lg text-md font-medium
+          transition-all
+          ${isTournamentActive
+            ? "bg-primary text-white shadow-md"
+            : "text-white hover:bg-white/30"}
+        `}
+      >
+        <div className="flex items-center gap-4">
+          {item.icon}
+          {item.label}
+        </div>
+        {openTournamentMenu ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+      </button>
 
-                return (
-                  <li key={sub.path}>
-                  <Link
-                    to={sub.path}
+      {openTournamentMenu && (
+        <ul className="ml-6 space-y-1">
+          {item.children.map((sub) => {
+            const isSubActive = location.search.includes(
+              sub.path.split("?")[1]
+            );
+
+            return (
+              <li key={sub.path}>
+                <Link
+                  to={sub.path}
+                  className={`
+                    flex items-center gap-2 px-3 py-2 text-sm transition-all
+                    ${isSubActive
+                      ? "text-yellow-400 font-bold"
+                      : "text-gray-300 hover:text-white"}
+                  `}
+                >
+                  <span
                     className={`
-                      flex items-center gap-2 px-3 py-2 text-sm transition-all
-                      ${isSubActive
-                        ? "text-yellow-400 font-bold"
-                        : "text-gray-300 hover:text-white"}
+                      w-2 h-2 rounded-full
+                      ${isSubActive ? "bg-yellow-400" : "bg-gray-200"}
                     `}
-                  >
-                    {/* TITIK SELALU ADA */}
-                    <span
-                      className={`
-                        w-2 h-2 rounded-full
-                        ${isSubActive ? "bg-yellow-400" : "bg-gray-200"}
-                      `}
-                    />
-                    {sub.label}
-                  </Link>
-                </li>
-              );
+                  />
+                  {sub.label}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </li>
+  );
+}
 
-              })}
-            </ul>
-          )}
-        </li>
-      );
-    }
+
 
     // ===== MENU BIASA =====
     const isExact = currentPath === item.path;
@@ -248,7 +276,8 @@ const adminMenu = [
       >
 
           {item.icon}
-          {item.label}
+         {!isCollapsed && item.label}
+
         </Link>
       </li>
     );

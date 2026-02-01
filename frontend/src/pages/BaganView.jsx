@@ -337,7 +337,7 @@ if (isRoundRobin) {
 
 
   return (
-    <div className="bg-gray-50 min-h-screen w-full">
+    <div className="min-h-screen w-full">
       <div className="max-full mx-auto mb-10">
         <h1 className="text-3xl md:text-4xl font-extrabold mb-9 text-center text-gray-800">
           {bagan.nama}
@@ -394,7 +394,7 @@ if (isRoundRobin) {
           {isRoundRobin ? (
             /* TAMPILAN ROUND ROBIN (TABEL) */
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-gray-700 border-b pb-2">Badan Pertandingan Round Robin</h2>
+              <h2 className="text-xl font-bold text-gray-700 border-b pb-2">Bagan Pertandingan Round Robin</h2>
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-gray-600">
@@ -437,19 +437,29 @@ if (isRoundRobin) {
                           </span>
                         </td>
 
-                        {role === "admin" && (
+                       {role === "admin" && (
                           <td className="p-4 border-b text-center">
-                            <button 
-                              onClick={() => {
-                                setSelectedMatch(m);
-                                setModalType("winner");
-                              }}
-                              className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200"
-                            >
-                              Input Skor
-                            </button>
-                          </td>
-                        )}
+                              {(
+                                // untuk SINGLE
+                                (!isDouble && !m.winnerId) ||
+                                // untuk DOUBLE
+                                (isDouble && !m.winnerDoubleId)
+                              ) ? (
+                                <button 
+                                  onClick={() => {
+                                    setSelectedMatch(m);
+                                    setModalType("winner");
+                                  }}
+                                  className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200"
+                                >
+                                  Input Skor
+                                </button>
+                              ) : (
+                                <span className="text-xs text-gray-400 italic">Selesai</span>
+                              )}
+                            </td>
+                          )}
+
                       </tr>
                     ))}
                   </tbody>
@@ -471,7 +481,11 @@ if (isRoundRobin) {
                       const hasS1 = isDouble ? match.doubleTeam1Id : match.peserta1Id;
                       const hasS2 = isDouble ? match.doubleTeam2Id : match.peserta2Id;
                       
-                      if (hasS1 !== null && hasS2 !== null) {
+                      const isFinished = isDouble
+                        ? !!match.winnerDoubleId
+                        : !!match.winnerId;
+
+                      if (hasS1 !== null && hasS2 !== null && !isFinished) {
                         setModalType("winner");
                       }
                     }}
@@ -706,7 +720,7 @@ if (isRoundRobin) {
           }}
         >
           <h2 style={{ fontSize: 20, marginBottom: 12, color: "#1f2937" }}>
-            Badan Pertandingan Round Robin
+            Bagan Pertandingan Round Robin
           </h2>
 
           <table style={{ width: "100%", borderCollapse: "collapse" }}>

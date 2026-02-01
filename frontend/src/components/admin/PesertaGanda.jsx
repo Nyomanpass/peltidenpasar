@@ -48,6 +48,8 @@ function PesertaGanda() {
   const isAdmin = role === "admin"; // Pastikan ini true jika admin
   const isActive = (path) => location.pathname === path;
 
+  
+
   const fetchData = useCallback(async (idOverride) => {
     const tournamentId = idOverride || localStorage.getItem("selectedTournament");
     if (!tournamentId) return;
