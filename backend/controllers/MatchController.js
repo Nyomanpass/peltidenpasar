@@ -9,6 +9,9 @@ import { ScoreRule } from "../models/ScoreRuleModel.js";
 
 import { Op } from "sequelize";
 
+const points = ["0", "15", "30", "40"];
+
+
 const _processMatchPeserta = async (matchId, side1Id, side2Id, kategori) => {
   const match = await Match.findByPk(matchId);
   if (!match) return null;
@@ -822,4 +825,107 @@ export const resetMatchScore = async (req, res) => {
   }
 };
 
+export const manualWOPoint = async (req, res) => {
+  try {
+    const { matchId, winnerSide } = req.body; 
+    // winnerSide = "p1" atau "p2"
+
+    const match = await Match.findByPk(matchId);
+    if (!match) return res.status(404).json({ msg: "Match tidak ditemukan" });
+
+    const rule = await ScoreRule.findByPk(match.scoreRuleId);
+    if (!rule) return res.status(400).json({ msg: "ScoreRule belum dipilih" });
+
+    const { jumlahSet, gamePerSet } = rule;
+    const targetSetWin = Math.ceil(jumlahSet / 2);
+    const winnerIsP1 = winnerSide === "p1";
+    const isDouble = !!match.doubleTeam1Id;
+
+    let setMenangP1 = 0;
+    let setMenangP2 = 0;
+
+    for (let setKe = 1; setKe <= targetSetWin; setKe++) {
+      let gameP1 = 0;
+      let gameP2 = 0;
+
+      while ((winnerIsP1 ? gameP1 : gameP2) < gamePerSet) {
+        // POINT 15–30–40
+        for (let i = 1; i < points.length; i++) {
+          await MatchScoreLog.create({
+            matchId: match.id,
+            setKe,
+            skorP1: winnerIsP1 ? points[i] : "0",
+            skorP2: winnerIsP1 ? "0" : points[i],
+            gameP1,
+            gameP2,
+            setMenangP1,
+            setMenangP2,
+            keterangan: "WO Auto Point"
+          });
+        }
+
+        // GAME MENANG
+        if (winnerIsP1) gameP1++;
+        else gameP2++;
+
+        await MatchScoreLog.create({
+          matchId: match.id,
+          setKe,
+          skorP1: "0",
+          skorP2: "0",
+          gameP1,
+          gameP2,
+          setMenangP1,
+          setMenangP2,
+          keterangan: "WO Auto Game"
+        });
+      }
+
+      // SET SELESAI
+      if (winnerIsP1) setMenangP1++;
+      else setMenangP2++;
+
+      await MatchScoreLog.create({
+        matchId: match.id,
+        setKe,
+        skorP1: "0",
+        skorP2: "0",
+        gameP1,
+        gameP2,
+        setMenangP1,
+        setMenangP2,
+        keterangan: "WO Auto Set"
+      });
+    }
+
+    const winnerId = winnerIsP1
+      ? (isDouble ? match.doubleTeam1Id : match.peserta1Id)
+      : (isDouble ? match.doubleTeam2Id : match.peserta2Id);
+
+    await match.update({
+      winnerId: isDouble ? null : winnerId,
+      winnerDoubleId: isDouble ? winnerId : null,
+      score1: setMenangP1,
+      score2: setMenangP2,
+
+      // ⬇️ INI YANG KURANG
+      set1P1: winnerIsP1 ? gamePerSet : 0,
+      set1P2: winnerIsP1 ? 0 : gamePerSet,
+
+      set2P1: targetSetWin >= 2 ? (winnerIsP1 ? gamePerSet : 0) : null,
+      set2P2: targetSetWin >= 2 ? (winnerIsP1 ? 0 : gamePerSet) : null,
+
+      set3P1: targetSetWin >= 3 ? (winnerIsP1 ? gamePerSet : 0) : null,
+      set3P2: targetSetWin >= 3 ? (winnerIsP1 ? 0 : gamePerSet) : null,
+
+      status: "selesai"
+    });
+
+
+    res.json({ msg: "WO + skor otomatis berhasil dibuat" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
+};
 

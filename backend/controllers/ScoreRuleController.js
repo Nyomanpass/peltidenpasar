@@ -21,3 +21,16 @@ export const deleteScoreRule = async (req, res) => {
   await ScoreRule.destroy({ where: { id } });
   res.json({ msg: "Rule deleted" });
 };
+
+export const getScoreRuleById = async (req, res) => {
+  const { id } = req.params;
+
+  const rule = await ScoreRule.findByPk(id);
+
+  if (!rule) {
+    return res.status(404).json({ msg: "ScoreRule tidak ditemukan" });
+  }
+
+  res.json(rule);
+};
+

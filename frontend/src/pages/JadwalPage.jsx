@@ -32,10 +32,6 @@ const JadwalPage = () => {
   // State untuk mode edit
   const [editingJadwalId, setEditingJadwalId] = useState(null);
 
-  // State untuk modal pemenang
-  const [showWinnerModal, setShowWinnerModal] = useState(false);
-  const [selectedMatchToScore, setSelectedMatchToScore] = useState(null);
-  const [selectedJadwalIdToUpdate, setSelectedJadwalIdToUpdate] = useState(null);
 
   //filter jadwal dnegna tanggal
   const [selectedTanggalFilter, setSelectedTanggalFilter] = useState('');
@@ -53,6 +49,9 @@ const JadwalPage = () => {
   const [showForm, setShowForm] = useState(true); 
 
   const [manualWinnerMatch, setManualWinnerMatch] = useState(null);
+
+  const [ruleMode, setRuleMode] = useState(null); 
+
 
 
   const uniqueTanggal = [...new Set(jadwal.map(j => j.tanggal))].sort(
@@ -292,30 +291,6 @@ const fetchBagan = async () => {
     }
   };
 
-  const handleCompleteJadwal = (jadwal) => {
-    setSelectedMatchToScore(jadwal.match);
-    setSelectedJadwalIdToUpdate(jadwal.id);
-    setShowWinnerModal(true);
-  };
-
-  const handleWinnerSaved = async () => {
-    try {
-      await api.put(`/jadwal/${selectedJadwalIdToUpdate}/status`, { status: 'selesai' });
-      setSuccess('Skor dan pemenang berhasil disimpan. Jadwal berhasil diselesaikan.');
-      
-      fetchJadwal();
-      fetchMatches(selectedBaganId); 
-      
-    } catch (err) {
-      console.error('Error:', err);
-      setError(err.response?.data?.error || 'Gagal memperbarui status jadwal.');
-    } finally {
-      setShowWinnerModal(false);
-      setSelectedMatchToScore(null);
-      setSelectedJadwalIdToUpdate(null);
-    }
-  };
-
   const handleDeleteJadwal = (jadwalId) => {
     setConfirmDelete({
       show: true,
@@ -334,9 +309,6 @@ const fetchBagan = async () => {
       setConfirmDelete({ show: false, jadwalId: null });
     }
   };
-
-
-
 
   const filteredMatches = matches.filter((m) => {
     const isAlreadyScheduled = jadwal.some(
@@ -786,15 +758,25 @@ const groupedJadwal = [...jadwal]
                               <div className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 min-w-[130px] overflow-hidden animate-in fade-in zoom-in duration-200">
                                 <button onClick={() => { handleEditClick(match); setOpenMenuId(null); }} className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-yellow-50 text-[11px] font-extrabold text-gray-700 border-b border-gray-50">Edit</button>
                                 {match.status !== "selesai" && (
-                                  <button
-                                    onClick={() => {
-                                      setManualWinnerMatch(match.match);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-blue-50 text-[11px] font-extrabold text-blue-600 border-b border-gray-50"
-                                  >
-                                    Input Pemenang
-                                  </button>
+                                    <button
+                                      onClick={() => {
+                                        if (!match.match.scoreRuleId) {
+                                          setPendingJadwal(match);
+                                          setRuleMode("manual"); 
+                                          setShowRuleModal(true); 
+                                          setOpenMenuId(null);
+                                          return;
+                                        }
+
+                                        // ✅ BARU masuk manual
+                                        setManualWinnerMatch(match.match);
+                                        
+                                        setOpenMenuId(null);
+                                      }}
+                                      className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-yellow-50 text-[11px] font-extrabold text-blue-500 border-b border-gray-50"
+                                    >
+                                      Input Pemenang
+                                    </button>
                                 )}
                                 <button onClick={() => { handleDeleteJadwal(match.id); setOpenMenuId(null); }} className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-red-50 text-[11px] font-extrabold text-red-600">Hapus</button>
                               </div>
@@ -842,16 +824,21 @@ const groupedJadwal = [...jadwal]
                                   )}
 
                                   {match.status === "berlangsung" && (
-                                    <button
-                                      onClick={() =>
-                                        match.match.scoreRuleId
-                                          ? openRefereePanel(match)
-                                          : (setPendingJadwal(match), setShowRuleModal(true))
-                                      }
-                                      className="w-full bg-indigo-600 text-white text-[10px] font-black rounded-xl py-2.5 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                                      <button
+                                        onClick={() => {
+                                          if (match.match.scoreRuleId) {
+                                            openRefereePanel(match);
+                                          } else {
+                                            setPendingJadwal(match);
+                                            setRuleMode("wasit");   
+                                            setShowRuleModal(true);
+                                          }
+                                        }}
+                                     className="w-full bg-indigo-500 hover:bg-yellow-600 text-white text-[10px] font-black rounded-xl py-2.5 transition-all shadow-md shadow-yellow-100 flex items-center justify-center gap-2"
                                     >
                                       BUKA PANEL WASIT
                                     </button>
+
                                   )}
                                 </>
                               )}
@@ -881,14 +868,7 @@ const groupedJadwal = [...jadwal]
   </div>
 )}
 
-  
-  {showWinnerModal && selectedMatchToScore && (
-    <WinnerModal
-      match={selectedMatchToScore}
-      onClose={() => setShowWinnerModal(false)}
-      onSaved={handleWinnerSaved}
-    />
-  )}
+
 
 
 
@@ -932,24 +912,36 @@ const groupedJadwal = [...jadwal]
           Batal
         </button>
 
-        <button
-          disabled={!selectedRule}
-          onClick={async () => {
-            await api.patch(`/matches/${pendingJadwal.match.id}/set-rule`, {
-              scoreRuleId: selectedRule
-            });
+      <button
+        disabled={!selectedRule}
+        onClick={async () => {
+          await api.patch(`/matches/${pendingJadwal.match.id}/set-rule`, {
+            scoreRuleId: selectedRule
+          });
 
-            setShowRuleModal(false);
-            openRefereePanel(pendingJadwal);
-          }}
-          className={`w-1/2 py-2 rounded-xl font-semibold transition text-white
-            ${selectedRule 
-              ? "bg-blue-600 hover:bg-blue-700" 
-              : "bg-blue-300 cursor-not-allowed"
-            }`}
-        >
-          Mulai Match
-        </button>
+          setShowRuleModal(false);
+
+          if (ruleMode === "wasit") {
+            openRefereePanel(pendingJadwal); // ✅ ke wasit
+          }
+
+          if (ruleMode === "manual") {
+            setManualWinnerMatch(pendingJadwal.match); // ✅ ke WinnerModal
+          }
+
+          setRuleMode(null); // reset
+        }}
+        className={`w-1/2 py-2 rounded-xl font-bold text-white transition-all
+          ${selectedRule
+            ? "bg-blue-600 hover:bg-blue-700 shadow-md"
+            : "bg-blue-300 cursor-not-allowed"
+          }
+        `}
+      >
+        Lanjut
+      </button>
+
+
       </div>
 
     </div>

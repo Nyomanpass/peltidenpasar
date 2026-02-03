@@ -4,7 +4,7 @@ import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import api from "../api"; // Mengimpor instans axios dari file api.js
-import { CheckCircle, Info, Star, Users } from "lucide-react";
+import { Info, Star, Users } from "lucide-react";
 import AlertMessage from "../components/AlertMessage";
 
 // Modal
@@ -49,11 +49,30 @@ export default function BaganView({baganId}) {
     }
   };
 
-  // Load peserta menggunakan axios
+  const formatSetScore = (m) => {
+    const sets = [];
+
+    for (let i = 1; i <= 3; i++) {
+      const s1 = m[`set${i}P1`];
+      const s2 = m[`set${i}P2`];
+      const tb1 = m[`set${i}TB1`];
+      const tb2 = m[`set${i}TB2`];
+
+      if (s1 != null && s2 != null && !(s1 === 0 && s2 === 0)) {
+        if (tb1 != null && tb2 != null) {
+          sets.push(`${s1}-${s2}(${tb1}-${tb2})`);
+        } else {
+          sets.push(`${s1}-${s2}`);
+        }
+      }
+    }
+
+    return sets.join(" "); 
+  };
+
   const loadAllPeserta = async (kelompokUmurId) => {
     try {
       const isDouble = bagan?.kategori === "double";
-      // Jika double, ambil dari tabel double-teams. Jika single, tetap pesertafilter.
       const endpoint = isDouble ? '/double-teams' : '/pesertafilter';
       
       const res = await api.get(endpoint, {
@@ -67,7 +86,6 @@ export default function BaganView({baganId}) {
       const data = res.data;
       setAllPeserta(data);
       
-      // Hitung Bye
       const totalPeserta = data.length;
       let bracketSize = 2;
       while (bracketSize < totalPeserta) {
@@ -89,108 +107,102 @@ export default function BaganView({baganId}) {
     }
   }, [bagan]);
 
-  // Export PDF yang diperbaiki
-const handleExportPDF = async () => {
-  const bracketEl = document.getElementById(
-    isRoundRobin ? "roundrobin-pdf" : "bracket-container"
-  );
+  
+  const handleExportPDF = async () => {
+    const bracketEl = document.getElementById(
+      isRoundRobin ? "roundrobin-pdf" : "bracket-container"
+    );
 
-  const ketPdfEl = document.getElementById("keterangan-pdf");
+    const ketPdfEl = document.getElementById("keterangan-pdf");
 
-  if (!bracketEl || !bagan) return;
+    if (!bracketEl || !bagan) return;
 
-  try {
-    // 🔥 TAMBAHAN: tampilkan dulu kalau round robin
-    if (isRoundRobin) {
-      bracketEl.style.display = "block";
-    }
+    try {
+     
+      if (isRoundRobin) {
+        bracketEl.style.display = "block";
+      }
 
-    await new Promise(r => setTimeout(r, 100)); // tunggu render
+      await new Promise(r => setTimeout(r, 100)); 
 
-    /* =========================
-       1️⃣ CAPTURE BRACKET (HALAMAN 1)
-    ========================= */
-    const bracketCanvas = await html2canvas(bracketEl, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff"
-    });
-
-    const bracketImg = bracketCanvas.toDataURL("image/jpeg", 1.0);
-
-    // ❌ JANGAN pakai *0.75
-    const bw = bracketCanvas.width;
-    const bh = bracketCanvas.height;
-
-    if (!bw || !bh) {
-      throw new Error("Canvas kosong (width/height = 0)");
-    }
-
-    const paddingTop = 120;
-    const pdfWidth = bw + 60;
-    const pdfHeight = bh + paddingTop + 60;
-
-    const pdf = new jsPDF({
-      orientation: bw > bh ? "l" : "p",
-      unit: "pt",
-      format: [pdfWidth, pdfHeight]
-    });
-
-    /* =========================
-       2️⃣ HEADER
-    ========================= */
-    const namaTurnamen =
-    bagan.Tournament?.name || bagan.tournament_name || "PELTI DENPASAR";
-    const namaKategori = bagan.nama || "Kategori Umum";
-
-    pdf.setFontSize(36);
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(20, 50, 100);
-    pdf.text(namaTurnamen.toUpperCase(), pdfWidth / 2, 60, { align: "center" });
-
-    pdf.setFontSize(24);
-    pdf.setFont("helvetica", "normal");
-    pdf.setTextColor(60, 60, 60);
-    pdf.text(namaKategori, pdfWidth / 2, 100, { align: "center" });
-
-    pdf.setDrawColor(200);
-    pdf.line(50, 120, pdfWidth - 50, 120);
-
-    pdf.addImage(bracketImg, "JPEG", 30, paddingTop, bw, bh);
-
-    /* =========================
-       3️⃣ HALAMAN 2 – KETERANGAN
-    ========================= */
-    if (ketPdfEl && !isRoundRobin) {
-      ketPdfEl.style.display = "block";
-      await new Promise(r => setTimeout(r, 100));
-
-      const canvas = await html2canvas(ketPdfEl, {
+    
+      const bracketCanvas = await html2canvas(bracketEl, {
         scale: 2,
+        useCORS: true,
         backgroundColor: "#ffffff"
       });
 
-      const w = canvas.width;
-      const h = canvas.height;
+      const bracketImg = bracketCanvas.toDataURL("image/jpeg", 1.0);
 
-      pdf.addPage();
-      pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 30, 40, w, h);
 
-      ketPdfEl.style.display = "none";
+      const bw = bracketCanvas.width;
+      const bh = bracketCanvas.height;
+
+      if (!bw || !bh) {
+        throw new Error("Canvas kosong (width/height = 0)");
+      }
+
+      const paddingTop = 120;
+      const pdfWidth = bw + 60;
+      const pdfHeight = bh + paddingTop + 60;
+
+      const pdf = new jsPDF({
+        orientation: bw > bh ? "l" : "p",
+        unit: "pt",
+        format: [pdfWidth, pdfHeight]
+      });
+
+    
+      const namaTurnamen =
+      bagan.Tournament?.name || bagan.tournament_name || "PELTI DENPASAR";
+      const namaKategori = bagan.nama || "Kategori Umum";
+
+      pdf.setFontSize(36);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(20, 50, 100);
+      pdf.text(namaTurnamen.toUpperCase(), pdfWidth / 2, 60, { align: "center" });
+
+      pdf.setFontSize(24);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(60, 60, 60);
+      pdf.text(namaKategori, pdfWidth / 2, 100, { align: "center" });
+
+      pdf.setDrawColor(200);
+      pdf.line(50, 120, pdfWidth - 50, 120);
+
+      pdf.addImage(bracketImg, "JPEG", 30, paddingTop, bw, bh);
+
+     
+      if (ketPdfEl && !isRoundRobin) {
+        ketPdfEl.style.display = "block";
+        await new Promise(r => setTimeout(r, 100));
+
+        const canvas = await html2canvas(ketPdfEl, {
+          scale: 2,
+          backgroundColor: "#ffffff"
+        });
+
+        const w = canvas.width;
+        const h = canvas.height;
+
+        pdf.addPage();
+        pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 30, 40, w, h);
+
+        ketPdfEl.style.display = "none";
+      }
+
+      pdf.save(`Bagan-${namaKategori.replace(/\s+/g, "-")}.pdf`);
+
+
+      if (isRoundRobin) {
+        bracketEl.style.display = "none";
+      }
+
+    } catch (err) {
+      console.error("Export PDF Error:", err);
+      alert("Gagal export PDF: " + err.message);
     }
-
-    pdf.save(`Bagan-${namaKategori.replace(/\s+/g, "-")}.pdf`);
-
-    // 🔥 sembunyikan lagi
-    if (isRoundRobin) {
-      bracketEl.style.display = "none";
-    }
-
-  } catch (err) {
-    console.error("Export PDF Error:", err);
-    alert("Gagal export PDF: " + err.message);
-  }
-};
+  };
 
 
 
@@ -433,7 +445,7 @@ if (isRoundRobin) {
 
                         <td className="p-4 border-b text-center">
                           <span className="bg-gray-100 px-3 py-1 rounded-md font-mono font-bold">
-                            {m.score1 ?? 0} - {m.score2 ?? 0}
+                            {formatSetScore(m)}
                           </span>
                         </td>
 
@@ -490,47 +502,58 @@ if (isRoundRobin) {
                       }
                     }}
                   >
-                    <SeedItem>
-                      <div className="bg-white rounded-lg">
-                        {/* --- TEAM 1 --- */}
-                        <SeedTeam
-                          className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
-                            ${
-                              (isDouble ? (match.winnerDoubleId === match.doubleTeam1Id && match.doubleTeam1Id !== null) : (match.winnerId === match.peserta1Id && match.peserta1Id !== null))
-                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                            }
-                          `}
-                        >
-                          {isDouble 
-                            ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
-                            : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
-                          
-                          {match.score1 !== null && (
-                            <span className="float-right font-bold">{match.score1}</span>
-                          )}
-                        </SeedTeam>
+                 <SeedItem>
+                  <div className="relative bg-white">
 
-                        {/* --- TEAM 2 --- */}
-                        <SeedTeam
-                          className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
-                            ${
-                              (isDouble ? (match.winnerDoubleId === match.doubleTeam2Id && match.doubleTeam2Id !== null) : (match.winnerId === match.peserta2Id && match.peserta2Id !== null))
-                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                            }
-                          `}
-                        >
-                          {isDouble 
-                            ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
-                            : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
-                          
-                          {match.score2 !== null && (
-                            <span className="float-right font-bold">{match.score2}</span>
-                          )}
-                        </SeedTeam>
+                    {/* BADGE SCORE (ABSOLUTE) */}
+                    {formatSetScore(match) && (
+                      <div className="absolute -top-3 -right-3 z-10">
+                        <span style={{
+                              color: "#000000"
+                            }}
+                          className="font-bold text-md px-2 py-0.5">
+                          {formatSetScore(match)}
+                        </span>
                       </div>
-                    </SeedItem>
+                    )}
+
+                    {/* --- TEAM 1 --- */}
+                    <SeedTeam
+                      className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
+                        ${
+                          (isDouble
+                            ? match.winnerDoubleId === match.doubleTeam1Id
+                            : match.winnerId === match.peserta1Id)
+                            ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                            : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                        }
+                      `}
+                    >
+                      {isDouble 
+                        ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
+                        : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
+                    </SeedTeam>
+
+                    {/* --- TEAM 2 --- */}
+                    <SeedTeam
+                      className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
+                        ${
+                          (isDouble
+                            ? match.winnerDoubleId === match.doubleTeam2Id
+                            : match.winnerId === match.peserta2Id)
+                            ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                            : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                        }
+                      `}
+                    >
+                      {isDouble 
+                        ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
+                        : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
+                    </SeedTeam>
+
+                  </div>
+                </SeedItem>
+
                   </Seed>
                 );
               }}
