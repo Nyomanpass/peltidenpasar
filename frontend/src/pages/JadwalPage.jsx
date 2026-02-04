@@ -912,34 +912,48 @@ const groupedJadwal = [...jadwal]
           Batal
         </button>
 
-      <button
-        disabled={!selectedRule}
-        onClick={async () => {
-          await api.patch(`/matches/${pendingJadwal.match.id}/set-rule`, {
-            scoreRuleId: selectedRule
-          });
+          <button
+  disabled={!selectedRule}
+  onClick={async () => {
+    await api.patch(`/matches/${pendingJadwal.match.id}/set-rule`, {
+      scoreRuleId: selectedRule
+    });
 
-          setShowRuleModal(false);
+    // 🔥 UPDATE DATA MATCH DI FRONTEND (BIAR TIDAK PERLU REFRESH)
+    const updatedMatch = {
+      ...pendingJadwal.match,
+      scoreRuleId: selectedRule
+    };
 
-          if (ruleMode === "wasit") {
-            openRefereePanel(pendingJadwal); // ✅ ke wasit
-          }
+    const updatedJadwal = {
+      ...pendingJadwal,
+      match: updatedMatch
+    };
 
-          if (ruleMode === "manual") {
-            setManualWinnerMatch(pendingJadwal.match); // ✅ ke WinnerModal
-          }
+    setPendingJadwal(updatedJadwal);
+    setShowRuleModal(false);
 
-          setRuleMode(null); // reset
-        }}
-        className={`w-1/2 py-2 rounded-xl font-bold text-white transition-all
-          ${selectedRule
-            ? "bg-blue-600 hover:bg-blue-700 shadow-md"
-            : "bg-blue-300 cursor-not-allowed"
-          }
-        `}
-      >
-        Lanjut
-      </button>
+    if (ruleMode === "wasit") {
+      openRefereePanel(updatedJadwal); // ke wasit
+    }
+
+    if (ruleMode === "manual") {
+      setManualWinnerMatch(updatedMatch); // ke WinnerModal
+    }
+
+    setRuleMode(null);
+    setSelectedRule(""); // reset dropdown
+  }}
+  className={`w-1/2 py-2 rounded-xl font-bold text-white transition-all
+    ${selectedRule
+      ? "bg-blue-600 hover:bg-blue-700 shadow-md"
+      : "bg-blue-300 cursor-not-allowed"
+    }
+  `}
+>
+  Lanjut
+</button>
+
 
 
       </div>

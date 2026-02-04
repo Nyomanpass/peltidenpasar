@@ -265,6 +265,10 @@ const JuaraPage = () => {
                                 <th className="px-4 py-3 text-center font-bold border-b">Poin</th>
                                 <th className="px-4 py-3 text-center font-bold border-b">M</th>
                                 <th className="px-4 py-3 text-center font-bold border-b">K</th>
+                                <th className="px-4 py-3">GM</th>
+                                <th className="px-4 py-3">GK</th>
+                                <th className="px-4 py-3">Selisih</th>
+
                               </tr>
                             </thead>
                             <tbody>
@@ -275,6 +279,12 @@ const JuaraPage = () => {
                                   <td className="px-4 py-3 text-center text-blue-600 font-bold">{p.poin || '0'}</td>
                                   <td className="px-4 py-3 text-center">{p.menang || '0'}</td>
                                   <td className="px-4 py-3 text-center">{p.kalah || '0'}</td>
+                                  <td className="px-4 py-3 text-center">{p.gameMenang}</td>
+                                    <td className="px-4 py-3 text-center">{p.gameKalah}</td>
+                                    <td className="px-4 py-3 text-center font-bold">
+                                      {p.selisih}
+                                    </td>
+
                                 </tr>
                               ))}
                             </tbody>

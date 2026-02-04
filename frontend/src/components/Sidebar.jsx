@@ -94,7 +94,7 @@ const adminMenu = [
     className={`
       fixed top-0 left-0 h-screen ${isCollapsed ? "w-20" : "w-72"}
       bg-secondary shadow-xl
-      z-[1000]
+      z-50
       overflow-visible
       border-r border-gray-200
       flex flex-col

@@ -549,71 +549,126 @@ export const getJuara = async (req, res) => {
     }
 
     // LOGIKA ROUND ROBIN GANDA
-    if (bagan.tipe === "roundrobin") {
+// ===== LOGIKA ROUND ROBIN =====
+// ===== ROUND ROBIN =====
+if (bagan.tipe === "roundrobin") {
   const isDouble = bagan.kategori === "double";
 
   const matches = await Match.findAll({
     where: { baganId, status: "selesai" },
     include: [
+      { model: Peserta, as: "peserta1", attributes: ["id", "namaLengkap"] },
+      { model: Peserta, as: "peserta2", attributes: ["id", "namaLengkap"] },
       { 
-        model: Peserta, as: "peserta1", attributes: ["id", "namaLengkap"] 
+        model: DoubleTeam, as: "doubleTeam1",
+        include: ["Player1", "Player2"]
       },
       { 
-        model: Peserta, as: "peserta2", attributes: ["id", "namaLengkap"] 
-      },
-      { 
-        model: DoubleTeam, as: "doubleTeam1", 
-        include: [
-          { model: Peserta, as: "Player1", attributes: ["namaLengkap"] },
-          { model: Peserta, as: "Player2", attributes: ["namaLengkap"] }
-        ] 
-      },
-      { 
-        model: DoubleTeam, as: "doubleTeam2", 
-        include: [
-          { model: Peserta, as: "Player1", attributes: ["namaLengkap"] },
-          { model: Peserta, as: "Player2", attributes: ["namaLengkap"] }
-        ] 
+        model: DoubleTeam, as: "doubleTeam2",
+        include: ["Player1", "Player2"]
       },
     ],
   });
 
-  if (!matches.length) return res.status(404).json({ message: "Belum ada match." });
+  if (!matches.length) {
+    return res.status(404).json({ message: "Belum ada match." });
+  }
 
   const klasemen = {};
 
-  matches.forEach(m => {
-    // Tentukan objek peserta berdasarkan kategori
-    const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
-    const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
-    const winnerId = isDouble ? m.winnerDoubleId : m.winnerId;
+ matches.forEach(m => {
+  const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
+  const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
+  const winnerId = isDouble ? m.winnerDoubleId : m.winnerId;
 
-    if (!p1 || !p2) return;
+  if (!p1 || !p2) return;
 
-    [p1, p2].forEach(p => {
-      if (!klasemen[p.id]) {
-        klasemen[p.id] = { peserta: p, poin: 0, menang: 0, kalah: 0 };
-      }
-    });
-
-    if (winnerId === p1.id) {
-      klasemen[p1.id].poin += 3; klasemen[p1.id].menang++;
-      klasemen[p2.id].kalah++;
-    } else if (winnerId === p2.id) {
-      klasemen[p2.id].poin += 3; klasemen[p2.id].menang++;
-      klasemen[p1.id].kalah++;
+  [p1, p2].forEach(p => {
+    if (!klasemen[p.id]) {
+      klasemen[p.id] = {
+        peserta: p,
+        poin: 0,
+        menang: 0,
+        kalah: 0,
+        gameMenang: 0,
+        gameKalah: 0,
+        headToHead: {}
+      };
     }
   });
 
-  const ranking = Object.values(klasemen).sort((a, b) => b.poin - a.poin);
+  // ✅ HITUNG GAME DARI SET
+  const p1Game =
+    (m.set1P1 || 0) +
+    (m.set2P1 || 0) +
+    (m.set3P1 || 0);
+
+  const p2Game =
+    (m.set1P2 || 0) +
+    (m.set2P2 || 0) +
+    (m.set3P2 || 0);
+
+  klasemen[p1.id].gameMenang += p1Game;
+  klasemen[p1.id].gameKalah += p2Game;
+
+  klasemen[p2.id].gameMenang += p2Game;
+  klasemen[p2.id].gameKalah += p1Game;
+
+  // head to head
+  klasemen[p1.id].headToHead[p2.id] = winnerId;
+  klasemen[p2.id].headToHead[p1.id] = winnerId;
+
+  // poin
+  if (winnerId === p1.id) {
+    klasemen[p1.id].poin += 3;
+    klasemen[p1.id].menang++;
+    klasemen[p2.id].kalah++;
+  } else if (winnerId === p2.id) {
+    klasemen[p2.id].poin += 3;
+    klasemen[p2.id].menang++;
+    klasemen[p1.id].kalah++;
+  }
+});
+
+  // sorting dengan tie-break
+  const ranking = Object.values(klasemen).sort((a, b) => {
+    // 1️⃣ POIN
+    if (b.poin !== a.poin) return b.poin - a.poin;
+
+    // 2️⃣ SELISIH GAME
+    const diffA = a.gameMenang - a.gameKalah;
+    const diffB = b.gameMenang - b.gameKalah;
+    if (diffB !== diffA) return diffB - diffA;
+
+    // 3️⃣ HEAD TO HEAD
+    const h2h = a.headToHead[b.peserta.id];
+    if (h2h) {
+      if (h2h === a.peserta.id) return -1;
+      if (h2h === b.peserta.id) return 1;
+    }
+
+    // 4️⃣ fallback terakhir
+    return a.peserta.id - b.peserta.id;
+  });
+
 
   return res.json({
     juara1: ranking[0]?.peserta || null,
     juara2: ranking[1]?.peserta || null,
     juara3: ranking[2]?.peserta || null,
-    klasemen: ranking
+    klasemen: ranking.map(r => ({
+      peserta: r.peserta,
+      poin: r.poin,
+      menang: r.menang,
+      kalah: r.kalah,
+      gameMenang: r.gameMenang,
+      gameKalah: r.gameKalah,
+      selisih: r.gameMenang - r.gameKalah
+    }))
   });
 }
+
+
 
   } catch (err) {
     res.status(500).json({ error: err.message });

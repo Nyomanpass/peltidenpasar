@@ -73,72 +73,89 @@ function WinnerModal({ match, onClose, onSaved }) {
 };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[999]">
-      <div className="bg-white p-6 rounded-xl w-full max-w-lg">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[999]">
+  <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-gray-100 p-6 animate-in zoom-in duration-200">
 
-        <h3 className="text-xl font-bold mb-2 text-center">
-          Input Skor Manual (WO)
-        </h3>
-
-        <p className="text-sm text-gray-500 text-center mb-4">
-          Rule: <b>{rule.name}</b> ({rule.jumlahSet} set, {rule.gamePerSet} game)
-        </p>
-
-        {/* PILIH PEMENANG */}
-        <div className="flex gap-3 mb-6">
-          <button
-            onClick={() => setWinnerId(p1Id)}
-            className={`flex-1 p-3 rounded-xl border font-bold transition ${
-              winnerId === p1Id
-                ? "bg-green-500 text-white"
-                : "bg-gray-100 hover:bg-gray-200"
-            }`}
-          >
-            {p1Name}
-          </button>
-
-          <button
-            onClick={() => setWinnerId(p2Id)}
-            className={`flex-1 p-3 rounded-xl border font-bold transition ${
-              winnerId === p2Id
-                ? "bg-green-500 text-white"
-                : "bg-gray-100 hover:bg-gray-200"
-            }`}
-          >
-            {p2Name}
-          </button>
-        </div>
-
-        {/* INFO */}
-        <p className="text-xs text-gray-500 text-center mb-4">
-          Sistem akan otomatis membuat skor:
-          <br />
-          <b>
-            sesuai aturan ({rule.gamePerSet}-0 per set sampai menang{" "}
-            {Math.ceil(rule.jumlahSet / 2)} set)
-          </b>
-        </p>
-
-        {/* TOMBOL WO */}
-        <button
-          onClick={handleWO}
-          disabled={!winnerId || loading}
-          className="w-full bg-red-600 text-white py-3 rounded-xl font-bold disabled:bg-gray-300"
-        >
-          {loading ? "Menyimpan..." : "Menang WO (lawan tidak hadir)"}
-        </button>
-
-        <div className="flex justify-end mt-6">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-200 rounded"
-          >
-            Batal
-          </button>
-        </div>
-
-      </div>
+    {/* HEADER */}
+    <div className="text-center mb-5">
+      <h3 className="text-2xl font-extrabold text-gray-900">
+        Input Skor Manual (WO)
+      </h3>
+      <p className="text-sm text-gray-500 mt-1">
+        Rule: <b>{rule.name}</b> • {rule.jumlahSet} set • {rule.gamePerSet} game
+      </p>
     </div>
+
+    {/* PILIH PEMENANG */}
+    <div className="grid grid-cols-2 gap-4 mb-6">
+      <button
+        onClick={() => setWinnerId(p1Id)}
+        className={`p-4 rounded-2xl border-2 font-bold text-sm transition-all duration-200 flex flex-col items-center gap-2
+          ${
+            winnerId === p1Id
+              ? "bg-green-500 text-white border-green-600 shadow-lg scale-105"
+              : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-green-50 hover:border-green-400"
+          }
+        `}
+      >
+        🏆
+        <span className="text-center">{p1Name}</span>
+      </button>
+
+      <button
+        onClick={() => setWinnerId(p2Id)}
+        className={`p-4 rounded-2xl border-2 font-bold text-sm transition-all duration-200 flex flex-col items-center gap-2
+          ${
+            winnerId === p2Id
+              ? "bg-green-500 text-white border-green-600 shadow-lg scale-105"
+              : "bg-gray-50 text-gray-700 border-gray-200 hover:bg-green-50 hover:border-green-400"
+          }
+        `}
+      >
+        🏆
+        <span className="text-center">{p2Name}</span>
+      </button>
+    </div>
+
+    {/* INFO */}
+    <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 text-center mb-5">
+      <p className="text-xs text-gray-600 leading-relaxed">
+        Sistem akan otomatis membuat skor:
+        <br />
+        <b className="text-gray-800">
+          {rule.gamePerSet}-0 per set sampai menang{" "}
+          {Math.ceil(rule.jumlahSet / 2)} set
+        </b>
+      </p>
+    </div>
+
+    {/* TOMBOL AKSI */}
+    <div className="space-y-3">
+      <button
+        onClick={handleWO}
+        disabled={!winnerId || loading}
+        className={`w-full py-3 rounded-2xl font-extrabold text-white transition-all shadow-lg
+          ${
+            winnerId
+              ? "bg-red-600 hover:bg-red-700 active:scale-95"
+              : "bg-gray-300 cursor-not-allowed"
+          }
+        `}
+      >
+        {loading ? "⏳ Menyimpan..." : "Menang WO (lawan tidak hadir)"}
+      </button>
+
+      <button
+        onClick={onClose}
+        className="w-full py-2 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold transition"
+      >
+        Batal
+      </button>
+    </div>
+
+  </div>
+</div>
+
   );
 }
 
