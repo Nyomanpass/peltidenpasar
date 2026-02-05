@@ -79,7 +79,12 @@ const styles = StyleSheet.create({
     borderTopColor: '#e5e7eb',
     borderTopStyle: 'solid',
     paddingTop: 5 
-  }
+  },
+
+  tableColGame: { width: '8%', fontSize: 9, textAlign: 'center' },
+  tableColDiff: { width: '10%', fontSize: 9, textAlign: 'center', fontWeight: 'bold' },
+
+
 });
 
 // FUNGSI HELPER: Untuk menangani nama Single atau Double
@@ -150,6 +155,9 @@ const JuaraPDF = ({ winnersData = [], tournamentName }) => {
                     <Text style={styles.tableColPoint}>POIN</Text>
                     <Text style={styles.tableColWL}>W</Text>
                     <Text style={styles.tableColWL}>L</Text>
+                    <Text style={styles.tableColGame}>GM</Text>
+                    <Text style={styles.tableColGame}>GK</Text>
+                    <Text style={styles.tableColDiff}>±</Text>
                   </View>
                   {w.klasemen.map((p, idx) => (
                     <View key={idx} style={styles.tableRow}>
@@ -158,6 +166,16 @@ const JuaraPDF = ({ winnersData = [], tournamentName }) => {
                       <Text style={[styles.tableColPoint, {color: '#2563eb'}]}>{p.poin || 0}</Text>
                       <Text style={styles.tableColWL}>{p.menang || 0}</Text>
                       <Text style={styles.tableColWL}>{p.kalah || 0}</Text>
+                      <Text style={styles.tableColGame}>{p.gameMenang || 0}</Text>
+                      <Text style={styles.tableColGame}>{p.gameKalah || 0}</Text>
+                      <Text
+                        style={[
+                          styles.tableColDiff,
+                          { color: (p.selisih ?? 0) >= 0 ? '#16a34a' : '#dc2626' }
+                        ]}
+                      >
+                        {p.selisih ?? 0}
+                      </Text>
                     </View>
                   ))}
                 </View>

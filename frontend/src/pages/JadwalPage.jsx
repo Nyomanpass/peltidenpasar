@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import WinnerModal from "../components/modalbox/WinnerModal";
-import { Edit, Trash2, Calendar, Clock, PlusCircle, CheckCircle, XCircle, Layout, Filter, ChevronUp } from "lucide-react";
+import { Edit, Scale, Calendar, Clock, PlusCircle, CheckCircle, XCircle, Layout, Filter, ChevronUp } from "lucide-react";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import JadwalPDF from './JadwalPDF';
 import RefereeForm from './RefereeForm';
@@ -768,7 +768,7 @@ const groupedJadwal = [...jadwal]
                                           return;
                                         }
 
-                                        // ✅ BARU masuk manual
+                                        
                                         setManualWinnerMatch(match.match);
                                         
                                         setOpenMenuId(null);
@@ -870,29 +870,33 @@ const groupedJadwal = [...jadwal]
 
 
 
-
-
 {showRuleModal && (
-  <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[9999]">
-    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-gray-200 p-6 animate-in zoom-in duration-200">
-      
+  <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-[9999]">
+    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-gray-200 p-7 animate-in fade-in zoom-in duration-300">
+
       {/* HEADER */}
-      <h2 className="text-xl font-bold text-gray-800 mb-1">
-        Pilih Aturan Skor
-      </h2>
-      <p className="text-sm text-gray-500 mb-4">
-        Tentukan sistem perhitungan skor sebelum pertandingan dimulai.
-      </p>
+      <div className="text-center mb-5">
+        <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+          <Scale size={24} className="text-blue-600" />
+        </div>
+        <h2 className="text-2xl font-extrabold text-gray-800">
+          Pilih Aturan Skor
+        </h2>
+        <p className="text-sm text-gray-500 mt-1">
+          Tentukan sistem perhitungan skor sebelum pertandingan dimulai
+        </p>
+      </div>
 
       {/* SELECT */}
-      <div className="mb-4">
-        <label className="block text-sm font-semibold text-gray-700 mb-1">
+      <div className="mb-6">
+        <label className="block text-sm font-bold text-gray-700 mb-2">
           Aturan Skor
         </label>
         <select
           value={selectedRule}
           onChange={(e) => setSelectedRule(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full rounded-xl border-2 border-gray-200 bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-800
+                     focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition"
         >
           <option value="">-- Pilih Rule --</option>
           {scoreRules.map(r => (
@@ -906,61 +910,61 @@ const groupedJadwal = [...jadwal]
       {/* ACTION */}
       <div className="flex gap-3 mt-6">
         <button
-          onClick={() => setShowRuleModal(false)}
-          className="w-1/2 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-xl font-semibold transition"
+          onClick={() => {
+            setShowRuleModal(false);
+            setSelectedRule("");
+          }}
+          className="w-1/2 py-3 rounded-xl font-bold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
         >
           Batal
         </button>
 
-          <button
-  disabled={!selectedRule}
-  onClick={async () => {
-    await api.patch(`/matches/${pendingJadwal.match.id}/set-rule`, {
-      scoreRuleId: selectedRule
-    });
+        <button
+          disabled={!selectedRule}
+          onClick={async () => {
+            await api.patch(`/matches/${pendingJadwal.match.id}/set-rule`, {
+              scoreRuleId: selectedRule
+            });
 
-    // 🔥 UPDATE DATA MATCH DI FRONTEND (BIAR TIDAK PERLU REFRESH)
-    const updatedMatch = {
-      ...pendingJadwal.match,
-      scoreRuleId: selectedRule
-    };
+            const updatedMatch = {
+              ...pendingJadwal.match,
+              scoreRuleId: selectedRule
+            };
 
-    const updatedJadwal = {
-      ...pendingJadwal,
-      match: updatedMatch
-    };
+            const updatedJadwal = {
+              ...pendingJadwal,
+              match: updatedMatch
+            };
 
-    setPendingJadwal(updatedJadwal);
-    setShowRuleModal(false);
+            setPendingJadwal(updatedJadwal);
+            setShowRuleModal(false);
 
-    if (ruleMode === "wasit") {
-      openRefereePanel(updatedJadwal); // ke wasit
-    }
+            if (ruleMode === "wasit") {
+              openRefereePanel(updatedJadwal);
+            }
 
-    if (ruleMode === "manual") {
-      setManualWinnerMatch(updatedMatch); // ke WinnerModal
-    }
+            if (ruleMode === "manual") {
+              setManualWinnerMatch(updatedMatch);
+            }
 
-    setRuleMode(null);
-    setSelectedRule(""); // reset dropdown
-  }}
-  className={`w-1/2 py-2 rounded-xl font-bold text-white transition-all
-    ${selectedRule
-      ? "bg-blue-600 hover:bg-blue-700 shadow-md"
-      : "bg-blue-300 cursor-not-allowed"
-    }
-  `}
->
-  Lanjut
-</button>
-
-
-
+            setRuleMode(null);
+            setSelectedRule("");
+          }}
+          className={`w-1/2 py-3 rounded-xl font-extrabold text-white transition-all shadow-lg
+            ${selectedRule
+              ? "bg-blue-600 hover:bg-blue-700 active:scale-95"
+              : "bg-blue-300 cursor-not-allowed"
+            }
+          `}
+        >
+          Lanjutkan
+        </button>
       </div>
 
     </div>
   </div>
 )}
+
 
 {confirmDelete.show && (
   <AlertMessage

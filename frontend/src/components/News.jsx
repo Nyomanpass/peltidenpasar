@@ -54,7 +54,7 @@ export default function News() {
   }
 
   return (
-    <section className="w-full py-8 sm:py-12 bg-gray-50">
+    <section className="w-full py-8 sm:py-12">
       {/* ===== Header ===== */}
       <header className="text-center mb-8 sm:mb-12 px-4 sm:px-6 md:px-8 lg:px-12">
         <p className="text-sm md:text-base text-yellow-600 font-medium tracking-wide uppercase">

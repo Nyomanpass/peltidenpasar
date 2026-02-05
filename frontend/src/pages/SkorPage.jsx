@@ -275,7 +275,9 @@ function SkorPage() {
                         {[1, 2, 3].map(sNum => {
                           const s1 = match[`set${sNum}P1`];
                           const s2 = match[`set${sNum}P2`];
-                          if (s1 === 0 && s2 === 0) return null;
+                          if ( s1 == null && s2 == null || 
+                                  (s1 === 0 && s2 === 0)
+                            ) return null;
                           return (
                             <div key={sNum} className="flex flex-col items-center bg-slate-50 border border-slate-100 px-4 py-1.5 rounded-2xl min-w-[55px]">
                               <span className="text-[7px] text-slate-400 font-black uppercase">Set {sNum}</span>
