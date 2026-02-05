@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import VerificationDrawer from "./VerificationDrawer";
 import api from "../api"; // Pastikan Anda mengimpor API instance
 
-function NavbarDashboard({ toggleSidebar }) {
+function NavbarDashboard({ toggleSidebar, toggleCollapse, isCollapsed }) {
   const navigate = useNavigate();
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State untuk drawer verifikasi
@@ -53,7 +53,6 @@ function NavbarDashboard({ toggleSidebar }) {
     try {
       await api.put(`/peserta/${id}/verify`, { status: "verified" });
       fetchPendingUsers();
-      alert("Peserta berhasil diverifikasi!");
     } catch (error) {
       console.error(error);
     }
@@ -66,7 +65,7 @@ const handleReject = async (id, message) => {
     const user = pendingUsers.find(p => p.id === id);
     
     if (!user) {
-      alert("Data peserta tidak ditemukan di list.");
+     
       return;
     }
 
@@ -91,11 +90,11 @@ const handleReject = async (id, message) => {
 
     // 4. Refresh list (karena data sudah dihapus di backend, list akan otomatis berkurang)
     fetchPendingUsers();
-    alert("Peserta ditolak, pesan WA terkirim, dan data dihapus.");
+   
 
   } catch (error) {
     console.error(error);
-    alert("Gagal memproses penolakan.");
+  
   }
 };
   
@@ -109,21 +108,36 @@ const handleReject = async (id, message) => {
 
   return (
     <>
-    <nav className="w-full bg-white border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between 
-        fixed top-0 left-0 z-50
-        md:left-72 md:w-[calc(100%-18rem)]
-        transition-all duration-300">
+    <nav className={`
+      w-full bg-white shadow-sm px-4 py-3 flex items-center justify-between
+      fixed top-0 left-0 z-50
+      transition-all duration-300
+      ${isCollapsed
+        ? "md:left-20 md:w-[calc(100%-5rem)]"
+        : "md:left-72 md:w-[calc(100%-18rem)]"}
+    `}>
+
 
 
         {/* KIRI: Logo, Toggle Menu, dan Judul */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          {/* tombol buka sidebar (mobile) */}
           <button
             className="md:hidden p-2 rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
             onClick={toggleSidebar}
           >
             <Menu size={22} />
           </button>
-          
+
+          {/* tombol minimize sidebar (desktop) */}
+          <button
+            onClick={toggleCollapse}
+            className="hidden md:block p-2 rounded-full hover:bg-gray-100 text-gray-700"
+            title="Minimize Sidebar"
+          >
+            <Menu size={20} />
+          </button>
+
           {/* Logo Pelatnas Denpasar */}
           <div className="flex items-center gap-4">
             <img 

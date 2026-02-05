@@ -2,11 +2,16 @@ import React, { useState, useEffect, useRef } from "react";
 import api from "../api";
 import { X, CheckCircle, Upload, CreditCard, Loader2, AlertCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import AlertMessage from "../components/AlertMessage";
 
 
 function PesertaForm({ onSuccess }) {
   const fileInputRef = useRef(null);
   const buktiBayarRef = useRef(null);
+
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
   
   const location = useLocation();
   const query = new URLSearchParams(location.search);
@@ -92,7 +97,7 @@ function PesertaForm({ onSuccess }) {
     const isRegistrationClosed = new Date() > deadline;
 
     if (isRegistrationClosed) {
-        alert("Maaf, pendaftaran untuk turnamen ini sudah ditutup (Batas H-3).");
+        setError("Maaf, pendaftaran untuk turnamen ini sudah ditutup (Batas H-3).");
         setSelectedTournament(null);
         setFormData({ ...formData, tournamentId: "" }); // Reset pilihan
         return;
@@ -119,7 +124,7 @@ function PesertaForm({ onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (selectedTournament?.type === "berbayar" && !formData.buktiBayar) {
-      alert("Harap unggah bukti pembayaran terlebih dahulu!");
+      setError("Harap unggah bukti pembayaran terlebih dahulu!");
       return;
     }
 
@@ -134,7 +139,7 @@ function PesertaForm({ onSuccess }) {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      alert("Pendaftaran Berhasil! ✅");
+      setSuccess("Pendaftaran berhasil! Data Anda akan diverifikasi panitia.");
       
       setFormData({
         namaLengkap: "", nomorWhatsapp: "", tanggalLahir: "",
@@ -148,7 +153,7 @@ function PesertaForm({ onSuccess }) {
       
       if (onSuccess) onSuccess();
     } catch (err) {
-      alert("Gagal mendaftar, silakan cek kembali data Anda.");
+      setError("Gagal mendaftar, silakan cek kembali data Anda.");
     } finally {
       setIsSubmitting(false);
     }
@@ -234,6 +239,18 @@ if (availableTournaments.length === 0) {
 
   return (
     <div className="bg-gray-50 font-sans min-h-screen">
+          <AlertMessage
+            type="success"
+            message={success}
+            onClose={() => setSuccess("")}
+          />
+
+          <AlertMessage
+            type="error"
+            message={error}
+            onClose={() => setError("")}
+          />
+
       <div className="bg-white shadow-2xl w-full min-h-screen">
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
           

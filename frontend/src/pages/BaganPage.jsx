@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Trash2, Eye, PlusCircle, Layout, Filter, Users } from "lucide-react";
+import AlertMessage from "../components/AlertMessage";
+
+
 import api from "../api"; 
+
 
 export default function BaganPage({onSelectBagan}) {
   const [kelompokUmurList, setKelompokUmurList] = useState([]);
@@ -11,6 +15,17 @@ export default function BaganPage({onSelectBagan}) {
   const role = localStorage.getItem('role');
   const selectedTournamentName = localStorage.getItem("selectedTournamentName");
   const [filterKategori, setFilterKategori] = useState("all");
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    baganId: null,
+  });
+
+
+  
 
   const navigate = useNavigate();
   const isSelectorMode = !!onSelectBagan;
@@ -62,7 +77,7 @@ const fetchBagan = async () => {
 
   const handleCreateBagan = async () => {
   if (!selectedKelompok) {
-    alert("Pilih kelompok umur terlebih dahulu.");
+     setError("Pilih kelompok umur terlebih dahulu.");
     return;
   }
 
@@ -75,29 +90,39 @@ const fetchBagan = async () => {
       kategori: selectedKategori // Kirim kategori ke backend
     });
 
-    alert("Bagan berhasil dibuat!");
+    setSuccess("Bagan berhasil dibuat!");
     setSelectedKelompok(""); // Reset pilihan
     fetchBagan();
   } catch (err) {
     console.error("Gagal membuat bagan:", err);
-    alert("Gagal membuat bagan. Pastikan data peserta sudah ada.");
+    setError("Gagal membuat bagan. Pastikan data peserta sudah ada.");
   }
 };
 
 
   // --- DELETE BAGAN ---
-  const handleDeleteBagan = async (baganId) => {
-    if (window.confirm("Apakah Anda yakin ingin menghapus bagan ini?")) {
-      try {
-        await api.delete(`/bagan/${baganId}`);
-        alert("Bagan berhasil dihapus!");
-        fetchBagan();
-      } catch (err) {
-        console.error("Gagal menghapus bagan:", err);
-        alert("Gagal menghapus bagan.");
-      }
-    }
+
+  const handleDeleteBagan = (baganId) => {
+    setConfirmDelete({ show: true, baganId });
   };
+
+
+  
+
+const confirmDeleteBagan = async () => {
+  try {
+    await api.delete(`/bagan/${confirmDelete.baganId}`);
+    setSuccess("Bagan berhasil dihapus!");
+    fetchBagan();
+  } catch (err) {
+    console.error("Gagal menghapus bagan:", err);
+    setError("Gagal menghapus bagan.");
+  } finally {
+    setConfirmDelete({ show: false, baganId: null });
+  }
+};
+
+
 
 
   const handleViewDetail = (baganId) => {
@@ -112,6 +137,19 @@ const fetchBagan = async () => {
 
   return (
     <div className="min-h-screen"> 
+
+    <AlertMessage
+    type="success"
+    message={success}
+    onClose={() => setSuccess("")}
+    />
+
+    <AlertMessage
+    type="error"
+    message={error}
+    onClose={() => setError("")}
+    />
+
     
     {/* --- HEADER UTAMA --- */}
      <div className="mb-8 border-b pb-4">
@@ -213,9 +251,12 @@ const fetchBagan = async () => {
   <div className="space-y-4">
       {(() => {
           // Logika filter data sebelum di-map
-          const filteredData = baganList.filter((b) =>
-              filterKategori === "all" ? true : b.kategori === filterKategori
-          );
+          const filteredData = baganList
+            .filter((b) =>
+                filterKategori === "all" ? true : b.kategori === filterKategori
+            )
+            .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId);
+
 
           if (filteredData.length === 0) {
               return (
@@ -258,16 +299,17 @@ const fetchBagan = async () => {
                   {/* Tombol Aksi */}
                   <div className="flex gap-3">
                       {role === "admin" && (
-                          <button
-                              onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteBagan(bagan.id);
-                              }}
-                              className="flex items-center justify-center gap-1 bg-red-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-700 transition"
-                              title="Hapus Bagan"
-                          >
-                              <Trash2 size={16} /> Hapus
-                          </button>
+                        <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteBagan(bagan.id);
+                        }}
+                        className="flex items-center justify-center gap-1 bg-red-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-700 transition"
+                        title="Hapus Bagan"
+                        >
+                        <Trash2 size={16} /> Hapus
+                        </button>
+
                       )}
                       <button
                           onClick={(e) => {
@@ -284,6 +326,31 @@ const fetchBagan = async () => {
           ));
       })()}
   </div>
+  
+ {confirmDelete.show && (
+  <AlertMessage
+    type="warning"
+    message="Yakin mau menghapus bagan ini?"
+    onClose={() => setConfirmDelete({ show: false, baganId: null })}
+  >
+    <div className="flex gap-3 justify-center mt-4">
+      <button
+        onClick={() => setConfirmDelete({ show: false, baganId: null })}
+        className="px-5 py-2 rounded-xl bg-gray-200 font-bold hover:bg-gray-300 transition"
+      >
+        Batal
+      </button>
+      <button
+        onClick={confirmDeleteBagan}
+        className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+      >
+        Hapus
+      </button>
+    </div>
+  </AlertMessage>
+)}
+
+
 </div>
   );
 }

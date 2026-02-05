@@ -53,13 +53,13 @@ const TournamentDetailPage = () => {
                             <div className="inline-flex bg-gray-100 p-1 rounded-xl border border-gray-200">
                                 <button
                                     onClick={() => setSubTabPeserta('single')}
-                                    className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${subTabPeserta === 'single' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                    className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${subTabPeserta === 'single' ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                                 >
                                     <User size={14} className="inline mr-2"/> Single
                                 </button>
                                 <button
                                     onClick={() => setSubTabPeserta('ganda')}
-                                    className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${subTabPeserta === 'ganda' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                                    className={`px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${subTabPeserta === 'ganda' ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                                 >
                                     <Users2 size={14} className="inline mr-2"/> Double
                                 </button>

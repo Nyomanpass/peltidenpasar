@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import api from "../../api";
 import { Link } from "react-router-dom";
 import { Eye, Trash2, Users, Search, ChevronDown, ChevronUp, User, Users2 } from "lucide-react";
+import AlertMessage from "../AlertMessage";
 
 function Peserta() {
   // --- 1. STATE MANAGEMENT ---
@@ -9,6 +10,16 @@ function Peserta() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [collapsedGroups, setCollapsedGroups] = useState({});
+
+
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    pesertaId: null,
+  });
+
 
   
 
@@ -78,16 +89,27 @@ function Peserta() {
     }));
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Yakin mau hapus peserta ini?")) return;
+
+  const handleDelete = (id) => {
+    setConfirmDelete({
+      show: true,
+      pesertaId: id,
+    });
+  };
+
+  const handleConfirmDelete = async () => {
     try {
-      await api.delete(`/peserta/${id}`);
-      fetchPeserta(); // Ambil data ulang setelah hapus
+      await api.delete(`/peserta/${confirmDelete.pesertaId}`);
+      setSuccess("Peserta berhasil dihapus");
+      fetchPeserta();
     } catch (err) {
       console.error("Error delete:", err);
-      alert("Gagal menghapus peserta");
+      setError("Gagal menghapus peserta");
+    } finally {
+      setConfirmDelete({ show: false, pesertaId: null });
     }
   };
+
 
   // --- 5. RENDER LOGIC ---
   if (loading) {
@@ -100,17 +122,32 @@ function Peserta() {
   }
 
   return (
-    <div className="min-h-screen bg-white p-4">
+    <div className="min-h-screen">
+
+       {/* ALERT */}
+      <AlertMessage
+        type="success"
+        message={success}
+        onClose={() => setSuccess("")}
+      />
+      <AlertMessage
+        type="error"
+        message={error}
+        onClose={() => setError("")}
+      />
+
 
       {/* --- HEADER --- */}
       <div className="mb-8 border-b pb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Manajemen Peserta</h1>
-            <p className="text-sm text-blue-600 font-bold uppercase tracking-widest mt-1">
-              Tournament: <span className="text-gray-700">{currentTournamentName || "Belum Memilih"}</span>
-            </p>
-          </div>
+            <div>
+              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                Manajement Peserta
+              </h1>
+              <p className="text-md text-yellow-600 font-semibold mt-1">
+                  Tournament: {currentTournamentName || "Belum Memilih"}
+              </p>
+            </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4">
             {/* Navigasi Button Kategori */}
@@ -118,13 +155,13 @@ function Peserta() {
                 <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
                   <Link 
                     to={"/admin/peserta"} 
-                    className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta") || isActive("/tournament/peserta") ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta") || isActive("/tournament/peserta") ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                   >
                     <User size={16} /> Single
                   </Link>
                   <Link 
                     to={"/admin/peserta-ganda"} 
-                    className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta-ganda") || isActive("/tournament/peserta-ganda") ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                    className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta-ganda") || isActive("/tournament/peserta-ganda") ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
                   >
                     <Users2 size={16} /> Double
                   </Link>
@@ -283,6 +320,28 @@ function Peserta() {
         </div>
       );
     })()}
+
+    {confirmDelete.show && (
+        <AlertMessage
+          type="warning"
+          message="Yakin mau menghapus peserta ini?"
+          onClose={() => setConfirmDelete({ show: false, pesertaId: null })}
+        >
+          <button
+            onClick={() => setConfirmDelete({ show: false, pesertaId: null })}
+            className="px-5 py-2 rounded-xl bg-gray-200 font-bold hover:bg-gray-300 transition"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleConfirmDelete}
+            className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+          >
+            Hapus
+          </button>
+        </AlertMessage>
+      )}
+
     </div>
   );
 }

@@ -9,6 +9,9 @@ import { ScoreRule } from "../models/ScoreRuleModel.js";
 
 import { Op } from "sequelize";
 
+const points = ["0", "15", "30", "40"];
+
+
 const _processMatchPeserta = async (matchId, side1Id, side2Id, kategori) => {
   const match = await Match.findByPk(matchId);
   if (!match) return null;
@@ -361,75 +364,94 @@ function shuffle(array) {
 // 🔹 Helper untuk menempatkan BYE
 function placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta) {
   const bracketSize = initialSlots.length;
-  const totalMatches = bracketSize / 2;
+  const blockSize = 4; // 1 blok = 4 slot
+  const totalBlocks = Math.ceil(bracketSize / blockSize);
 
-  // 1. PRIORITAS: Berikan BYE KHUSUS untuk yang isSeeded === true
+  // ===============================
+  // 1. BYE untuk SEED (prioritas)
+  // ===============================
+  const blocksWithBye = new Set();
+
   for (const seed of seededPeserta) {
     if (byeSlotsCount <= 0) break;
-    if (seed.isSeeded) {
-      const slotIndex = seed.slot - 1;
-      const opponentIndex = slotIndex % 2 === 0 ? slotIndex + 1 : slotIndex - 1;
-      
-      if (!assignedSlots.has(opponentIndex)) {
-        initialSlots[opponentIndex] = null; // BYE
-        assignedSlots.add(opponentIndex);
-        byeSlotsCount--;
-      }
+    if (!seed.isSeeded) continue;
+
+    const slotIndex = seed.slot - 1;
+    const opponentIndex = slotIndex % 2 === 0 ? slotIndex + 1 : slotIndex - 1;
+    const blockIndex = Math.floor(slotIndex / blockSize);
+
+    if (!assignedSlots.has(opponentIndex)) {
+      initialSlots[opponentIndex] = null; // BYE
+      assignedSlots.add(opponentIndex);
+      blocksWithBye.add(blockIndex);
+      byeSlotsCount--;
     }
   }
 
   if (byeSlotsCount <= 0) return;
 
-  // 2. SEBAR SISA BYE: ACAK TAPI JANGAN BERDEKATAN
-  // Cari semua pasangan match (pair) yang masih kosong total (dua-duanya belum diisi)
-  let availablePairs = [];
-  for (let i = 0; i < bracketSize; i += 2) {
-    if (!assignedSlots.has(i) && !assignedSlots.has(i + 1)) {
-      availablePairs.push(i); // Simpan index awal match (0, 2, 4, dst)
+  // ===============================
+  // 2. Cari blok yang BELUM punya BYE
+  // ===============================
+  let candidateBlocks = [];
+  for (let b = 0; b < totalBlocks; b++) {
+    if (!blocksWithBye.has(b)) {
+      candidateBlocks.push(b);
     }
   }
 
-  // Acak urutan pasangan agar tidak selalu dari atas
-  availablePairs = shuffle(availablePairs);
+  // Acak blok agar tidak selalu dari atas
+  candidateBlocks = shuffle(candidateBlocks);
 
-  // Tentukan jarak minimal (Gap). 
-  // Misal: Jika ada 16 match, usahakan jarak antar BYE minimal 2 match.
-  const gapMin = totalMatches <= 8 ? 1 : 2; 
-  let lastUsedMatchIndex = -gapMin - 1;
-  let finalSelectedPairs = [];
-
-  // Ambil pasangan dengan filter jarak
-  for (let i = 0; i < availablePairs.length; i++) {
-    const currentMatchIndex = availablePairs[i] / 2; // Match ke-berapa (0, 1, 2...)
-    
-    // Cek apakah jarak dari match sebelumnya cukup jauh
-    if (Math.abs(currentMatchIndex - lastUsedMatchIndex) >= gapMin) {
-      finalSelectedPairs.push(availablePairs[i]);
-      lastUsedMatchIndex = currentMatchIndex;
-    }
-    
-    // Jika sudah cukup untuk memenuhi sisa BYE, berhenti
-    if (finalSelectedPairs.length >= byeSlotsCount) break;
-  }
-
-  // Jika setelah difilter jarak ternyata kurang (karena terlalu renggang), 
-  // ambil sisa pasangan apa saja yang tersedia agar BYE tetap habis
-  if (finalSelectedPairs.length < byeSlotsCount) {
-    const remaining = availablePairs.filter(p => !finalSelectedPairs.includes(p));
-    finalSelectedPairs = [...finalSelectedPairs, ...remaining.slice(0, byeSlotsCount - finalSelectedPairs.length)];
-  }
-
-  // Masukkan BYE ke dalam slot yang sudah dipilih secara acak & renggang
-  for (let pairStart of finalSelectedPairs) {
+  // ===============================
+  // 3. Taruh BYE di blok yang kosong
+  // ===============================
+  for (const blockIndex of candidateBlocks) {
     if (byeSlotsCount <= 0) break;
-    
-    // Pilih slot 1 atau slot 2 dalam match tersebut secara acak
-    const slotPilihan = pairStart + (Math.random() < 0.5 ? 0 : 1);
-    initialSlots[slotPilihan] = null;
-    assignedSlots.add(slotPilihan);
+
+    const start = blockIndex * blockSize;
+    const end = Math.min(start + blockSize, bracketSize);
+
+    let possibleSlots = [];
+    for (let i = start; i < end; i++) {
+      const pairIndex = i % 2 === 0 ? i + 1 : i - 1;
+      if (!assignedSlots.has(i) && !assignedSlots.has(pairIndex)) {
+        possibleSlots.push(i);
+      }
+    }
+
+    if (possibleSlots.length > 0) {
+      const slot = possibleSlots[Math.floor(Math.random() * possibleSlots.length)];
+      initialSlots[slot] = null;
+      assignedSlots.add(slot);
+      blocksWithBye.add(blockIndex);
+      byeSlotsCount--;
+    }
+  }
+
+  if (byeSlotsCount <= 0) return;
+
+  // ===============================
+  // 4. SISA BYE (kalau masih ada)
+  // ===============================
+  let fallbackSlots = [];
+  for (let i = 0; i < bracketSize; i++) {
+    const pairIndex = i % 2 === 0 ? i + 1 : i - 1;
+    if (!assignedSlots.has(i) && !assignedSlots.has(pairIndex)) {
+      fallbackSlots.push(i);
+    }
+  }
+
+  fallbackSlots = shuffle(fallbackSlots);
+
+  for (const slot of fallbackSlots) {
+    if (byeSlotsCount <= 0) break;
+    initialSlots[slot] = null;
+    assignedSlots.add(slot);
     byeSlotsCount--;
   }
 }
+
 
 
 
@@ -527,71 +549,126 @@ export const getJuara = async (req, res) => {
     }
 
     // LOGIKA ROUND ROBIN GANDA
-    if (bagan.tipe === "roundrobin") {
+// ===== LOGIKA ROUND ROBIN =====
+// ===== ROUND ROBIN =====
+if (bagan.tipe === "roundrobin") {
   const isDouble = bagan.kategori === "double";
 
   const matches = await Match.findAll({
     where: { baganId, status: "selesai" },
     include: [
+      { model: Peserta, as: "peserta1", attributes: ["id", "namaLengkap"] },
+      { model: Peserta, as: "peserta2", attributes: ["id", "namaLengkap"] },
       { 
-        model: Peserta, as: "peserta1", attributes: ["id", "namaLengkap"] 
+        model: DoubleTeam, as: "doubleTeam1",
+        include: ["Player1", "Player2"]
       },
       { 
-        model: Peserta, as: "peserta2", attributes: ["id", "namaLengkap"] 
-      },
-      { 
-        model: DoubleTeam, as: "doubleTeam1", 
-        include: [
-          { model: Peserta, as: "Player1", attributes: ["namaLengkap"] },
-          { model: Peserta, as: "Player2", attributes: ["namaLengkap"] }
-        ] 
-      },
-      { 
-        model: DoubleTeam, as: "doubleTeam2", 
-        include: [
-          { model: Peserta, as: "Player1", attributes: ["namaLengkap"] },
-          { model: Peserta, as: "Player2", attributes: ["namaLengkap"] }
-        ] 
+        model: DoubleTeam, as: "doubleTeam2",
+        include: ["Player1", "Player2"]
       },
     ],
   });
 
-  if (!matches.length) return res.status(404).json({ message: "Belum ada match." });
+  if (!matches.length) {
+    return res.status(404).json({ message: "Belum ada match." });
+  }
 
   const klasemen = {};
 
-  matches.forEach(m => {
-    // Tentukan objek peserta berdasarkan kategori
-    const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
-    const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
-    const winnerId = isDouble ? m.winnerDoubleId : m.winnerId;
+ matches.forEach(m => {
+  const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
+  const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
+  const winnerId = isDouble ? m.winnerDoubleId : m.winnerId;
 
-    if (!p1 || !p2) return;
+  if (!p1 || !p2) return;
 
-    [p1, p2].forEach(p => {
-      if (!klasemen[p.id]) {
-        klasemen[p.id] = { peserta: p, poin: 0, menang: 0, kalah: 0 };
-      }
-    });
-
-    if (winnerId === p1.id) {
-      klasemen[p1.id].poin += 3; klasemen[p1.id].menang++;
-      klasemen[p2.id].kalah++;
-    } else if (winnerId === p2.id) {
-      klasemen[p2.id].poin += 3; klasemen[p2.id].menang++;
-      klasemen[p1.id].kalah++;
+  [p1, p2].forEach(p => {
+    if (!klasemen[p.id]) {
+      klasemen[p.id] = {
+        peserta: p,
+        poin: 0,
+        menang: 0,
+        kalah: 0,
+        gameMenang: 0,
+        gameKalah: 0,
+        headToHead: {}
+      };
     }
   });
 
-  const ranking = Object.values(klasemen).sort((a, b) => b.poin - a.poin);
+  // ✅ HITUNG GAME DARI SET
+  const p1Game =
+    (m.set1P1 || 0) +
+    (m.set2P1 || 0) +
+    (m.set3P1 || 0);
+
+  const p2Game =
+    (m.set1P2 || 0) +
+    (m.set2P2 || 0) +
+    (m.set3P2 || 0);
+
+  klasemen[p1.id].gameMenang += p1Game;
+  klasemen[p1.id].gameKalah += p2Game;
+
+  klasemen[p2.id].gameMenang += p2Game;
+  klasemen[p2.id].gameKalah += p1Game;
+
+  // head to head
+  klasemen[p1.id].headToHead[p2.id] = winnerId;
+  klasemen[p2.id].headToHead[p1.id] = winnerId;
+
+  // poin
+  if (winnerId === p1.id) {
+    klasemen[p1.id].poin += 3;
+    klasemen[p1.id].menang++;
+    klasemen[p2.id].kalah++;
+  } else if (winnerId === p2.id) {
+    klasemen[p2.id].poin += 3;
+    klasemen[p2.id].menang++;
+    klasemen[p1.id].kalah++;
+  }
+});
+
+  // sorting dengan tie-break
+  const ranking = Object.values(klasemen).sort((a, b) => {
+    // 1️⃣ POIN
+    if (b.poin !== a.poin) return b.poin - a.poin;
+
+    // 2️⃣ SELISIH GAME
+    const diffA = a.gameMenang - a.gameKalah;
+    const diffB = b.gameMenang - b.gameKalah;
+    if (diffB !== diffA) return diffB - diffA;
+
+    // 3️⃣ HEAD TO HEAD
+    const h2h = a.headToHead[b.peserta.id];
+    if (h2h) {
+      if (h2h === a.peserta.id) return -1;
+      if (h2h === b.peserta.id) return 1;
+    }
+
+    // 4️⃣ fallback terakhir
+    return a.peserta.id - b.peserta.id;
+  });
+
 
   return res.json({
     juara1: ranking[0]?.peserta || null,
     juara2: ranking[1]?.peserta || null,
     juara3: ranking[2]?.peserta || null,
-    klasemen: ranking
+    klasemen: ranking.map(r => ({
+      peserta: r.peserta,
+      poin: r.poin,
+      menang: r.menang,
+      kalah: r.kalah,
+      gameMenang: r.gameMenang,
+      gameKalah: r.gameKalah,
+      selisih: r.gameMenang - r.gameKalah
+    }))
   });
 }
+
+
 
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -803,4 +880,107 @@ export const resetMatchScore = async (req, res) => {
   }
 };
 
+export const manualWOPoint = async (req, res) => {
+  try {
+    const { matchId, winnerSide } = req.body; 
+    // winnerSide = "p1" atau "p2"
+
+    const match = await Match.findByPk(matchId);
+    if (!match) return res.status(404).json({ msg: "Match tidak ditemukan" });
+
+    const rule = await ScoreRule.findByPk(match.scoreRuleId);
+    if (!rule) return res.status(400).json({ msg: "ScoreRule belum dipilih" });
+
+    const { jumlahSet, gamePerSet } = rule;
+    const targetSetWin = Math.ceil(jumlahSet / 2);
+    const winnerIsP1 = winnerSide === "p1";
+    const isDouble = !!match.doubleTeam1Id;
+
+    let setMenangP1 = 0;
+    let setMenangP2 = 0;
+
+    for (let setKe = 1; setKe <= targetSetWin; setKe++) {
+      let gameP1 = 0;
+      let gameP2 = 0;
+
+      while ((winnerIsP1 ? gameP1 : gameP2) < gamePerSet) {
+        // POINT 15–30–40
+        for (let i = 1; i < points.length; i++) {
+          await MatchScoreLog.create({
+            matchId: match.id,
+            setKe,
+            skorP1: winnerIsP1 ? points[i] : "0",
+            skorP2: winnerIsP1 ? "0" : points[i],
+            gameP1,
+            gameP2,
+            setMenangP1,
+            setMenangP2,
+            keterangan: "WO Auto Point"
+          });
+        }
+
+        // GAME MENANG
+        if (winnerIsP1) gameP1++;
+        else gameP2++;
+
+        await MatchScoreLog.create({
+          matchId: match.id,
+          setKe,
+          skorP1: "0",
+          skorP2: "0",
+          gameP1,
+          gameP2,
+          setMenangP1,
+          setMenangP2,
+          keterangan: "WO Auto Game"
+        });
+      }
+
+      // SET SELESAI
+      if (winnerIsP1) setMenangP1++;
+      else setMenangP2++;
+
+      await MatchScoreLog.create({
+        matchId: match.id,
+        setKe,
+        skorP1: "0",
+        skorP2: "0",
+        gameP1,
+        gameP2,
+        setMenangP1,
+        setMenangP2,
+        keterangan: "WO Auto Set"
+      });
+    }
+
+    const winnerId = winnerIsP1
+      ? (isDouble ? match.doubleTeam1Id : match.peserta1Id)
+      : (isDouble ? match.doubleTeam2Id : match.peserta2Id);
+
+    await match.update({
+      winnerId: isDouble ? null : winnerId,
+      winnerDoubleId: isDouble ? winnerId : null,
+      score1: setMenangP1,
+      score2: setMenangP2,
+
+      // ⬇️ INI YANG KURANG
+      set1P1: winnerIsP1 ? gamePerSet : 0,
+      set1P2: winnerIsP1 ? 0 : gamePerSet,
+
+      set2P1: targetSetWin >= 2 ? (winnerIsP1 ? gamePerSet : 0) : null,
+      set2P2: targetSetWin >= 2 ? (winnerIsP1 ? 0 : gamePerSet) : null,
+
+      set3P1: targetSetWin >= 3 ? (winnerIsP1 ? gamePerSet : 0) : null,
+      set3P2: targetSetWin >= 3 ? (winnerIsP1 ? 0 : gamePerSet) : null,
+
+      status: "selesai"
+    });
+
+
+    res.json({ msg: "WO + skor otomatis berhasil dibuat" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ msg: "Server error" });
+  }
+};
 

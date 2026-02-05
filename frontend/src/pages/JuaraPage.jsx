@@ -9,10 +9,11 @@ const JuaraPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filterKategori, setFilterKategori] = useState("all");
-  // State untuk mencegah PDF crash (Eo is not a function)
+
   const [readyPDF, setReadyPDF] = useState(false);
 
   const [tName, setTName] = useState(localStorage.getItem("selectedTournamentName") || "TURNAMEN"); 
+  const role = localStorage.getItem('role');
 
   const fetchAllData = async () => {
     try {
@@ -37,13 +38,15 @@ const JuaraPage = () => {
             baganId: bagan.id,
             baganNama: bagan.nama,
             kategori: bagan.kategori ? bagan.kategori.toLowerCase().trim() : "single", 
-            winners: winnersResponse.data || {}, // Di sini data klasemen disimpan
+            kelompokUmurId: bagan.kelompokUmurId, 
+            winners: winnersResponse.data || {},
           };
         } catch (err) {
           return {
             baganId: bagan.id,
             baganNama: bagan.nama,
             kategori: bagan.kategori ? bagan.kategori.toLowerCase().trim() : "single",
+            kelompokUmurId: bagan.kelompokUmurId, 
             winners: null,
           };
         }
@@ -61,25 +64,25 @@ const JuaraPage = () => {
   };
 
   useEffect(() => {
-    // Fungsi yang akan dipanggil saat turnamen berubah
+    
     const handleTournamentChange = () => {
       console.log("Turnamen berubah, memuat ulang data juara...");
       fetchAllData();
     };
 
-    // Jalankan pertama kali saat komponen mount
+
     fetchAllData();
 
-    // Dengar event 'tournament-changed'
+
     window.addEventListener("tournament-changed", handleTournamentChange);
 
-    // Bersihkan listener saat komponen tidak lagi dipakai
+ 
     return () => {
       window.removeEventListener("tournament-changed", handleTournamentChange);
     };
   }, []);
 
-  // Reset tombol PDF setiap kali filter berubah agar tidak crash
+
   useEffect(() => {
     setReadyPDF(false);
   }, [filterKategori]);
@@ -102,64 +105,100 @@ const JuaraPage = () => {
   if (error) return <div className="flex justify-center items-center h-screen text-red-600 font-bold">{error}</div>;
 
   return (
-    <div className="font-sans bg-white min-h-screen">
-      <div className="space-y-8 mx-auto px-4 py-8">
+    <div className="min-h-screen">
+      
 
-        {/* --- HEADER: FILTER & PDF --- */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-sm">
-          <div className="flex gap-2 bg-white p-1 rounded-xl border border-gray-200">
-            {["all", "single", "double"].map((kat) => (
-              <button
-                key={kat}
-                onClick={() => setFilterKategori(kat)}
-                className={`px-6 py-2 rounded-lg text-sm font-bold capitalize transition-all ${
-                  filterKategori === kat 
-                    ? "bg-gray-800 text-white shadow-md" 
-                    : "text-gray-500 hover:bg-gray-100"
-                }`}
-              >
-                {kat === "all" ? "Semua" : kat}
-              </button>
-            ))}
+        {/* --- HEA{/* --- HEADER UTAMA --- */}
+      <div className="mb-8 border-b pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+              Hasil Pertandingan
+            </h1>
+            <p className="text-md text-yellow-600 font-semibold mt-1">
+              Tournament: {localStorage.getItem("selectedTournamentName") || "Belum Memilih"}
+            </p>
           </div>
-
-            {/* --- CARI BAGIAN INI DAN GANTI --- */}
-          {filteredWinners.length > 0 && (
-            <div className="flex items-center">
-              {!readyPDF ? (
-                /* TOMBOL PERTAMA: SIAPKAN */
-                <button 
-                  key="btn-siapkan"
-                  onClick={() => setReadyPDF(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"
-                >
-                  <FileText size={20} /> Siapkan PDF {filterKategori !== 'all' ? filterKategori : ''}
-                </button>
-              ) : (
-                /* TOMBOL KEDUA: DOWNLOAD (MUNCUL SETELAH DIKLIK SIAPKAN) */
-                <PDFDownloadLink
-                  key="btn-download"
-                  document={<JuaraPDF winnersData={filteredWinners} tournamentName={tName} />}
-                  fileName={`Juara_${tName}_${filterKategori}.pdf`}
-                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"
-                  // INI BAGIAN UNTUK REFRESH BALIK KE TOMBOL MERAH
-                  onClick={() => {
-                    setTimeout(() => {
-                      setReadyPDF(false); // Balik ke "Siapkan PDF" setelah 3 detik
-                    }, 3000);
-                  }}
-                >
-                  {({ loading }) => (
-                    <>
-                      <Trophy size={20} />
-                      {loading ? "Menyusun..." : "Download Sekarang (Klik)"}
-                    </>
-                  )}
-                </PDFDownloadLink>
-              )}
-            </div>
-          )}
         </div>
+      </div>
+        
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+  
+  {/* FILTER KATEGORI */}
+  <div className="flex gap-2 mb-6 bg-gray-100 p-1.5 rounded-2xl w-fit">
+    <button
+      onClick={() => setFilterKategori("all")}
+      className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+        filterKategori === "all"
+          ? "bg-white text-gray-900 shadow-sm"
+          : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      Semua
+    </button>
+
+    <button
+      onClick={() => setFilterKategori("single")}
+      className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+        filterKategori === "single"
+          ? "bg-blue-600 text-white shadow-md"
+          : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      Single
+    </button>
+
+    <button
+      onClick={() => setFilterKategori("double")}
+      className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
+        filterKategori === "double"
+          ? "bg-purple-600 text-white shadow-md"
+          : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      Double
+    </button>
+  </div>
+
+  {/* TOMBOL PDF */}
+  
+{role === "admin" && filteredWinners.length > 0 && (
+  <div className="flex items-center">
+    {!readyPDF ? (
+      <button 
+        key="btn-siapkan"
+        onClick={() => setReadyPDF(true)}
+        className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"
+      >
+        <FileText size={20} /> 
+        Siapkan PDF {filterKategori !== 'all' ? filterKategori : ''}
+      </button>
+    ) : (
+      <PDFDownloadLink
+        key="btn-download"
+        document={<JuaraPDF winnersData={filteredWinners} tournamentName={tName} />}
+        fileName={`Juara_${tName}_${filterKategori}.pdf`}
+        className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2"
+        onClick={() => {
+          setTimeout(() => {
+            setReadyPDF(false);
+          }, 3000);
+        }}
+      >
+        {({ loading }) => (
+          <>
+            <Trophy size={20} />
+            {loading ? "Menyusun..." : "Download Sekarang (Klik)"}
+          </>
+        )}
+      </PDFDownloadLink>
+    )}
+  </div>
+)}
+
+
+</div>
+
 
         {/* --- LIST DATA JUARA --- */}
         {filteredWinners.length === 0 ? (
@@ -167,7 +206,9 @@ const JuaraPage = () => {
             <p className="text-lg text-gray-600">Tidak ada data juara untuk kategori {filterKategori}.</p>
           </div>
         ) : (
-          filteredWinners.map((data) => {
+         filteredWinners
+            .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId)
+            .map((data) => {
             const winners = data.winners;
             return (
               <div key={data.baganId} className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 mb-10">
@@ -224,6 +265,10 @@ const JuaraPage = () => {
                                 <th className="px-4 py-3 text-center font-bold border-b">Poin</th>
                                 <th className="px-4 py-3 text-center font-bold border-b">M</th>
                                 <th className="px-4 py-3 text-center font-bold border-b">K</th>
+                                <th className="px-4 py-3">GM</th>
+                                <th className="px-4 py-3">GK</th>
+                                <th className="px-4 py-3">Selisih</th>
+
                               </tr>
                             </thead>
                             <tbody>
@@ -234,6 +279,12 @@ const JuaraPage = () => {
                                   <td className="px-4 py-3 text-center text-blue-600 font-bold">{p.poin || '0'}</td>
                                   <td className="px-4 py-3 text-center">{p.menang || '0'}</td>
                                   <td className="px-4 py-3 text-center">{p.kalah || '0'}</td>
+                                  <td className="px-4 py-3 text-center">{p.gameMenang}</td>
+                                    <td className="px-4 py-3 text-center">{p.gameKalah}</td>
+                                    <td className="px-4 py-3 text-center font-bold">
+                                      {p.selisih}
+                                    </td>
+
                                 </tr>
                               ))}
                             </tbody>
@@ -247,7 +298,7 @@ const JuaraPage = () => {
             );
           })
         )}
-      </div>
+
     </div>
   );
 };

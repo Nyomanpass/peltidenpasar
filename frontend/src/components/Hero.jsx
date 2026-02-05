@@ -63,14 +63,12 @@ function Hero() {
 
           <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-10 lg:px-40">
             <div className="max-w-3xl text-left">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-5xl font-semibold text-white leading-snug drop-shadow-lg">
+                {slide.title}
+              </h1>
               <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base lg:text-lg text-gray-200 font-light leading-relaxed drop-shadow-md max-w-2xl">
                 {slide.description}
               </p>
-
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-5xl font-semibold text-white leading-snug drop-shadow-lg">
-                {slide.title}
-              </h1>
-
               <a
                 href={slide.ctaLink}
                 className="mt-4 sm:mt-5 inline-block bg-primary text-white font-black text-xs sm:text-sm md:text-base px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:bg-[#c29841] transition duration-300 transform hover:scale-105 shadow-lg uppercase tracking-wide"

@@ -4,7 +4,8 @@ import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import api from "../api"; // Mengimpor instans axios dari file api.js
-import { CheckCircle, Info, Star, Users } from "lucide-react";
+import { Info, Star, Users } from "lucide-react";
+import AlertMessage from "../components/AlertMessage";
 
 // Modal
 import PesertaModal from "../components/modalbox/PesertaModal";
@@ -26,6 +27,11 @@ export default function BaganView({baganId}) {
   const isRoundRobin = bagan?.tipe === "roundrobin";
   const [isLocked, setIsLocked] = useState(false);
 
+  const [alertType, setAlertType] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+  const [showLockConfirm, setShowLockConfirm] = useState(false);
+
+
 
 
   // Load data bagan menggunakan axios
@@ -43,11 +49,30 @@ export default function BaganView({baganId}) {
     }
   };
 
-  // Load peserta menggunakan axios
+  const formatSetScore = (m) => {
+    const sets = [];
+
+    for (let i = 1; i <= 3; i++) {
+      const s1 = m[`set${i}P1`];
+      const s2 = m[`set${i}P2`];
+      const tb1 = m[`set${i}TB1`];
+      const tb2 = m[`set${i}TB2`];
+
+      if (s1 != null && s2 != null && !(s1 === 0 && s2 === 0)) {
+        if (tb1 != null && tb2 != null) {
+          sets.push(`${s1}-${s2}(${tb1}-${tb2})`);
+        } else {
+          sets.push(`${s1}-${s2}`);
+        }
+      }
+    }
+
+    return sets.join(" "); 
+  };
+
   const loadAllPeserta = async (kelompokUmurId) => {
     try {
       const isDouble = bagan?.kategori === "double";
-      // Jika double, ambil dari tabel double-teams. Jika single, tetap pesertafilter.
       const endpoint = isDouble ? '/double-teams' : '/pesertafilter';
       
       const res = await api.get(endpoint, {
@@ -61,7 +86,6 @@ export default function BaganView({baganId}) {
       const data = res.data;
       setAllPeserta(data);
       
-      // Hitung Bye
       const totalPeserta = data.length;
       let bracketSize = 2;
       while (bracketSize < totalPeserta) {
@@ -83,72 +107,83 @@ export default function BaganView({baganId}) {
     }
   }, [bagan]);
 
-  // Export PDF yang diperbaiki
-const handleExportPDF = async () => {
-  const bracketEl = document.getElementById("bracket-container");
-  const ketPdfEl = document.getElementById("keterangan-pdf");
+  
+  const handleExportPDF = async () => {
+    const bracketEl = document.getElementById(
+      isRoundRobin ? "roundrobin-pdf" : "bracket-container"
+    );
 
-  if (!bracketEl || !bagan) return;
+    const ketPdfEl = document.getElementById("keterangan-pdf");
 
-  try {
-    /* =========================
-       1️⃣ CAPTURE BRACKET (HALAMAN 1)
-    ========================= */
-    const bracketCanvas = await html2canvas(bracketEl, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff"
-    });
+    if (!bracketEl || !bagan) return;
 
-    const bracketImg = bracketCanvas.toDataURL("image/jpeg", 1.0);
-    const bw = bracketCanvas.width * 0.75;
-    const bh = bracketCanvas.height * 0.75;
+    try {
+     
+      if (isRoundRobin) {
+        bracketEl.style.display = "block";
+      }
 
-    const paddingTop = 120;
-    const pdfWidth = bw + 60;
-    const pdfHeight = bh + paddingTop + 60;
+      await new Promise(r => setTimeout(r, 100)); 
 
-    const pdf = new jsPDF({
-      orientation: bw > bh ? "l" : "p",
-      unit: "pt",
-      format: [pdfWidth, pdfHeight]
-    });
+    
+      const bracketCanvas = await html2canvas(bracketEl, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff"
+      });
 
-    /* =========================
-       2️⃣ HEADER
-    ========================= */
-    const namaTurnamen =
+      const bracketImg = bracketCanvas.toDataURL("image/jpeg", 1.0);
+
+
+      const bw = bracketCanvas.width;
+      const bh = bracketCanvas.height;
+
+      if (!bw || !bh) {
+        throw new Error("Canvas kosong (width/height = 0)");
+      }
+
+      const paddingTop = 120;
+      const pdfWidth = bw + 60;
+      const pdfHeight = bh + paddingTop + 60;
+
+      const pdf = new jsPDF({
+        orientation: bw > bh ? "l" : "p",
+        unit: "pt",
+        format: [pdfWidth, pdfHeight]
+      });
+
+    
+      const namaTurnamen =
       bagan.Tournament?.name || bagan.tournament_name || "PELTI DENPASAR";
-    const namaKategori = bagan.nama || "Kategori Umum";
+      const namaKategori = bagan.nama || "Kategori Umum";
 
-    pdf.setFontSize(26);
-    pdf.setFont("helvetica", "bold");
-    pdf.setTextColor(20, 50, 100);
-    pdf.text(namaTurnamen.toUpperCase(), pdfWidth / 2, 50, { align: "center" });
+      pdf.setFontSize(36);
+      pdf.setFont("helvetica", "bold");
+      pdf.setTextColor(20, 50, 100);
+      pdf.text(namaTurnamen.toUpperCase(), pdfWidth / 2, 60, { align: "center" });
 
-    pdf.setFontSize(18);
-    pdf.setFont("helvetica", "normal");
-    pdf.setTextColor(60, 60, 60);
-    pdf.text(namaKategori, pdfWidth / 2, 80, { align: "center" });
+      pdf.setFontSize(24);
+      pdf.setFont("helvetica", "normal");
+      pdf.setTextColor(60, 60, 60);
+      pdf.text(namaKategori, pdfWidth / 2, 100, { align: "center" });
 
-    pdf.setDrawColor(200);
-    pdf.line(50, 95, pdfWidth - 50, 95);
+      pdf.setDrawColor(200);
+      pdf.line(50, 120, pdfWidth - 50, 120);
 
-    pdf.addImage(bracketImg, "JPEG", 30, paddingTop, bw, bh);
+      pdf.addImage(bracketImg, "JPEG", 30, paddingTop, bw, bh);
 
-    /* =========================
-       3️⃣ HALAMAN 2 – KETERANGAN (AMAN)
-    ========================= */
-    if (ketPdfEl) {
+     
+      if (ketPdfEl && !isRoundRobin) {
         ketPdfEl.style.display = "block";
+        await new Promise(r => setTimeout(r, 100));
 
         const canvas = await html2canvas(ketPdfEl, {
           scale: 2,
           backgroundColor: "#ffffff"
         });
 
-        const w = canvas.width * 0.75;
-        const h = canvas.height * 0.75;
+        const w = canvas.width;
+        const h = canvas.height;
 
         pdf.addPage();
         pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 30, 40, w, h);
@@ -156,36 +191,39 @@ const handleExportPDF = async () => {
         ketPdfEl.style.display = "none";
       }
 
-    pdf.save(`Bagan-${namaKategori.replace(/\s+/g, "-")}.pdf`);
-  } catch (err) {
-    console.error("Export PDF Error:", err);
-  }
-};
+      pdf.save(`Bagan-${namaKategori.replace(/\s+/g, "-")}.pdf`);
+
+
+      if (isRoundRobin) {
+        bracketEl.style.display = "none";
+      }
+
+    } catch (err) {
+      console.error("Export PDF Error:", err);
+      alert("Gagal export PDF: " + err.message);
+    }
+  };
+
 
 
 
 const handleLockBagan = async () => {
-  const confirmLock = window.confirm(
-    "⚠️ PERINGATAN: Setelah dikunci, pengundian tidak dapat diulang kembali. Pastikan bagan sudah benar!"
-  );
-  
-  if (!confirmLock) return;
-
   try {
     setIsLoading(true);
-    // Mengirim perintah ke backend
-    await api.patch(`/bagan/${finalId}/lock`); 
-    
-    // Refresh data bagan agar bagan.isLocked terupdate di UI
-    await loadBagan(); 
-    alert("✅ Bagan telah resmi dikunci!");
+    await api.patch(`/bagan/${finalId}/lock`);
+    await loadBagan();
+
+    setAlertType("success");
+    setAlertMessage("Bagan berhasil dikunci dan tidak bisa diubah lagi.");
   } catch (error) {
-    console.error(error);
-    alert("Gagal mengunci bagan: " + error.message);
+    setAlertType("error");
+    setAlertMessage("Gagal mengunci bagan.");
   } finally {
     setIsLoading(false);
+    setShowLockConfirm(false);
   }
 };
+
 
   // Lakukan pengundian menggunakan axios
   const handleUndian = async (seededPeserta, byeSlots) => {
@@ -251,6 +289,42 @@ const handleLockBagan = async () => {
   const finalMatch = bagan.Matches.find((m) => m.round === finalRound);
 
   let juara = null;
+
+  let juaraRR = null;
+
+if (isRoundRobin) {
+  const klasemen = {};
+  let semuaSelesai = true;
+
+  bagan.Matches.forEach(m => {
+    const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
+    const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
+    const wId = isDouble ? m.winnerDoubleId : m.winnerId;
+
+    // ⛔ kalau ada match belum ada pemenang
+    if (!wId) semuaSelesai = false;
+
+    if (!p1 || !p2) return;
+
+    [p1, p2].forEach(p => {
+      if (!klasemen[p.id]) {
+        klasemen[p.id] = { peserta: p, poin: 0 };
+      }
+    });
+
+    if (wId === p1.id) klasemen[p1.id].poin += 3;
+    if (wId === p2.id) klasemen[p2.id].poin += 3;
+  });
+
+  if (semuaSelesai) {
+    const ranking = Object.values(klasemen).sort((a,b)=>b.poin-a.poin);
+    juaraRR = ranking[0]?.peserta || null;
+  } else {
+    juaraRR = null; // ❗ BELUM ADA JUARA
+  }
+}
+
+  
   if (finalMatch) {
     if (isDouble && finalMatch.winnerDoubleId) {
       const winner = finalMatch.winnerDoubleId === finalMatch.doubleTeam1Id ? finalMatch.doubleTeam1 : finalMatch.doubleTeam2;
@@ -260,8 +334,22 @@ const handleLockBagan = async () => {
     }
   }
 
+  const thStyle = {
+    border: "1px solid #d1d5db",
+    padding: "8px",
+    fontSize: 12,
+    textAlign: "left"
+  };
+
+  const tdStyle = {
+    border: "1px solid #e5e7eb",
+    padding: "8px",
+    fontSize: 12
+  };
+
+
   return (
-    <div className="bg-gray-50 min-h-screen w-full">
+    <div className="min-h-screen w-full">
       <div className="max-full mx-auto mb-10">
         <h1 className="text-3xl md:text-4xl font-extrabold mb-9 text-center text-gray-800">
           {bagan.nama}
@@ -284,11 +372,12 @@ const handleLockBagan = async () => {
             {/* Tombol Kunci: HANYA tampil jika BELUM dikunci */}
             {!bagan.isLocked && (
               <button
-                onClick={handleLockBagan}
-                className="px-8 py-3 bg-red-600 text-white font-bold rounded-xl shadow-lg hover:bg-red-700 transition-all flex items-center gap-2"
+                onClick={() => setShowLockConfirm(true)}
+                className="px-8 py-3 bg-red-600 text-white font-bold rounded-xl"
               >
                 Kunci Bagan 🔒
               </button>
+
             )}
 
             {/* Tombol Export PDF: Selalu Tampil */}
@@ -317,7 +406,7 @@ const handleLockBagan = async () => {
           {isRoundRobin ? (
             /* TAMPILAN ROUND ROBIN (TABEL) */
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-gray-700 border-b pb-2">Badan Pertandingan Round Robin</h2>
+              <h2 className="text-xl font-bold text-gray-700 border-b pb-2">Bagan Pertandingan Round Robin</h2>
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-50 text-gray-600">
@@ -356,23 +445,33 @@ const handleLockBagan = async () => {
 
                         <td className="p-4 border-b text-center">
                           <span className="bg-gray-100 px-3 py-1 rounded-md font-mono font-bold">
-                            {m.score1 ?? 0} - {m.score2 ?? 0}
+                            {formatSetScore(m)}
                           </span>
                         </td>
 
-                        {role === "admin" && (
+                       {role === "admin" && (
                           <td className="p-4 border-b text-center">
-                            <button 
-                              onClick={() => {
-                                setSelectedMatch(m);
-                                setModalType("winner");
-                              }}
-                              className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200"
-                            >
-                              Input Skor
-                            </button>
-                          </td>
-                        )}
+                              {(
+                                // untuk SINGLE
+                                (!isDouble && !m.winnerId) ||
+                                // untuk DOUBLE
+                                (isDouble && !m.winnerDoubleId)
+                              ) ? (
+                                <button 
+                                  onClick={() => {
+                                    setSelectedMatch(m);
+                                    setModalType("winner");
+                                  }}
+                                  className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200"
+                                >
+                                  Input Skor
+                                </button>
+                              ) : (
+                                <span className="text-xs text-gray-400 italic">Selesai</span>
+                              )}
+                            </td>
+                          )}
+
                       </tr>
                     ))}
                   </tbody>
@@ -394,52 +493,67 @@ const handleLockBagan = async () => {
                       const hasS1 = isDouble ? match.doubleTeam1Id : match.peserta1Id;
                       const hasS2 = isDouble ? match.doubleTeam2Id : match.peserta2Id;
                       
-                      if (hasS1 !== null && hasS2 !== null) {
+                      const isFinished = isDouble
+                        ? !!match.winnerDoubleId
+                        : !!match.winnerId;
+
+                      if (hasS1 !== null && hasS2 !== null && !isFinished) {
                         setModalType("winner");
                       }
                     }}
                   >
-                    <SeedItem>
-                      <div className="bg-white rounded-lg">
-                        {/* --- TEAM 1 --- */}
-                        <SeedTeam
-                          className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
-                            ${
-                              (isDouble ? (match.winnerDoubleId === match.doubleTeam1Id && match.doubleTeam1Id !== null) : (match.winnerId === match.peserta1Id && match.peserta1Id !== null))
-                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                            }
-                          `}
-                        >
-                          {isDouble 
-                            ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
-                            : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
-                          
-                          {match.score1 !== null && (
-                            <span className="float-right font-bold">{match.score1}</span>
-                          )}
-                        </SeedTeam>
+                 <SeedItem>
+                  <div className="relative bg-white">
 
-                        {/* --- TEAM 2 --- */}
-                        <SeedTeam
-                          className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
-                            ${
-                              (isDouble ? (match.winnerDoubleId === match.doubleTeam2Id && match.doubleTeam2Id !== null) : (match.winnerId === match.peserta2Id && match.peserta2Id !== null))
-                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                            }
-                          `}
-                        >
-                          {isDouble 
-                            ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
-                            : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
-                          
-                          {match.score2 !== null && (
-                            <span className="float-right font-bold">{match.score2}</span>
-                          )}
-                        </SeedTeam>
+                    {/* BADGE SCORE (ABSOLUTE) */}
+                    {formatSetScore(match) && (
+                      <div className="absolute -top-3 -right-3 z-10">
+                        <span style={{
+                              color: "#000000"
+                            }}
+                          className="font-bold text-md px-2 py-0.5">
+                          {formatSetScore(match)}
+                        </span>
                       </div>
-                    </SeedItem>
+                    )}
+
+                    {/* --- TEAM 1 --- */}
+                    <SeedTeam
+                      className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
+                        ${
+                          (isDouble
+                            ? match.winnerDoubleId === match.doubleTeam1Id
+                            : match.winnerId === match.peserta1Id)
+                            ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                            : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                        }
+                      `}
+                    >
+                      {isDouble 
+                        ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
+                        : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
+                    </SeedTeam>
+
+                    {/* --- TEAM 2 --- */}
+                    <SeedTeam
+                      className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
+                        ${
+                          (isDouble
+                            ? match.winnerDoubleId === match.doubleTeam2Id
+                            : match.winnerId === match.peserta2Id)
+                            ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                            : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                        }
+                      `}
+                    >
+                      {isDouble 
+                        ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
+                        : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
+                    </SeedTeam>
+
+                  </div>
+                </SeedItem>
+
                   </Seed>
                 );
               }}
@@ -575,7 +689,7 @@ const handleLockBagan = async () => {
             <span>{new Date().toLocaleString("id-ID")}</span>
           </div>
 
-          {juara && (
+          {(isRoundRobin ? juaraRR : juara) && (
             <div
               style={{
                 marginTop: 32,
@@ -605,12 +719,91 @@ const handleLockBagan = async () => {
                   marginBottom: 10
                 }}
               >
-                {juara}
+                {isRoundRobin
+                ? (isDouble
+                    ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
+                    : juaraRR?.namaLengkap)
+                : juara}
+
               </div>
             </div>
           )}
 
         </div>
+
+        {/* ===== ROUND ROBIN PDF (KHUSUS EXPORT) ===== */}
+        <div
+          id="roundrobin-pdf"
+          style={{
+            background: "#ffffff",
+            padding: "32px",
+            fontFamily: "Arial, Helvetica, sans-serif",
+            display: "none",
+            width: "100%"
+          }}
+        >
+          <h2 style={{ fontSize: 20, marginBottom: 12, color: "#1f2937" }}>
+            Bagan Pertandingan Round Robin
+          </h2>
+
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr style={{ background: "#f3f4f6" }}>
+                <th style={thStyle}>No</th>
+                <th style={thStyle}>Peserta 1</th>
+                <th style={thStyle}>VS</th>
+                <th style={thStyle}>Peserta 2</th>
+                <th style={thStyle}>Skor</th>
+              </tr>
+            </thead>
+            <tbody>
+              {bagan.Matches.map((m, i) => (
+                <tr key={m.id}>
+                  <td style={tdStyle}>{i + 1}</td>
+                  <td style={tdStyle}>
+                    {isDouble
+                      ? m.doubleTeam1?.namaTim
+                      : m.peserta1?.namaLengkap}
+                  </td>
+                  <td style={tdStyle}>VS</td>
+                  <td style={tdStyle}>
+                    {isDouble
+                      ? m.doubleTeam2?.namaTim
+                      : m.peserta2?.namaLengkap}
+                  </td>
+                  <td style={tdStyle}>
+                    {m.score1 ?? 0} - {m.score2 ?? 0}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {(isRoundRobin ? juaraRR : juara) && (
+            <div
+              style={{
+                marginTop: 32,
+                padding: 20,
+                border: "2px solid #facc15",
+                borderRadius: 12,
+                background: "#fffbeb",
+                textAlign: "center"
+              }}
+            >
+              <div style={{ fontSize: 20, fontWeight: "bold", color: "#ca8a04" }}>
+                🏆 Juara
+              </div>
+              <div style={{ fontSize: 16, marginTop: 6 }}>
+                {isRoundRobin
+                  ? (isDouble
+                      ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
+                      : juaraRR?.namaLengkap)
+                  : juara}
+              </div>
+            </div>
+          )}
+        </div>
+
 
 
         {/* Hanya tampil jika BUKAN Round Robin */}
@@ -699,7 +892,12 @@ const handleLockBagan = async () => {
             <h2 className="text-3xl font-bold text-yellow-600 animate-bounce">
               🏆 Juara
             </h2>
-            <p className="text-2xl font-semibold text-gray-900 mt-2">{juara}</p>
+            <p className="text-2xl font-semibold text-gray-900 mt-2">{isRoundRobin
+              ? (isDouble
+                  ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
+                  : juaraRR?.namaLengkap)
+              : juara}
+            </p>
           </div>
         )}
       </div>
@@ -773,6 +971,43 @@ const handleLockBagan = async () => {
     </div>
   </div>
 )}
+
+
+{showLockConfirm && (
+  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
+    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 animate-in zoom-in">
+      
+      <h2 className="text-xl font-bold text-gray-800 mb-2">
+        Kunci Bagan?
+      </h2>
+      <p className="text-sm text-gray-500 mb-5">
+        Setelah dikunci, bagan tidak bisa diundi ulang atau diubah.
+      </p>
+
+      <div className="flex gap-3 justify-end">
+        <button
+          onClick={() => setShowLockConfirm(false)}
+          className="px-4 py-2 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+        >
+          Batal
+        </button>
+
+        <button
+          onClick={handleLockBagan}
+          className="px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700"
+        >
+          Ya, Kunci
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+<AlertMessage
+  type={alertType}
+  message={alertMessage}
+  onClose={() => setAlertMessage("")}
+/>
 
 
     </div>

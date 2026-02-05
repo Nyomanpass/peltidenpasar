@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api";
 import { ArrowLeft, User, Phone, Calendar, Users, FileText, CheckCircle, X, Bell, XCircle, Send, Pencil } from "lucide-react";
+import AlertMessage from "../AlertMessage";
 
 export default function DetailPeserta() {
   const { id } = useParams();
@@ -22,6 +23,12 @@ export default function DetailPeserta() {
   const [previewFotoKartu, setPreviewFotoKartu] = useState(null);
   const [previewBuktiBayar, setPreviewBuktiBayar] = useState(null);
   const [kelompokUmurList, setKelompokUmurList] = useState([]);
+
+
+  const [success, setSuccess] = useState("");
+  const [errorAlert, setErrorAlert] = useState("");
+  const [showVerifyConfirm, setShowVerifyConfirm] = useState(false);
+
 
 
 
@@ -100,32 +107,36 @@ export default function DetailPeserta() {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
-      alert("Peserta berhasil diupdate");
+      setSuccess("Data peserta berhasil diperbarui ✅");
       setIsEditing(false);
       fetchPesertaDetail();
     } catch (err) {
       console.error(err);
-      alert("Gagal update peserta");
+      setError("Gagal update peserta");
     }
   };
 
 
 
-  // HANDLER VERIFIKASI (SETUJU)
   const handleVerify = async () => {
-    if (!window.confirm(`Verifikasi ${peserta.namaLengkap}?`)) return;
-    try {
-      await api.put(`/peserta/${id}/verify`, { status: "verified" });
-      setPeserta(p => ({ ...p, status: 'verified' }));
-      fetchPendingTotal();
-      alert("Peserta berhasil diverifikasi! ✅");
-    } catch (err) { alert("Gagal memverifikasi."); }
-  };
+  try {
+    await api.put(`/peserta/${id}/verify`, { status: "verified" });
+    setPeserta(p => ({ ...p, status: "verified" }));
+    fetchPendingTotal();
+    setSuccess(`Peserta ${peserta.namaLengkap} berhasil diverifikasi ✅`);
+    setShowVerifyConfirm(false);
+  } catch (err) {
+    console.error(err);
+    setError("Gagal memverifikasi peserta.");
+    setShowVerifyConfirm(false);
+  }
+};
+
 
   // HANDLER TOLAK (REJECT)
   const handleReject = async () => {
     if (!rejectMessage) {
-      alert("Mohon masukkan alasan penolakan.");
+      setError("Mohon masukkan alasan penolakan.");
       return;
     }
 
@@ -144,11 +155,11 @@ export default function DetailPeserta() {
         window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, "_blank");
       }
 
-      alert("Peserta ditolak dan pesan WA telah disiapkan.");
+      setSuccess(`Peserta ${peserta.namaLengkap} berhasil ditolak dan WA disiapkan.`);
       navigate(-1); // Kembali ke list karena data sudah ditolak/dihapus
     } catch (error) {
       console.error(error);
-      alert("Gagal memproses penolakan.");
+      setError("Gagal memproses penolakan.");
     }
   };
 
@@ -156,8 +167,19 @@ export default function DetailPeserta() {
   if (error || !peserta) return <div className="p-10 text-center text-red-500 font-bold">{error}</div>;
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6 bg-gray-50 min-h-screen font-sans">
-      
+    <div className="mx-auto p-4 md:p-6 min-h-screen font-sans">
+        <AlertMessage
+          type="success"
+          message={success}
+          onClose={() => setSuccess("")}
+        />
+
+        <AlertMessage
+          type="error"
+          message={errorAlert}
+          onClose={() => setErrorAlert("")}
+        />
+
       {/* Modal Popup Gambar (Tetap sama) */}
       {modalImage && (
         <div className="fixed inset-0 z-[999] flex items-center justify-center bg-black/80 p-4" onClick={() => setModalImage(null)}>
@@ -238,7 +260,7 @@ export default function DetailPeserta() {
                 <div className="mt-8 space-y-4">
                   {!isRejecting ? (
                     <div className="flex gap-4">
-                      <button onClick={handleVerify} className="flex-1 flex items-center justify-center gap-2 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 shadow-lg transition-transform active:scale-95">
+                      <button onClick={() => setShowVerifyConfirm(true)} className="flex-1 flex items-center justify-center gap-2 py-4 bg-green-600 text-white rounded-2xl font-bold hover:bg-green-700 shadow-lg transition-transform active:scale-95">
                         <CheckCircle size={22} /> Verifikasi
                       </button>
                       <button onClick={() => setIsRejecting(true)} className="flex-1 flex items-center justify-center gap-2 py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 shadow-lg transition-transform active:scale-95">
@@ -411,6 +433,39 @@ export default function DetailPeserta() {
     </div>
   </div>
 )}
+
+{showVerifyConfirm && (
+  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+    <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full animate-in fade-in zoom-in">
+
+      <h2 className="text-lg font-bold text-gray-800 mb-2">
+        Konfirmasi Verifikasi
+      </h2>
+      <p className="text-sm text-gray-600 mb-6">
+        Yakin ingin memverifikasi peserta:
+        <span className="font-bold"> {peserta.namaLengkap}</span> ?
+      </p>
+
+      <div className="flex gap-3 justify-end">
+        <button
+          onClick={() => setShowVerifyConfirm(false)}
+          className="px-4 py-2 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+        >
+          Batal
+        </button>
+
+        <button
+          onClick={handleVerify}
+          className="px-4 py-2 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700"
+        >
+          Ya, Verifikasi
+        </button>
+      </div>
+
+    </div>
+  </div>
+)}
+
 
 
     </div>

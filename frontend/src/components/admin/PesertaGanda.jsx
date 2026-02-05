@@ -5,6 +5,7 @@ import {
   Users, Search, UserPlus, CheckCircle2, Users2, 
   User, ChevronDown, ChevronUp, X, Eye, Trash2 
 } from "lucide-react";
+import AlertMessage from "../AlertMessage";
 
 function PesertaGanda() {
   const location = useLocation();
@@ -26,6 +27,18 @@ function PesertaGanda() {
   const [modalSearchTerm, setModalSearchTerm] = useState("");
 
 
+  const [alert, setAlert] = useState({
+    show: false,
+    type: "success",
+    message: "",
+  });
+
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    teamId: null,
+  });
+
+
 
   const toggleModalGroup = (id) => {
     setCollapsedPlayers(prev => ({ ...prev, [id]: !prev[id] }));
@@ -34,6 +47,8 @@ function PesertaGanda() {
   const role = localStorage.getItem("role");
   const isAdmin = role === "admin"; // Pastikan ini true jika admin
   const isActive = (path) => location.pathname === path;
+
+  
 
   const fetchData = useCallback(async (idOverride) => {
     const tournamentId = idOverride || localStorage.getItem("selectedTournament");
@@ -91,12 +106,21 @@ function PesertaGanda() {
         kelompokUmurId: parseInt(selectedTargetKU) 
       };
       await api.post("/double-teams", payload);
-      alert("Tim ganda berhasil dibuat!");
+      setAlert({
+        show: true,
+        type: "success",
+        message: "Tim ganda berhasil dibuat",
+      });
+
       setSelectedPlayers([]);
       setIsModalOpen(false);
       fetchData(); 
     } catch (err) {
-      alert(err.response?.data?.msg || "Gagal menyimpan tim");
+      setAlert({
+        show: true,
+        type: "error",
+        message: err.response?.data?.msg || "Gagal menyimpan tim",
+      });
     }
   };
 
@@ -110,15 +134,27 @@ function PesertaGanda() {
   };
 
 
-  const handleDeleteTeam = async (id) => {
-    if (!window.confirm("Yakin mau hapus tim ganda ini?")) return;
-    try {
-      await api.delete(`/double-teams/${id}`);
-      fetchData();
-    } catch (err) {
-      alert("Gagal menghapus tim");
-    }
-  };
+const handleDeleteTeam = async () => {
+  try {
+    await api.delete(`/double-teams/${confirmDelete.teamId}`);
+
+    setAlert({
+      show: true,
+      type: "success",
+      message: "Tim ganda berhasil dihapus",
+    });
+
+    setConfirmDelete({ show: false, teamId: null });
+    fetchData();
+  } catch (err) {
+    setAlert({
+      show: true,
+      type: "error",
+      message: "Gagal menghapus tim",
+    });
+  }
+};
+
 
   const hitungUmur = (tanggalLahir) => {
   if (!tanggalLahir) return 0;
@@ -133,58 +169,52 @@ function PesertaGanda() {
   if (loading) return <div className="p-20 text-center font-bold">Memuat data...</div>;
 
   return (
-    <div className="min-h-screen bg-white p-4">
+    <div className="min-h-screen">
       {/* --- HEADER --- */}
-      <div className="mb-8 border-b pb-8">
+     
+     <div className="mb-8 border-b pb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Manajemen Peserta</h1>
-            <p className="text-sm text-blue-600 font-bold uppercase tracking-widest mt-1">
-              Tournament: <span className="text-gray-700">{currentTournamentName}</span>
-            </p>
-          </div>
+            <div>
+              <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+                Manajement Peserta
+              </h1>
+              <p className="text-md text-yellow-600 font-semibold mt-1">
+                  Tournament: {currentTournamentName || "Belum Memilih"}
+              </p>
+            </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-4">
-            {isAdmin && (
-            <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
-              <Link 
-                to={"/admin/peserta"} 
-                className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta") || isActive("/tournament/peserta") ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                <User size={16} /> Single
-              </Link>
-              <Link 
-                to={"/admin/peserta-ganda"} 
-                className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta-ganda") || isActive("/tournament/peserta-ganda") ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
-              >
-                <Users2 size={16} /> Double
-              </Link>
-            </div>
-            )}
-
+            {/* Navigasi Button Kategori */}
+               {role === "admin" && (
+                <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200">
+                  <Link 
+                    to={"/admin/peserta"} 
+                    className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta") || isActive("/tournament/peserta") ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  >
+                    <User size={16} /> Single
+                  </Link>
+                  <Link 
+                    to={"/admin/peserta-ganda"} 
+                    className={`flex items-center gap-2 px-5 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${isActive("/admin/peserta-ganda") || isActive("/tournament/peserta-ganda") ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                  >
+                    <Users2 size={16} /> Double
+                  </Link>
+                </div>
+                )}
+            {/* Input Pencarian */}
             <div className="relative w-full sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
-                placeholder="Cari nama tim/pemain..."
+                placeholder="Cari nama..."
                 className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm transition-all"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-                  
-            {isAdmin && (
-              <button 
-                onClick={() => setIsModalOpen(true)}
-                className="flex items-center gap-2 bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:bg-blue-700 transition-all"
-              >
-                <UserPlus size={18} /> BUAT TIM GANDA
-              </button>
-            )}
           </div>
         </div>
       </div>
-
    
 {(() => {
   // 1. Hitung total tim yang cocok dengan pencarian di SEMUA kelompok umur
@@ -195,15 +225,7 @@ function PesertaGanda() {
     return namaP1.includes(search) || namaP2.includes(search);
   });
 
-  // 2. Jika database ganda benar-benar kosong (sebelum ada search)
-  if (doubleTeams.length === 0) {
-    return (
-      <div className="p-10 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
-        <Users2 size={48} className="text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500 font-medium">Belum ada data tim ganda untuk tournament ini.</p>
-      </div>
-    );
-  }
+
 
   // 3. JIKA sedang mencari tapi tidak ada satu pun tim yang cocok (Global Search Result)
   if (searchTerm !== "" && allFilteredTeams.length === 0) {
@@ -227,8 +249,32 @@ function PesertaGanda() {
   // 4. Render List jika data ditemukan
   return (
     <div className="space-y-6">
-      {masterKU.map((ku) => {
-        // Ambil tim asli di kategori ini
+      
+        {/* TOOLBAR DI ATAS TABEL */}
+    {isAdmin && (
+      <div className="flex justify-end">
+        <button 
+          onClick={() => setIsModalOpen(true)}
+          className="flex items-center gap-2 bg-yellow-600 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:bg-yellow-500 transition-all"
+        >
+          <UserPlus size={18} /> Buat Tim Ganda
+        </button>
+      </div>
+    )}
+
+      {doubleTeams.length === 0 && (
+      <div className="p-10 text-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200">
+        <Users2 size={48} className="text-gray-300 mx-auto mb-4" />
+        <p className="text-gray-500 font-medium">
+          Belum ada data tim ganda untuk tournament ini.
+        </p>
+      </div>
+    )}
+
+
+      {doubleTeams.length > 0 && masterKU.map((ku) => {
+
+        // Ambil tim asli di ktegori ini
         const rawTeamsInCategory = doubleTeams.filter(team => 
           (team.kelompokUmurId === ku.id || team.KelompokUmur?.id === ku.id)
         );
@@ -305,9 +351,9 @@ function PesertaGanda() {
                         <td className="px-6 py-3">
                           <div className="flex justify-center gap-2">
                             {isAdmin ? (
-                              <button 
-                                onClick={() => handleDeleteTeam(team.id)} 
-                                className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                             <button 
+                                onClick={() => setConfirmDelete({ show: true, teamId: team.id })}
+                                className="p-1.5 text-red-600 hover:bg-red-100 rounded-lg"
                               >
                                 <Trash2 size={16} />
                               </button>
@@ -350,7 +396,7 @@ function PesertaGanda() {
                 {/* 1. KATEGORI TARGET */}
                 <div className="space-y-4">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">1. Kategori Target</label>
-                  <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                     {masterKU.map(ku => (
                       <button
                         key={ku.id}
@@ -365,8 +411,6 @@ function PesertaGanda() {
                   </div>
                 </div>
 
-                {/* 2. PILIH 2 PEMAIN */}
-              {/* 2. PILIH 2 PEMAIN (SISTEM CARD COLLAPSIBLE DI DALAM MODAL) */}
                {/* 2. PILIH 2 PEMAIN (DENGAN FITUR SEARCH) */}
                 <div className="md:col-span-2 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -505,6 +549,36 @@ function PesertaGanda() {
            </div>
         </div>
       )}
+      {alert.show && (
+        <AlertMessage
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert({ show: false, type: "success", message: "" })}
+        />
+      )}
+
+    {confirmDelete.show && (
+      <AlertMessage
+        type="warning"
+        message="Yakin mau menghapus tim ganda ini?"
+        onClose={() => setConfirmDelete({ show: false, teamId: null })}
+      >
+        <button
+          onClick={() => setConfirmDelete({ show: false, teamId: null })}
+          className="px-5 py-2 rounded-xl bg-gray-200 font-bold hover:bg-gray-300 transition"
+        >
+          Batal
+        </button>
+        <button
+          onClick={handleDeleteTeam}
+          className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+        >
+          Hapus
+        </button>
+      </AlertMessage>
+    )}
+
+
     </div>
   );
 }
