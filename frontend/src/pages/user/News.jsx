@@ -40,33 +40,30 @@ export default function News() {
     <>
       <Navbar />
 
-      <section className="relative pb-16 pt-30 bg-gray-50">
+      <section className="relative pb-16 bg-gray-50">
         {/* Header */}
-        <div className="relative w-full h-[500px] sm:h-[300px] md:h-[300px] lg:h-[300px] mb-20">
-          <img
-            src="/hero.jpg"
-            alt="Profil Pelti Denpasar"
-            className="relative w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/60"></div>
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10 md:px-20 lg:px-40 text-center text-white">
-            <h2 className="text-lg sm:text-2xl md:text-4xl lg:text-4xl font-bold mb-3 sm:mb-4 leading-snug">
-              Berita Terbaru
-            </h2>
-            <p className="max-w-md sm:max-w-2xl lg:max-w-4xl text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed">
-              Ikuti perkembangan PELTI Denpasar terbaru melalui news yang telah kami pilih untuk Anda
-            </p>
-          </div>
+        
+        <div className="relative w-full h-[300px] mt-30 mb-16">
+        <img
+          src="/hero.jpg"
+          alt="Visi dan Misi Pelti Denpasar"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">
+             Berita Terbaru
+          </h2>
+          <p className="max-w-2xl text-sm md:text-base opacity-90">
+        Ikuti perkembangan PELTI Denpasar terbaru melalui news yang telah
+              kami pilih untuk Anda
+          </p>
         </div>
+      </div>
 
         {/* Grid Berita */}
-        <div className="px-4 sm:px-6 lg:px-40">
-          <div
-            className="grid gap-6 sm:gap-8"
-            style={{
-              gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            }}
-          >
+        <div className="px-4 sm:px-6 lg:px-24 xl:px-40">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {currentItems.map((item) => (
               <div
                 key={item.idNews}
@@ -83,7 +80,7 @@ export default function News() {
 
                 {/* Konten */}
                 <div className="p-5 flex flex-col flex-1">
-                  <p className="text-xs sm:text-sm text-yellow-600 font-semibold">
+                  <p className="text-xs text-yellow-600 font-semibold">
                     {item.tanggalUpload
                       ? new Date(item.tanggalUpload).toLocaleDateString("id-ID", {
                           day: "2-digit",
@@ -92,9 +89,11 @@ export default function News() {
                         })
                       : "-"}
                   </p>
+
                   <h3 className="text-base sm:text-lg font-semibold text-gray-900 mt-1 hover:text-yellow-600 transition">
                     {item.title}
                   </h3>
+
                   <p className="text-sm text-gray-600 mt-3 line-clamp-3 flex-1">
                     {item.desc.length > 100
                       ? item.desc.slice(0, 100) + "..."
@@ -114,7 +113,7 @@ export default function News() {
         </div>
 
         {/* Pagination */}
-        <div className="flex justify-center items-center gap-4 mt-12">
+        <div className="flex flex-wrap justify-center items-center gap-4 mt-12 px-4">
           <button
             onClick={handlePrev}
             disabled={currentPage === 1}

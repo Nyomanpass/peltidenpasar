@@ -73,29 +73,29 @@ export default function NewsDetail() {
   return (
     <>
       <Navbar />
-       <div className="relative mt-30 w-full h-[500px] sm:h-[300px] md:h-[300px] lg:h-[300px]">
-          <img
-            src="/hero.jpg"
-            alt="Profil Pelti Denpasar"
-            className="relative w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-black/60"></div>
-          <div className="absolute inset-0 flex flex-col items-center justify-center px-6 sm:px-10 md:px-20 lg:px-40 text-center text-white">
-            <h2 className="text-lg sm:text-2xl md:text-4xl lg:text-4xl font-bold mb-3 sm:mb-4 leading-snug">
-              Berita Terbaru
-            </h2>
-            <p className="max-w-md sm:max-w-2xl lg:max-w-4xl text-xs sm:text-sm md:text-base lg:text-lg leading-relaxed">
-              Ikuti perkembangan PELTI Denpasar terbaru melalui news yang telah kami pilih untuk Anda
-            </p>
-          </div>
+
+      {/* HERO */}
+      <div className="relative w-full h-[300px] mt-30 ">
+        <img
+          src="/hero.jpg"
+          alt="Visi dan Misi Pelti Denpasar"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
+          <h2 className="text-3xl md:text-4xl font-bold mb-3">
+             Berita Terbaru
+          </h2>
+          <p className="max-w-2xl text-sm md:text-base opacity-90">
+        Ikuti perkembangan PELTI Denpasar terbaru melalui news yang telah
+              kami pilih untuk Anda
+          </p>
         </div>
+      </div>
 
-
-      <section className="bg-gray-50 pt-20 pb-16 px-15">
-      
-      
-        {/* FULL WIDTH CONTAINER */}
-        <div className="w-full h-full px-4 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
+      {/* CONTENT */}
+      <section className="bg-gray-50 pt-10 sm:pt-20 pb-16 px-4 sm:px-15">
+        <div className="w-full h-full px-3 sm:px-6 lg:px-12 xl:px-16 2xl:px-24">
 
           {/* Breadcrumb */}
           <div className="text-sm mb-6 text-gray-500">
@@ -105,16 +105,15 @@ export default function NewsDetail() {
           </div>
 
           {/* GRID */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
 
-            {/* ===== MAIN CONTENT ===== */}
-            <article className="lg:col-span-8 bg-white rounded-xl shadow-sm p-6 sm:p-8">
-
-              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900">
+            {/* MAIN */}
+            <article className="lg:col-span-8 bg-white rounded-xl shadow-sm p-5 sm:p-8">
+              <h1 className="text-xl sm:text-3xl md:text-4xl font-bold text-gray-900">
                 {news.title}
               </h1>
 
-              <div className="mt-3 text-sm text-gray-500">
+              <div className="mt-3 text-xs sm:text-sm text-gray-500">
                 <span className="mr-4">
                   {new Date(news.tanggalUpload).toLocaleDateString("id-ID", {
                     day: "2-digit",
@@ -125,8 +124,7 @@ export default function NewsDetail() {
                 <span>Oleh: {news.penulis || "Admin PELTI Denpasar"}</span>
               </div>
 
-              {/* Image */}
-              <div className="mt-6 w-full h-64 sm:h-80 md:h-[420px] rounded-xl overflow-hidden">
+              <div className="mt-6 w-full h-56 sm:h-80 md:h-[420px] rounded-xl overflow-hidden">
                 <img
                   src={news.image}
                   alt={news.title}
@@ -134,16 +132,14 @@ export default function NewsDetail() {
                 />
               </div>
 
-              {/* Content */}
               <div
                 className="prose prose-sm sm:prose-base lg:prose-lg max-w-none mt-8"
                 dangerouslySetInnerHTML={{ __html: news.desc }}
               />
             </article>
 
-            {/* ===== SIDEBAR ===== */}
+            {/* SIDEBAR */}
             <aside className="lg:col-span-4 space-y-4">
-
               <h3 className="text-lg font-semibold text-gray-900">
                 News Lainnya
               </h3>
@@ -179,8 +175,6 @@ export default function NewsDetail() {
             </aside>
           </div>
         </div>
-
-        
       </section>
 
       <Footer />

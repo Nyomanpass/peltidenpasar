@@ -71,7 +71,7 @@ export default function News() {
           {displayedNews.map((b) => (
             <article
               key={b.idNews}
-              className="bg-white shadow-sm sm:shadow-md sm:rounded-lg overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300 mb-3 sm:mb-0"
+              className="bg-white shadow-sm sm:shadow-md  rounded-md sm:rounded-lg  overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300 mb-3 sm:mb-0"
             >
               {/* Gambar */}
               <div className="relative w-full overflow-hidden aspect-[16/10]">
