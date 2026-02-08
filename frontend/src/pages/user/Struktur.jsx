@@ -23,13 +23,13 @@ export default function Struktur() {
       <Navbar />
 
       {/* HERO */}
-      <div className="relative w-full h-[300px] mt-30">
+      <div className="relative w-full h-[370px] mt-18">
         <img
           src="/hero.jpg"
           alt="Struktur Organisasi Pelti Denpasar"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 bg-black/50"></div>
         <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
           <h2 className="text-3xl md:text-4xl font-bold mb-3">
             Struktur Organisasi

@@ -38,9 +38,10 @@ const TournamentCTA = () => {
                     Batas waktu pendaftaran semakin dekat. Amankan tempat Anda sebelum kuota penuh!
                 </p>
 
-            </div>
-        </section>
-    );
+    </div>
+  </section>
+);
+
 };
 
 export default TournamentCTA;

@@ -746,43 +746,82 @@ const groupedJadwal = [...jadwal]
                     {match ? (
                       <div className="h-full bg-white border border-gray-100 rounded-[1.8rem] p-5 shadow-md hover:shadow-2xl hover:border-yellow-400 hover:-translate-y-1 transition-all duration-300 relative group/card overflow-hidden">
                        
-                        {role === "admin" && (
+                       {(role === "admin" || role === "wasit") && (
                           <div className="absolute top-4 right-4 z-30">
                             <button
-                              onClick={() => setOpenMenuId(openMenuId === match.id ? null : match.id)}
-                              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-yellow-500 hover:text-white transition-all shadow-sm"
+                              onClick={() =>
+                                setOpenMenuId(openMenuId === match.id ? null : match.id)
+                              }
+                              className="w-8 h-8 flex items-center justify-center rounded-full
+                                        bg-gray-50 text-gray-400 hover:bg-yellow-500
+                                        hover:text-white transition-all shadow-sm"
                             >
                               <span className="font-black text-lg">⋮</span>
                             </button>
-                            {openMenuId === match.id && (
-                              <div className="absolute right-0 mt-2 bg-white border border-gray-100 rounded-2xl shadow-2xl z-50 min-w-[130px] overflow-hidden animate-in fade-in zoom-in duration-200">
-                                <button onClick={() => { handleEditClick(match); setOpenMenuId(null); }} className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-yellow-50 text-[11px] font-extrabold text-gray-700 border-b border-gray-50">Edit</button>
-                                {match.status !== "selesai" && (
-                                    <button
-                                      onClick={() => {
-                                        if (!match.match.scoreRuleId) {
-                                          setPendingJadwal(match);
-                                          setRuleMode("manual"); 
-                                          setShowRuleModal(true); 
-                                          setOpenMenuId(null);
-                                          return;
-                                        }
 
-                                        
-                                        setManualWinnerMatch(match.match);
-                                        
-                                        setOpenMenuId(null);
-                                      }}
-                                      className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-yellow-50 text-[11px] font-extrabold text-blue-500 border-b border-gray-50"
-                                    >
-                                      Input Pemenang
-                                    </button>
+                            {openMenuId === match.id && (
+                              <div className="absolute right-0 mt-2 bg-white rounded-2xl shadow-2xl
+                                              z-50 min-w-[140px] overflow-hidden
+                                              animate-in fade-in zoom-in duration-200">
+
+                                {/* EDIT — ADMIN ONLY */}
+                                {role === "admin" && (
+                                  <button
+                                    onClick={() => {
+                                      handleEditClick(match);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="flex items-center gap-2 w-full text-left px-4 py-3
+                                              hover:bg-yellow-50 text-[11px] font-extrabold
+                                              text-gray-700 border-b border-gray-50"
+                                  >
+                                    Edit
+                                  </button>
                                 )}
-                                <button onClick={() => { handleDeleteJadwal(match.id); setOpenMenuId(null); }} className="flex items-center gap-2 w-full text-left px-4 py-3 hover:bg-red-50 text-[11px] font-extrabold text-red-600">Hapus</button>
+
+                                {/* INPUT PEMENANG — ADMIN & WASIT */}
+                                {match.status !== "selesai" && (role === "admin" || role === "wasit") && (
+                                  <button
+                                    onClick={() => {
+                                      if (!match.match.scoreRuleId) {
+                                        setPendingJadwal(match);
+                                        setRuleMode("manual");
+                                        setShowRuleModal(true);
+                                        setOpenMenuId(null);
+                                        return;
+                                      }
+
+                                      setManualWinnerMatch(match.match);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="flex items-center gap-2 w-full text-left px-4 py-3
+                                              hover:bg-blue-50 text-[11px] font-extrabold
+                                              text-blue-500 border-b border-gray-50"
+                                  >
+                                    Input Pemenang
+                                  </button>
+                                )}
+
+                                {/* HAPUS — ADMIN ONLY */}
+                                {role === "admin" && (
+                                  <button
+                                    onClick={() => {
+                                      handleDeleteJadwal(match.id);
+                                      setOpenMenuId(null);
+                                    }}
+                                    className="flex items-center gap-2 w-full text-left px-4 py-3
+                                              hover:bg-red-50 text-[11px] font-extrabold
+                                              text-red-600"
+                                  >
+                                    Hapus
+                                  </button>
+                                )}
+
                               </div>
                             )}
                           </div>
                         )}
+
 
                         <div className="mt-1 flex flex-col h-full">
                           <div className="text-[10px] font-black text-blue-600 uppercase tracking-wider mb-3">
@@ -810,7 +849,7 @@ const groupedJadwal = [...jadwal]
                                   <span className="text-sm font-black text-gray-900 bg-gray-100 px-2 py-0.5 rounded-lg">{match.match.score1} - {match.match.score2}</span>
                                 )}
                              </div>
-                              {role === "admin" && (
+                              {(role === "admin" || role === "wasit")&& (
                                 <>
                                   {(match.status === "terjadwal" ||
                                     match.status === "belum" ||

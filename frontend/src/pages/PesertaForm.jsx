@@ -255,7 +255,7 @@ if (availableTournaments.length === 0) {
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
           
           {/* KOLOM KIRI: BRANDING & INFO (50%) */}
-          <div className="relative bg-secondary p-8 lg:p-16 flex flex-col justify-center items-center text-white overflow-hidden order-2 lg:order-1">
+          <div className="relative bg-secondary p-8 lg:p-16 flex flex-col justify-center items-center text-white overflow-hidden">
             <div className="absolute top-0 -left-12 w-64 h-64 bg-primary/20 rounded-full transform -translate-y-1/2 blur-2xl"></div>
             <div className="absolute bottom-0 -right-12 w-64 h-64 bg-primary/20 rounded-full transform translate-y-1/2 blur-2xl"></div>
 
@@ -292,7 +292,7 @@ if (availableTournaments.length === 0) {
           </div>
 
           {/* KOLOM KANAN: FORMULIR (50%) */}
-          <div className="flex-1 p-6  bg-white flex flex-col justify-center items-center order-1">
+          <div className="flex-1 p-6  bg-white flex flex-col justify-center items-center">
             <div className="w-full max-w-2xl">
               <div className="mb-10 text-center lg:text-left">
                 <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Formulir Pendaftaran</h2>

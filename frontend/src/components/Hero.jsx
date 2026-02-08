@@ -49,7 +49,7 @@ function Hero() {
   if (slides.length === 0) return null;
 
   return (
-    <section className="w-full mt-30 h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden">
+    <section className="w-full  mt-18 h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden">
       {slides.map((slide, index) => (
         <div
           key={slide.idSlider}
@@ -61,7 +61,7 @@ function Hero() {
           <div className="absolute inset-0 bg-black/50"></div>
           <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 to-transparent"></div>
 
-          <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-10 lg:px-40">
+          <div className="absolute inset-0 flex items-center justify-start px-6 sm:px-12 lg:px-20">
             <div className="max-w-3xl text-left">
                 <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-5xl font-semibold text-white leading-snug drop-shadow-lg">
                 {slide.title}

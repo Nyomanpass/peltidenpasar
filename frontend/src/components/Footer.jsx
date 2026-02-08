@@ -1,19 +1,8 @@
 import { FaFacebook, FaInstagram } from "react-icons/fa";
 export default function Footer() {
   return (
-    <footer
-      className="
-        relative
-        w-screen
-        left-1/2 right-1/2
-        -ml-[50vw] -mr-[50vw]
-        text-left
-        bg-black
-        text-gray-300
-      "
-    >
-      {/* Container isi footer */}
-      <div className="max-w-screen  mx-auto px-6 sm:px-12 lg:px-45 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+    <footer className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-gray-300">
+      <div className="max-w-7xl mx-auto px-6 sm:px-12 lg:px-20 py-14 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
         
         {/* Logo + Deskripsi */}
         <div>

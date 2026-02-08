@@ -71,12 +71,12 @@ const TournamentComming = () => {
           <div className="w-16 sm:w-20 h-1.5 bg-blue-600 mx-auto mt-3 sm:mt-4 rounded-full"></div>
         </div>
 
-        {/* LOOP TURNAMEN */}
-        {tournaments.map((t) => {
-          const deadline = new Date(t.start_date);
-          deadline.setDate(deadline.getDate() - 3);
-          deadline.setHours(23, 59, 59, 999);
-          const isClosed = new Date() > deadline;
+      {/* LOOP TURNAMEN */}
+      {tournaments.map((t) => {
+        const deadline = new Date(t.start_date);
+        deadline.setDate(deadline.getDate() - 3);
+        deadline.setHours(23, 59, 59, 999);
+        const isClosed = new Date() > deadline;
 
           return (
             <div

@@ -100,17 +100,17 @@ export default function News() {
                       : item.desc}
                   </p>
 
-                  <Link
-                    to={`/berita/${item.idNews}`}
-                    className="mt-4 inline-block text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition"
-                  >
-                    Baca Selengkapnya →
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Link
+            to={`/berita/${item.idNews}`}
+            className="mt-4 inline-block text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition"
+          >
+            Baca Selengkapnya →
+          </Link>
         </div>
+      </div>
+    ))}
+  </div>
+</div>
 
         {/* Pagination */}
         <div className="flex flex-wrap justify-center items-center gap-4 mt-12 px-4">

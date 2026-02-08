@@ -35,7 +35,6 @@ import UiSettings from "./pages/UiSettings";
 
 //landing page
 import TournamentUser from "./pages/user/TournamentUser";
-import AboutPage from "./pages/user/AboutPage";
 import ContactPage from "./pages/user/ContactPage";
 import TournamentDetailPage from "./components/TournamentDetailPage";
 import News from "./pages/user/News";
@@ -48,6 +47,7 @@ import Club from "./pages/user/Club";
 
 
 
+
 export default function App() {
   return (
     <AuthProvider>
@@ -55,11 +55,10 @@ export default function App() {
       <ScrollToTop/>
         <Routes>
           <Route index element={<Home />} />
-          {/* <Route path="/register" element={<Register/>}/> */}
+          <Route path="/register" element={<Register/>}/>
           <Route path="/login" element={<Login />} />
           <Route path="/daftar-peserta" element={<PesertaForm/>}/>
           <Route path="/tournament" element={<TournamentUser/>}/>
-          <Route path="/about" element={<AboutPage/>}/>
           <Route path="/contact" element={<ContactPage/>}/>
           <Route path="/berita" element={<News/>}/>
           <Route path="/berita/:idNews" element={<NewsDetail/>}/>
@@ -67,10 +66,7 @@ export default function App() {
           <Route path="/struktur-organisasi" element={<Struktur/>}/>
           <Route path="/kepengurusan" element={<Kepengurusan/>}/>
           <Route path="/atlet" element={<Athlete/>}/>
-          <Route path="/anggota" element={<Club/>}/> 
-   
-
-
+          <Route path="/anggota" element={<Club/>}/>    
           <Route path="/tournament-detail" element={<TournamentDetailPage/>}/>
           
    

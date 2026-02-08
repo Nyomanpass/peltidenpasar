@@ -75,17 +75,10 @@ export default function Navbar() {
       }`}
     >
       {/* Top Bar */}
-      <div className="bg-black text-white text-xs sm:text-sm px-4 sm:px-10 lg:px-40 py-1 flex justify-between items-center">
-        <p>Jalan Gunung Agung, Desa Pemecutan Kaja, Kota Denpasar, Bali</p>
-        <div className="flex gap-3">
-          <FacebookIcon className="w-5 h-5" />
-          <InstagramIcon className="w-5 h-5" />
-          <YoutubeIcon className="w-5 h-5" />
-        </div>
-      </div>
+  
 
       {/* Navbar */}
-      <nav className="bg-white px-4 sm:px-10 lg:px-40 py-4 shadow-md flex justify-between items-center">
+      <nav className="bg-white px-6 sm:px-12 lg:px-20 py-4 shadow-md flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="PELTI" className="w-10 md:w-14" />
