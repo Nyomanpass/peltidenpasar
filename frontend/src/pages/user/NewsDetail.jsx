@@ -177,7 +177,7 @@ export default function NewsDetail() {
         </div>
       </section>
 
-      <Footer />
+      <Footer/>
     </>
   );
 }
