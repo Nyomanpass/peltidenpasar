@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../api"; // axios instance
 
-const AUTO_SLIDE_INTERVAL = 8000;
+const AUTO_SLIDE_INTERVAL = 5000;
 
 function Hero() {
   const [slides, setSlides] = useState([]);
@@ -53,7 +53,7 @@ function Hero() {
   if (slides.length === 0) return null;
 
   return (
-    <section className="w-full mt-30 h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden">
+    <section className="w-full mt-16 md:mt-30 h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden">
       {slides.map((slide, index) => (
         <div
           key={slide.idSlider}
@@ -69,7 +69,7 @@ function Hero() {
           <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/30 to-transparent"></div>
 
           {/* Content */}
-          <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-10 lg:px-40">
+          <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-10 lg:px-20">
             <div className="max-w-3xl text-left">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-white leading-snug drop-shadow-lg">
                 {slide.title}

@@ -2,7 +2,7 @@ import React from 'react';
 import { Mail, MapPin, Phone, Clock, Send } from 'lucide-react'; 
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
-import ContactHero from '../../components/ContactHero';
+
 
 const ContactPage = () => {
   
@@ -17,27 +17,47 @@ const ContactPage = () => {
     <>
     <Navbar/>
     {/* HERO */}
-      <div className="relative w-full h-[370px] mt-18">
+     
+
+       <div className="relative w-full h-[400px] mt-18">
         <img
           src="/hero.jpg"
           alt="Kepengurusan Pelti Denpasar"
           className="w-full h-full object-cover"
         />
+
         <div className="absolute inset-0 bg-black/50"></div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">
-            Hubungi Kami
+
+        <div
+          className="
+            absolute inset-0
+            flex flex-col items-center justify-center
+            px-4 sm:px-6 md:px-10 lg:px-20
+            text-center text-white
+          "
+        >
+          <h2 className="text-xl sm:text-2xl md:text-4xl font-bold mb-3 leading-tight">
+              Hubungi Kami
           </h2>
-          <p className="max-w-2xl text-sm md:text-base opacity-90">
-            Kami siap menjawab pertanyaan Anda mengenai pembinaan atlet, keanggotaan, jadwal turnamen, atau peluang kemitraan.
+
+          <p
+            className="
+              max-w-md sm:max-w-xl md:max-w-2xl
+              text-xs sm:text-sm md:text-base
+              opacity-90 leading-relaxed
+            "
+          >
+             Kami siap menjawab pertanyaan Anda mengenai pembinaan atlet, keanggotaan, jadwal turnamen, atau peluang kemitraan.
+
           </p>
         </div>
       </div>
+
   <div className="min-h-screen bg-gray-50">
 
   {/* MAIN CONTENT */}
   <section className="py-12 sm:py-16">
-    <div className="container mx-auto px-4 md:px-10 lg:px-20">
+    <div className="mx-auto px-4 md:px-10 lg:px-20">
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
@@ -143,7 +163,7 @@ const ContactPage = () => {
 
   {/* MAP */}
   <section className="pb-16 pt-8 bg-gray-50">
-    <div className="container mx-auto px-4 md:px-10 lg:px-20">
+    <div className="mx-auto px-4 md:px-10 lg:px-20">
       <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center mb-6">
         Lokasi Kesekretariatan
       </h2>

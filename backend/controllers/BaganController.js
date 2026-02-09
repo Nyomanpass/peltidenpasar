@@ -33,7 +33,7 @@ export const createBagan = async (req, res) => {
     if (jumlah > 4) tipe = "knockout";
 
     const bagan = await Bagan.create({
-      nama: `Bagan ${isDouble ? '(Ganda)' : '(Tunggal)'} ${kelompokumur.nama}`,
+      nama: `${isDouble ? '(Ganda)' : '(Tunggal)'} ${kelompokumur.nama}`,
       tipe,
       jumlahPeserta: jumlah,
       kelompokUmurId,

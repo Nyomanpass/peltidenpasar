@@ -56,7 +56,7 @@ export default function News() {
   return (
     <section className="w-full py-8 sm:py-12">
       {/* ===== Header ===== */}
-      <header className="text-center mb-8 sm:mb-12 px-4 sm:px-6 md:px-8 lg:px-12">
+      <header className="text-center mb-8 sm:mb-12">
         <p className="text-sm md:text-base text-yellow-600 font-medium tracking-wide uppercase">
           PELTI DENPASAR
         </p>
@@ -66,12 +66,12 @@ export default function News() {
       </header>
 
       {/* ===== Grid Berita ===== */}
-      <div className="sm:px-6 md:px-8 lg:px-12">
+      <div className="px-4 sm:px-10 lg:px-20">
         <div className={`grid gap-0 sm:gap-8 md:gap-10 ${getGridCols()}`}>
           {displayedNews.map((b) => (
             <article
               key={b.idNews}
-              className="bg-white shadow-sm sm:shadow-md  rounded-md sm:rounded-lg  overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300 mb-3 sm:mb-0"
+              className="bg-white shadow-sm sm:shadow-md rounded-md sm:rounded-lg overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300 mb-3 sm:mb-0"
             >
               {/* Gambar */}
               <div className="relative w-full overflow-hidden aspect-[16/10]">

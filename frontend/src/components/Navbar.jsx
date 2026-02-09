@@ -90,7 +90,7 @@ export default function Navbar() {
       }`}
     >
       {/* TOP BAR */}
-      <div className="bg-black text-white text-xs px-4 sm:px-10 lg:px-40 py-1 flex justify-between items-center">
+      <div className="bg-black hidden md:flex text-white text-xs px-4 sm:px-10 lg:px-20 py-1 justify-between items-center">
         <p className="truncate">
           Jalan Gunung Agung, Desa Pemecutan Kaja, Kota Denpasar, Bali
         </p>
@@ -102,7 +102,7 @@ export default function Navbar() {
       </div>
 
       {/* MAIN NAV */}
-      <nav className="bg-white px-4 sm:px-10 lg:px-40 py-4 shadow-md flex justify-between items-center">
+      <nav className="bg-white px-4 sm:px-10 lg:px-20 py-4 shadow-md flex justify-between items-center">
         {/* LOGO */}
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="PELTI" className="w-10 md:w-14" />

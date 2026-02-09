@@ -10,14 +10,14 @@ function TournamentUser() {
       <Navbar />
 
       {/* HERO */}
-      <div className="relative w-full h-[240px] sm:h-[280px] md:h-[320px] lg:h-[360px] mt-30">
+      <div className="relative w-full h-[400px] mt-18">
         <img
           src="/hero.jpg"
           alt="Kepengurusan Pelti Denpasar"
           className="w-full h-full object-cover"
         />
 
-        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 bg-black/50"></div>
 
         <div
           className="

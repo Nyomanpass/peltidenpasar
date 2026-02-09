@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Eye, PlusCircle, Layout, Filter, Users } from "lucide-react";
+import { Trash2, Eye, PlusCircle, Layout, Filter, User, Users, Users2, ChevronRight } from "lucide-react";
 import AlertMessage from "../components/AlertMessage";
 
 
@@ -151,44 +151,62 @@ const confirmDeleteBagan = async () => {
     />
 
     
-    {/* --- HEADER UTAMA --- */}
-     <div className="mb-8 border-b pb-4">
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
+ {/* --- HEADER UTAMA --- */}
+<div className="mb-6 border-gray-100">
+    <div className="text-center md:text-left">
+        <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight leading-tight">
             Bagan Pertandingan
         </h1>
-        <p className="text-md text-yellow-600 font-semibold mt-1">
-            Tournament: {selectedTournamentName || "Semua Tournament"}
-        </p>
+        <div className="inline-flex items-center gap-2 mt-1 px-3 py-1 bg-yellow-50 rounded-full border border-yellow-100 md:bg-transparent md:border-none md:px-0">
+            <p className="text-[10px] md:text-sm text-yellow-700 md:text-yellow-600 font-bold uppercase tracking-widest">
+                Tournament: {selectedTournamentName || "Semua Tournament"}
+            </p>
+        </div>
     </div>
+</div>
 
-    {/* --- TAB FILTER KATEGORI --- */}
-    <div className="flex gap-2 mb-6 bg-gray-100 p-1.5 rounded-2xl w-fit border border-gray-200">
-        <button
-            onClick={() => setFilterKategori("all")}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-                filterKategori === "all" ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
-            }`}
-        >
-            Semua
-        </button>
-        <button
-            onClick={() => setFilterKategori("single")}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-                filterKategori === "single" ? "bg-blue-600 text-white shadow-md" : "text-gray-500 hover:text-gray-700"
-            }`}
-        >
-            Single
-        </button>
-        <button
-            onClick={() => setFilterKategori("double")}
-            className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-                filterKategori === "double" ? "bg-purple-600 text-white shadow-md" : "text-gray-500 hover:text-gray-700"
-            }`}
-        >
-            Double
-        </button>
-    </div>
+{/* --- TAB FILTER KATEGORI --- */}
+<div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+  {/* Navigasi Button Kategori (All / Single / Double) */}
+  <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-sm w-full sm:w-fit">
+    {/* Button SEMUA */}
+    <button
+      onClick={() => setFilterKategori("all")}
+      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
+        filterKategori === "all" 
+        ? "bg-white text-yellow-600 shadow-sm" 
+        : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      Semua
+    </button>
 
+    {/* Button SINGLE */}
+    <button
+      onClick={() => setFilterKategori("single")}
+      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
+        filterKategori === "single" 
+        ? "bg-white text-yellow-600 shadow-sm" 
+        : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      <User size={14} /> Single
+    </button>
+
+    {/* Button DOUBLE */}
+    <button
+      onClick={() => setFilterKategori("double")}
+      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
+        filterKategori === "double" 
+        ? "bg-white text-yellow-600 shadow-sm" 
+        : "text-gray-500 hover:text-gray-700"
+      }`}
+    >
+      <Users2 size={14} /> Double
+    </button>
+  </div>
+
+</div>
 
    {/* --- FILTER DAN AKSI (ADMIN SECTION) --- */}
 {role === "admin" && (
@@ -229,6 +247,7 @@ const confirmDeleteBagan = async () => {
                       // Jika sudah ada, kita sembunyikan (return false)
                       return !sudahAda;
                   })
+                  
                   .map((k) => (
                       <option key={k.id} value={k.id}>
                           {k.nama}
@@ -247,86 +266,86 @@ const confirmDeleteBagan = async () => {
     </div>
 )}
 
-    {/* --- LIST BAGAN --- */}
-  <div className="space-y-4">
-      {(() => {
-          // Logika filter data sebelum di-map
-          const filteredData = baganList
-            .filter((b) =>
-                filterKategori === "all" ? true : b.kategori === filterKategori
-            )
-            .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId);
+<div className="space-y-3 md:space-y-4">
+  {(() => {
+    const filteredData = baganList
+      .filter((b) => (filterKategori === "all" ? true : b.kategori === filterKategori))
+      .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId);
 
+    if (filteredData.length === 0) {
+      return (
+        <div className="p-10 text-center bg-gray-50 rounded-2xl shadow-inner border border-gray-100">
+          <Layout size={32} className="text-gray-300 mx-auto mb-3" />
+          <p className="text-sm md:text-lg text-gray-500 font-medium">
+            Tidak ada bagan yang tersedia.
+          </p>
+        </div>
+      );
+    }
 
-          if (filteredData.length === 0) {
-              return (
-                  <div className="p-10 text-center bg-gray-50 rounded-xl shadow-inner border border-gray-200">
-                      <Layout size={32} className="text-gray-400 mx-auto mb-3" />
-                      <p className="text-lg text-gray-600">
-                          Tidak ada bagan {filterKategori !== "all" ? filterKategori : ""} yang tersedia.
-                      </p>
-                  </div>
-              );
-          }
+    return filteredData.map((bagan) => (
+      <div
+        key={bagan.id}
+        className="group flex flex-row items-center justify-between bg-white border border-gray-100 p-3 md:p-5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
+        onClick={() => handleViewDetail(bagan.id)}
+      >
+        {/* INFO BAGAN (KIRI) */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <span className={`shrink-0 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
+                bagan.kategori === 'double' 
+                ? 'bg-purple-100 text-purple-600' 
+                : 'bg-blue-100 text-blue-600'
+            }`}>
+                {bagan.kategori}
+            </span>
+            <h2 className="font-black text-sm md:text-lg text-gray-800 group-hover:text-yellow-600 transition-colors truncate">
+              {bagan.nama}
+            </h2>
+          </div>
 
-          return filteredData.map((bagan) => (
-              <div
-                  key={bagan.id}
-                  className="flex flex-col md:flex-row justify-between items-start md:items-center 
-                            bg-white border border-gray-200 p-5 rounded-xl shadow-md 
-                            hover:shadow-xl transition transform hover:translate-y-[-2px] duration-200 cursor-pointer"
-                  onClick={() => handleViewDetail(bagan.id)}
-              >
-                  {/* Info Bagan */}
-                  <div className="mb-3 md:mb-0 md:flex-1">
-                      <div className="flex items-center gap-2">
-                          <h2 className="font-extrabold text-xl text-gray-900">{bagan.nama}</h2>
-                          {/* Badge Kategori */}
-                          <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-                              bagan.kategori === 'double' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                          }`}>
-                              {bagan.kategori}
-                          </span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1 text-sm">
-                          <p className="text-gray-500 font-medium">
-                              <Users size={16} className="inline mr-1 text-blue-500"/> 
-                              Peserta: {bagan.jumlahPeserta}
-                          </p>
-                      </div>
-                  </div>
+          <div className="flex items-center text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-tight">
+            <Users size={12} className="mr-1 text-gray-300" /> 
+            <span>{bagan.jumlahPeserta} Peserta</span>
+          </div>
+        </div>
 
-                  {/* Tombol Aksi */}
-                  <div className="flex gap-3">
-                      {role === "admin" && (
-                        <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteBagan(bagan.id);
-                        }}
-                        className="flex items-center justify-center gap-1 bg-red-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-700 transition"
-                        title="Hapus Bagan"
-                        >
-                        <Trash2 size={16} /> Hapus
-                        </button>
+        {/* TOMBOL AKSI (KANAN) */}
+        <div className="flex items-center gap-1 md:gap-3 ml-3">
+          {role === "admin" && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDeleteBagan(bagan.id);
+              }}
+              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+            >
+              <Trash2 size={16} />
+            </button>
+          )}
 
-                      )}
-                      <button
-                          onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewDetail(bagan.id);
-                          }}
-                          className="flex items-center justify-center gap-1 bg-yellow-500 text-white px-4 py-2 rounded-lg shadow-md font-semibold hover:bg-yellow-600 transition"
-                          title="Lihat Detail Bagan"
-                      >
-                          <Eye className="text-white" size={16} /> Lihat Bagan
-                      </button>
-                  </div>
-              </div>
-          ));
-      })()}
-  </div>
-  
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewDetail(bagan.id);
+            }}
+            className="flex items-center justify-center gap-2 bg-yellow-500 text-white p-2.5 md:px-5 md:py-2.5 rounded-xl shadow-sm hover:bg-yellow-600 transition-all"
+          >
+            <Eye size={16} />
+            {/* Teks "Lihat" disembunyikan di mobile, muncul di desktop */}
+            <span className="hidden md:block text-[10px] font-black uppercase tracking-wider">
+              Lihat
+            </span>
+          </button>
+          
+          {/* Pemanis: Panah kecil hanya muncul di mobile sebagai indikator klik */}
+          <ChevronRight size={16} className="md:hidden text-gray-300" />
+        </div>
+      </div>
+    ));
+  })()}
+</div>
+
  {confirmDelete.show && (
   <AlertMessage
     type="warning"

@@ -7,61 +7,64 @@ export default function Visimisi() {
       <Navbar />
 
       {/* HERO */}
-      <div className="relative w-full h-[370px] mt-18">
-        <img
-          src="/hero.jpg"
-          alt="Visi dan Misi Pelti Denpasar"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/50"></div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
-          <h2 className="text-3xl md:text-4xl font-bold mb-3">
-            Visi & Misi
-          </h2>
-          <p className="max-w-2xl text-sm md:text-base opacity-90">
-         PELTI Denpasar
-          </p>
-        </div>
-      </div>
+      {/* HERO */}
+<div className="relative w-full h-[260px] sm:h-[320px] md:h-[400px] mt-16">
+  <img
+    src="/hero.jpg"
+    alt="Visi dan Misi Pelti Denpasar"
+    className="w-full h-full object-cover"
+  />
+  <div className="absolute inset-0 bg-black/50"></div>
 
-      {/* CONTENT */}
-      <section className=" px-6 sm:px-12 lg:px-20 py-16 bg-gray-50">
-        <div className="w-full mx-auto space-y-12">
+  <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
+    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
+      Visi & Misi
+    </h2>
+    <p className="max-w-xl text-xs sm:text-sm md:text-base opacity-90">
+      PELTI Denpasar
+    </p>
+  </div>
+</div>
 
-          {/* VISI */}
-          <div className="bg-white w-full rounded-2xl shadow-sm p-8 md:p-10">
-            <h3 className="text-2xl font-semibold text-gray-800 mb-4">
-              Visi
-            </h3>
-            <div className="w-16 h-1 bg-gray-800 mb-6"></div>
-            <p className="text-gray-700 leading-relaxed text-base md:text-lg">
-              Menjadi organisasi PELTI yang terkemuka di Indonesia, khususnya
-              dalam pengembangan dan pembinaan tenis lapangan di Kota Denpasar.
-            </p>
-          </div>
+{/* CONTENT */}
+<section className="bg-gray-50 py-12 sm:py-16">
+  <div className="max-w-5xl mx-auto px-4 sm:px-8 lg:px-12 space-y-10">
 
-          {/* MISI */}
-          <div className="bg-white w-full rounded-2xl shadow-sm p-8 md:p-10">
-            <h3 className="text-2xl font-semibold text-gray-800 mb-4">
-              Misi
-            </h3>
-            <div className="w-16 h-1 bg-gray-800 mb-6"></div>
+    {/* VISI */}
+    <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8 md:p-10">
+      <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">
+        Visi
+      </h3>
+      <div className="w-14 h-1 bg-gray-800 mb-5"></div>
 
-            <ol className="space-y-4 list-decimal list-inside text-gray-700 leading-relaxed">
-              <li>
-                Membentuk manusia yang sehat dalam rangka mendukung pembangunan
-                bangsa dan Negara Indonesia serta memupuk persahabatan antar
-                PELTI melalui olahraga tenis lapangan.
-              </li>
-              <li>
-                Membentuk anggota agar memiliki rasa kepemilikan dan kecintaan
-                terhadap PELTI Pengurus Kota Denpasar demi kemajuan bersama.
-              </li>
-            </ol>
-          </div>
+      <p className="text-gray-700 leading-relaxed text-sm sm:text-base md:text-lg max-w-3xl">
+        Menjadi organisasi PELTI yang terkemuka di Indonesia, khususnya
+        dalam pengembangan dan pembinaan tenis lapangan di Kota Denpasar.
+      </p>
+    </div>
 
-        </div>
-      </section>
+    {/* MISI */}
+    <div className="bg-white rounded-2xl shadow-sm p-6 sm:p-8 md:p-10">
+      <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">
+        Misi
+      </h3>
+      <div className="w-14 h-1 bg-gray-800 mb-5"></div>
+
+      <ol className="space-y-3 list-decimal list-inside text-gray-700 leading-relaxed text-sm sm:text-base md:text-lg max-w-3xl">
+        <li>
+          Membentuk manusia yang sehat dalam rangka mendukung pembangunan
+          bangsa dan Negara Indonesia serta memupuk persahabatan antar
+          PELTI melalui olahraga tenis lapangan.
+        </li>
+        <li>
+          Membentuk anggota agar memiliki rasa kepemilikan dan kecintaan
+          terhadap PELTI Pengurus Kota Denpasar demi kemajuan bersama.
+        </li>
+      </ol>
+    </div>
+
+  </div>
+</section>
 
       <Footer />
     </>

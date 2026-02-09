@@ -59,27 +59,42 @@ export default function Athlete() {
       <Navbar />
 
       {/* HERO */}
-      <div className="relative w-full h-[200px] sm:h-[250px] md:h-[300px] mt-16 sm:mt-20">
+       <div className="relative w-full h-[400px] mt-18">
         <img
           src="/hero.jpg"
-          alt="Atlet Pelti Denpasar"
+          alt="Kepengurusan Pelti Denpasar"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/60"></div>
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center text-white">
-          <h2 className="text-xl sm:text-2xl md:text-4xl font-bold mb-1 sm:mb-2">
-            Atlet
+
+        <div className="absolute inset-0 bg-black/50"></div>
+
+        <div
+          className="
+            absolute inset-0
+            flex flex-col items-center justify-center
+            px-4 sm:px-6 md:px-10 lg:px-20
+            text-center text-white
+          "
+        >
+          <h2 className="text-xl sm:text-2xl md:text-4xl font-bold mb-3 leading-tight">
+              Atlet PELTI Kota Denpasar
           </h2>
-          <p className="max-w-xs sm:max-w-lg md:max-w-2xl text-xs sm:text-sm md:text-base opacity-90">
-            Atlet merupakan individu binaan yang dibentuk melalui latihan
-            terstruktur, disiplin tinggi, dan semangat kompetitif untuk
-            berprestasi di tingkat daerah maupun nasional.
+
+          <p
+            className="
+              max-w-md sm:max-w-xl md:max-w-2xl
+              text-xs sm:text-sm md:text-base
+              opacity-90 leading-relaxed
+            "
+          >
+            Atlet binaan yang dipersiapkan melalui latihan terstruktur untuk meraih prestasi di tingkat daerah dan nasional.
+
           </p>
         </div>
       </div>
 
       {/* CONTENT */}
-      <section className="relative px-3 sm:px-6 md:px-20 lg:px-32 py-8 sm:py-12 md:py-16 bg-gray-50 space-y-12 sm:space-y-16">
+      <section className="relative px-3 sm:px-6 md:px-10 lg:px-20 py-8 sm:py-12 md:py-16 bg-gray-50 space-y-12 sm:space-y-16">
 
         {/* RANKING NASIONAL */}
         <div className="bg-white rounded-2xl shadow-md p-4 sm:p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">

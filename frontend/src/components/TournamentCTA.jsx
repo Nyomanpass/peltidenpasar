@@ -14,12 +14,12 @@ const TournamentCTA = () => {
                 <TrendingUp className="w-10 h-10 sm:w-12 sm:h-12 text-primary mx-auto mb-3 sm:mb-4 animate-bounce-slow" /> 
                 
                 {/* Headline Persuasif */}
-                <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold mb-3 sm:mb-4 leading-snug sm:leading-tight">
+                <h2 className="text-xl sm:text-3xl md:text-4xl font-extrabold mb-3 sm:mb-4 leading-snug sm:leading-tight">
                     Jangan Hanya Menjadi Penonton!
                 </h2>
                 
                 {/* Sub-headline */}
-                <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-6 sm:mb-8 max-w-xl mx-auto">
+                <p className="text-[12px] sm:text-sm md:text-xl text-gray-700 mb-6 sm:mb-8 max-w-xl mx-auto">
                     Momen Anda adalah Sekarang. Buktikan kemampuan Anda, raih poin ranking tertinggi, dan ukir sejarah sebagai juara tenis Denpasar berikutnya.
                 </p>
                 
@@ -27,7 +27,7 @@ const TournamentCTA = () => {
                 <a
                     href={mainRegistrationLink}
                     className="inline-flex flex-wrap justify-center items-center bg-primary text-white font-extrabold 
-                               py-3 sm:py-4 px-4 sm:px-10 rounded-full text-base sm:text-xl uppercase tracking-wider 
+                               py-3 sm:py-4 px-4 sm:px-10 rounded-full text-[12px] sm:text-xl uppercase tracking-wider 
                                hover:bg-yellow-500 transition duration-300 shadow-xl transform hover:scale-105 w-full sm:w-auto"
                 >
                     Daftar Turnamen Aktif Sekarang

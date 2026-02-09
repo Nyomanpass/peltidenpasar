@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Trophy, Award, Crown, CheckCircle, Layout, FileText } from "lucide-react"; 
+import { Trophy, Award, Crown, CheckCircle, Layout, FileText, Users2, User } from "lucide-react"; 
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import JuaraPDF from './JuaraPDF'; 
 
@@ -106,59 +106,63 @@ const JuaraPage = () => {
 
   return (
     <div className="min-h-screen">
-      
-
-        {/* --- HEA{/* --- HEADER UTAMA --- */}
-      <div className="mb-8 border-b pb-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-              Hasil Pertandingan
+      <div className="mb-6 border-gray-100">
+        <div className="text-center md:text-left">
+            <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight leading-tight">
+                 Hasil Pertandingan
             </h1>
-            <p className="text-md text-yellow-600 font-semibold mt-1">
-              Tournament: {localStorage.getItem("selectedTournamentName") || "Belum Memilih"}
-            </p>
-          </div>
+            <div className="inline-flex items-center gap-2 mt-1 px-3 py-1 bg-yellow-50 rounded-full border border-yellow-100 md:bg-transparent md:border-none md:px-0">
+                <p className="text-[10px] md:text-sm text-yellow-700 md:text-yellow-600 font-bold uppercase tracking-widest">
+                    Tournament: {localStorage.getItem("selectedTournamentName") || "Belum Memilih"}
+                </p>
+            </div>
         </div>
-      </div>
+    </div>
         
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
   
   {/* FILTER KATEGORI */}
-  <div className="flex gap-2 mb-6 bg-gray-100 p-1.5 rounded-2xl w-fit">
+    <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+  {/* Navigasi Button Kategori (All / Single / Double) */}
+  <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-sm w-full sm:w-fit">
+    {/* Button SEMUA */}
     <button
       onClick={() => setFilterKategori("all")}
-      className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-        filterKategori === "all"
-          ? "bg-white text-gray-900 shadow-sm"
-          : "text-gray-500 hover:text-gray-700"
+      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
+        filterKategori === "all" 
+        ? "bg-white text-yellow-600 shadow-sm" 
+        : "text-gray-500 hover:text-gray-700"
       }`}
     >
       Semua
     </button>
 
+    {/* Button SINGLE */}
     <button
       onClick={() => setFilterKategori("single")}
-      className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-        filterKategori === "single"
-          ? "bg-blue-600 text-white shadow-md"
-          : "text-gray-500 hover:text-gray-700"
+      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
+        filterKategori === "single" 
+        ? "bg-white text-yellow-600 shadow-sm" 
+        : "text-gray-500 hover:text-gray-700"
       }`}
     >
-      Single
+      <User size={14} /> Single
     </button>
 
+    {/* Button DOUBLE */}
     <button
       onClick={() => setFilterKategori("double")}
-      className={`px-6 py-2 rounded-xl text-sm font-bold transition-all ${
-        filterKategori === "double"
-          ? "bg-purple-600 text-white shadow-md"
-          : "text-gray-500 hover:text-gray-700"
+      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
+        filterKategori === "double" 
+        ? "bg-white text-yellow-600 shadow-sm" 
+        : "text-gray-500 hover:text-gray-700"
       }`}
     >
-      Double
+      <Users2 size={14} /> Double
     </button>
   </div>
+
+</div>
 
   {/* TOMBOL PDF */}
   
@@ -195,111 +199,111 @@ const JuaraPage = () => {
     )}
   </div>
 )}
-
-
 </div>
-
-
         {/* --- LIST DATA JUARA --- */}
-        {filteredWinners.length === 0 ? (
-          <div className="p-10 text-center bg-gray-50 rounded-xl border border-dashed border-gray-300">
-            <p className="text-lg text-gray-600">Tidak ada data juara untuk kategori {filterKategori}.</p>
+     {filteredWinners.length === 0 ? (
+  <div className="p-10 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+    <p className="text-gray-500 text-sm font-medium">Tidak ada data juara untuk kategori {filterKategori}.</p>
+  </div>
+) : (
+  filteredWinners
+    .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId)
+    .map((data) => {
+      const winners = data.winners;
+      return (
+        <div key={data.baganId} className="bg-white p-4 md:p-8 rounded-2xl border border-gray-100 mb-6 md:mb-10">
+          {/* HEADER BAGAN */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-gray-100 pb-3 mb-5 gap-2">
+            <h2 className="text-base md:text-2xl font-black text-gray-800 flex items-center gap-2">
+              <Trophy size={18} className="text-yellow-500 shrink-0 md:w-6 md:h-6" /> 
+              {data.baganNama}
+            </h2>
+            <span className={`shrink-0 px-2 max-w-max py-0.5 rounded text-[8px] md:text-[10px] font-black uppercase tracking-wider border ${
+                data.kategori === 'double' 
+                ? 'bg-purple-50 text-purple-600 border-purple-100' 
+                : 'bg-blue-50 text-blue-600 border-blue-100'
+            }`}>
+                {data.kategori}
+            </span>
           </div>
-        ) : (
-         filteredWinners
-            .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId)
-            .map((data) => {
-            const winners = data.winners;
-            return (
-              <div key={data.baganId} className="bg-white p-8 rounded-3xl shadow-xl border border-gray-100 mb-10">
-                <div className="flex items-center justify-between border-b-2 border-yellow-500/50 pb-4 mb-8">
-                  <h2 className="text-3xl font-extrabold text-gray-800 flex items-center gap-3">
-                    <Crown size={28} className="text-blue-600" /> {data.baganNama}
-                  </h2>
-                  <span className="px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 border">
-                    {data.kategori}
-                  </span>
+
+          {!winners || (!winners.juara1 && !winners.juara2) ? (
+            <div className="p-5 text-center bg-gray-50 rounded-xl">
+              <p className="text-gray-400 text-[10px] md:text-sm italic font-medium">Data juara belum tersedia.</p>
+            </div>
+          ) : (
+            <>
+              {/* KARTU JUARA (URUTAN 1 - 2 - 3) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                {/* Juara 1 - EMAS */}
+                <div className="bg-yellow-500 p-4 md:p-6 rounded-xl text-center text-white">
+                  <Trophy size={24} className="mx-auto mb-2 md:w-8 md:h-8" />
+                  <h3 className="font-bold uppercase text-[8px] md:text-[10px] mb-1 opacity-90">Juara 1</h3>
+                  <p className="text-xs md:text-lg font-black truncate">{renderWinnerName(winners.juara1)}</p>
+                </div>
+                
+                {/* Juara 2 - perak */}
+                <div className="bg-orange-50 p-4 md:p-6 rounded-xl text-center text-orange-800 border border-orange-200">
+                  <Crown size={24} className="mx-auto mb-2 text-orange-400 md:w-8 md:h-8" />
+                  <h3 className="font-bold uppercase text-[8px] md:text-[10px] mb-1 opacity-70">Juara 2</h3>
+                  <p className="text-xs md:text-lg font-black truncate">{renderWinnerName(winners.juara2)}</p>
                 </div>
 
-                {!winners || (!winners.juara1 && !winners.juara2) ? (
-                  <div className="p-6 text-center bg-gray-50 rounded-xl">
-                    <p className="text-gray-500 italic">Perhitungan juara belum tersedia.</p>
-                  </div>
-                ) : (
-                  <>
-                    {/* KARTU JUARA 1, 2, 3 */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="bg-gradient-to-br from-yellow-400 to-yellow-500 p-8 rounded-2xl text-center text-white shadow-lg">
-                        <Trophy size={40} className="mx-auto mb-3" />
-                        <h3 className="font-bold uppercase text-sm mb-1">Juara 1</h3>
-                        <p className="text-xl font-black">{renderWinnerName(winners.juara1)}</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-gray-300 to-gray-400 p-8 rounded-2xl text-center text-gray-800 shadow-md">
-                        <Award size={40} className="mx-auto mb-3" />
-                        <h3 className="font-bold uppercase text-sm mb-1">Juara 2</h3>
-                        <p className="text-xl font-black">{renderWinnerName(winners.juara2)}</p>
-                      </div>
-                      <div className="bg-gradient-to-br from-orange-300 to-orange-400 p-8 rounded-2xl text-center text-orange-900 shadow-md">
-                        <Crown size={40} className="mx-auto mb-3" />
-                        <h3 className="font-bold uppercase text-sm mb-1">Juara 3</h3>
-                        <p className="text-xl font-black">
-                          {Array.isArray(winners.juara3) 
-                            ? winners.juara3.filter(x => x).map(renderWinnerName).join(" & ") 
-                            : renderWinnerName(winners.juara3)}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* --- KLASEMEN ROUND ROBIN --- */}
-                    {winners.klasemen && winners.klasemen.length > 0 && (
-                      <div className="mt-10">
-                        <h3 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
-                          <Layout size={20} className="text-blue-500" /> Detail Klasemen Akhir:
-                        </h3>
-                        <div className="overflow-x-auto rounded-xl border border-gray-200">
-                          <table className="min-w-full text-sm bg-gray-50">
-                            <thead className="bg-gray-100 text-gray-700">
-                              <tr>
-                                <th className="px-4 py-3 text-left font-bold border-b">Peringkat</th>
-                                <th className="px-4 py-3 text-left font-bold border-b">Nama Peserta / Tim</th>
-                                <th className="px-4 py-3 text-center font-bold border-b">Poin</th>
-                                <th className="px-4 py-3 text-center font-bold border-b">M</th>
-                                <th className="px-4 py-3 text-center font-bold border-b">K</th>
-                                <th className="px-4 py-3">GM</th>
-                                <th className="px-4 py-3">GK</th>
-                                <th className="px-4 py-3">Selisih</th>
-
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {winners.klasemen.map((p, index) => (
-                                <tr key={index} className="border-b border-gray-200 hover:bg-white transition">
-                                  <td className="px-4 py-3 font-bold text-center">{index + 1}</td>
-                                  <td className="px-4 py-3 font-semibold">{renderWinnerName(p.peserta)}</td>
-                                  <td className="px-4 py-3 text-center text-blue-600 font-bold">{p.poin || '0'}</td>
-                                  <td className="px-4 py-3 text-center">{p.menang || '0'}</td>
-                                  <td className="px-4 py-3 text-center">{p.kalah || '0'}</td>
-                                  <td className="px-4 py-3 text-center">{p.gameMenang}</td>
-                                    <td className="px-4 py-3 text-center">{p.gameKalah}</td>
-                                    <td className="px-4 py-3 text-center font-bold">
-                                      {p.selisih}
-                                    </td>
-
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
+                    {/* Juara 3 - perunggu */}
+                <div className="bg-gray-100 p-4 md:p-6 rounded-xl text-center text-gray-700 border border-gray-200">
+                  <Award size={24} className="mx-auto mb-2 text-gray-400 md:w-8 md:h-8" />
+                  <h3 className="font-bold uppercase text-[8px] md:text-[10px] mb-1 opacity-70">Juara 3</h3>
+                  <p className="text-xs md:text-lg font-black">
+                    {Array.isArray(winners.juara3) 
+                      ? winners.juara3.filter(x => x).map(renderWinnerName).join(" & ") 
+                      : renderWinnerName(winners.juara3)}
+                  </p>
+                </div>
               </div>
-            );
-          })
-        )}
 
-    </div>
+              {/* KLASEMEN (Ringkas) */}
+              {winners.klasemen && winners.klasemen.length > 0 && (
+                <div className="mt-6 md:mt-8">
+                  <h3 className="text-[11px] md:text-sm font-black text-gray-400 mb-3 flex items-center gap-2 uppercase tracking-widest">
+                    Klasemen Akhir
+                  </h3>
+                  
+                  <div className="overflow-x-auto rounded-xl border border-gray-100">
+                    <table className="min-w-full text-[10px] md:text-xs bg-white">
+                      <thead className="bg-gray-50 text-gray-400 border-b">
+                        <tr>
+                          <th className="px-3 py-2.5 text-center font-bold">#</th>
+                          <th className="px-3 py-2.5 text-left font-bold">PESERTA</th>
+                          <th className="px-3 py-2.5 text-center font-black text-blue-600 bg-blue-50/30">PTS</th>
+                          <th className="px-2 py-2.5 text-center">M</th>
+                          <th className="px-2 py-2.5 text-center">K</th>
+                          <th className="px-3 py-2.5 text-center font-bold">+/-</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {winners.klasemen.map((p, index) => (
+                          <tr key={index}>
+                            <td className="px-3 py-3 text-center text-gray-400 font-bold">{index + 1}</td>
+                            <td className="px-3 py-3 font-bold text-gray-700 uppercase">{renderWinnerName(p.peserta)}</td>
+                            <td className="px-3 py-3 text-center text-blue-600 font-black bg-blue-50/20">{p.poin || '0'}</td>
+                            <td className="px-2 py-3 text-center font-bold text-green-600">{p.menang || '0'}</td>
+                            <td className="px-2 py-3 text-center text-red-400">{p.kalah || '0'}</td>
+                            <td className="px-3 py-3 text-center font-bold text-gray-600">{p.selisih}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      );
+    })
+)}
+
+      </div>
   );
 };
 
