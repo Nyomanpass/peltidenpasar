@@ -36,6 +36,14 @@ export default function News() {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
+  const stripHtml = (html) => {
+      if (!html) return "";
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      return div.textContent || div.innerText || "";
+    };
+
+
   return (
     <>
       <Navbar />
@@ -97,11 +105,11 @@ export default function News() {
               {item.title}
             </h3>
 
-            <p className="text-xs sm:text-sm md:text-base text-gray-700 mt-2 sm:mt-3 flex-1 line-clamp-3">
-              {item.desc.length > 120
-                ? item.desc.slice(0, 120) + "..."
-                : item.desc}
-            </p>
+          <p className="text-xs sm:text-sm md:text-base text-gray-700 mt-2 sm:mt-3 flex-1 line-clamp-3">
+            {stripHtml(item.desc).length > 120
+              ? stripHtml(item.desc).slice(0, 120) + "..."
+              : stripHtml(item.desc)}
+          </p>
 
             <Link
               to={`/berita/${item.idNews}`}

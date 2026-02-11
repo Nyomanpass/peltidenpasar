@@ -53,6 +53,14 @@ export default function News() {
     );
   }
 
+  const stripHtml = (html) => {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.textContent || div.innerText || "";
+  };
+
+
   return (
     <section className="w-full py-8 sm:py-12">
       {/* ===== Header ===== */}
@@ -100,8 +108,11 @@ export default function News() {
                 </h3>
 
                 <p className="text-sm md:text-base text-gray-700 mt-3 flex-1 line-clamp-3">
-                  {b.desc}
+                  {stripHtml(b.desc).length > 120
+                    ? stripHtml(b.desc).slice(0, 120) + "..."
+                    : stripHtml(b.desc)}
                 </p>
+
 
                 <button
                   onClick={() => window.location.href = `/berita/${b.idNews}`}

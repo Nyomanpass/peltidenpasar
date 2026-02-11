@@ -103,6 +103,7 @@ const adminMenu = [
       transform transition-transform duration-300 ease-in-out
       ${isOpen ? "translate-x-0" : "-translate-x-full"} 
       md:translate-x-0
+      pt-20 md:pt-0
     `}
   >
   {/* ===== SCROLL AREA ===== */}

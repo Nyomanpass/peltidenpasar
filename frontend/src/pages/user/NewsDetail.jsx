@@ -132,10 +132,11 @@ export default function NewsDetail() {
                 />
               </div>
 
-              <div
-                className="prose prose-sm sm:prose-base lg:prose-lg max-w-none mt-6"
-                dangerouslySetInnerHTML={{ __html: news.desc }}
-              />
+                <div
+                  className="prose prose-sm sm:prose-base lg:prose-lg max-w-none mt-6 text-justify"
+                  dangerouslySetInnerHTML={{ __html: news.desc }}
+                />
+
             </article>
 
             {/* SIDEBAR */}

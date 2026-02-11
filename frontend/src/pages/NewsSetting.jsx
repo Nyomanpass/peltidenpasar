@@ -3,6 +3,8 @@ import { PlusCircle, Edit, Image } from "lucide-react";
 import api from "../api";
 import { format } from "date-fns";
 import { useRef } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 
 
 export default function NewsSetting() {
@@ -131,6 +133,35 @@ export default function NewsSetting() {
     (_, i) => startPage + i
   );
 
+  const modules = {
+    toolbar: [
+      [{ header: [1, 2, 3, false] }],
+      ["bold", "italic", "underline"],
+      [{ list: "ordered" }, { list: "bullet" }],
+      ["link"],
+      ["clean"],
+    ],
+  };
+
+  const formats = [
+    "header",
+    "bold",
+    "italic",
+    "underline",
+    "list",
+    "bullet",
+    "link",
+  ];
+
+  const stripHtml = (html) => {
+    if (!html) return "";
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return div.textContent || div.innerText || "";
+  };
+
+
+
   return (
     <div className="bg-white shadow-2xl max-width-5xl rounded-2xl p-8 border border-gray-100">
       {/* Header */}
@@ -193,16 +224,25 @@ export default function NewsSetting() {
           <label className="text-sm font-semibold text-gray-700 mb-1">
             Deskripsi
           </label>
-          <textarea
-            rows={3}
-            value={formData.desc}
-            onChange={(e) =>
-              setFormData({ ...formData, desc: e.target.value })
-            }
-            className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
-            required
-          />
+
+          <div className="border border-gray-300 rounded-xl shadow-sm 
+                          focus-within:ring-2 focus-within:ring-yellow-500/70 
+                          focus-within:border-yellow-500 transition overflow-hidden">
+
+            <ReactQuill
+              theme="snow"
+              value={formData.desc}
+              onChange={(value) =>
+                setFormData({ ...formData, desc: value })
+              }
+              modules={modules}
+              formats={formats}
+              className="bg-white"
+            />
+
+          </div>
         </div>
+
 
         <div className="flex justify-end mt-4">
           <button
@@ -238,10 +278,11 @@ export default function NewsSetting() {
                   {n.title}
                 </td>
                 <td className="px-5 py-3 text-gray-700">
-                  {n.desc.length > 100
-                    ? n.desc.slice(0, 100) + "..."
-                    : n.desc}
+                  {stripHtml(n.desc).length > 100
+                    ? stripHtml(n.desc).slice(0, 100) + "..."
+                    : stripHtml(n.desc)}
                 </td>
+
                 <td className="px-5 py-3">
                   {n.image ? (
                     <img

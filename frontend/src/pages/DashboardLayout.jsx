@@ -8,7 +8,7 @@ export default function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="flex min-h-screen overflow-visible relative">
+        <div className="min-h-screen md:flex">
       <Sidebar isOpen={isOpen} isCollapsed={isCollapsed} />
 
       <div
@@ -22,9 +22,30 @@ export default function DashboardLayout() {
           isCollapsed={isCollapsed}
         />
 
-        <main className="p-6 pt-28 md:pt-28 overflow-visible relative">
-          <Outlet />
-        </main>
+       <main
+  className="
+    pt-24 md:pt-28
+    p-4 md:p-6
+    overflow-visible relative
+  "
+>
+  <div
+    className="
+      max-w-7xl mx-auto w-full
+      md:max-w-none md:mx-0
+    "
+  >
+    <div
+      className="
+        bg-white shadow-lg border border-gray-100 rounded-xl p-4
+        md:bg-transparent md:shadow-none md:border-0 md:rounded-none md:p-0
+      "
+    >
+      <Outlet />
+    </div>
+  </div>
+</main>
+
       </div>
     </div>
   );
