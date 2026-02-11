@@ -21,6 +21,8 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
 
   // Logika pencarian gabungan
   const finalSearch = searchTermFromProps !== undefined ? searchTermFromProps : localSearch;
+  const basePath = role === "admin" ? "/admin" : "/wasit";
+
 
   // Fungsi pengecekan link aktif
   const isActive = (path) => location.pathname === path;
@@ -44,8 +46,20 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
   }, [tournamentId]);
 
   useEffect(() => {
+  fetchPeserta();
+
+  const handleTournamentChange = () => {
     fetchPeserta();
-  }, [fetchPeserta]);
+  };
+
+  window.addEventListener("tournament-changed", handleTournamentChange);
+
+  return () => {
+    window.removeEventListener("tournament-changed", handleTournamentChange);
+  };
+}, [fetchPeserta]);
+
+  
 
   // ... handler interaksi (toggleGroup, handleDelete, dll tetap sama) ...
   const toggleGroup = (id) => setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
@@ -85,22 +99,34 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
 
             <div className="flex flex-col sm:flex-row items-center gap-4">
               {/* Navigasi Button Kategori (Single / Double) */}
-              {role === "admin" && (
+              {(role === "admin" || role === "wasit") && (
                 <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-sm">
+                  
                   <Link 
-                    to={"/admin/peserta"} 
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all ${isActive("/admin/peserta") ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                    to={`${basePath}/peserta`} 
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all ${
+                      isActive(`${basePath}/peserta`)
+                        ? "bg-white text-yellow-600 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
                   >
                     <User size={14} /> Single
                   </Link>
+
                   <Link 
-                    to={"/admin/peserta-ganda"} 
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all ${isActive("/admin/peserta-ganda") ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                    to={`${basePath}/peserta-ganda`} 
+                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all ${
+                      isActive(`${basePath}/peserta-ganda`)
+                        ? "bg-white text-yellow-600 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
                   >
                     <Users2 size={14} /> Double
                   </Link>
+
                 </div>
               )}
+
 
               {/* Input Pencarian */}
               <div className="relative w-full sm:w-64">

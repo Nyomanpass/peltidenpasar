@@ -392,11 +392,9 @@ export default function Settings() {
               </tr>
             ))}
             {lapangan.length === 0 && (
-              <tr>
-                <td colSpan="4" className="text-center py-5 text-gray-500 italic bg-white">
-                  Tidak ada data lapangan tersedia.
-                </td>
-              </tr>
+              <tr><td colSpan="4" className="text-center py-5 text-gray-500 italic bg-white">
+              Tidak ada data lapangan tersedia.
+              </td></tr>
             )}
           </tbody>
         </table>
@@ -557,11 +555,10 @@ export default function Settings() {
               ))}
 
               {wasit.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="text-center py-5 text-gray-500 italic bg-white">
-                    Tidak ada data wasit.
-                  </td>
-                </tr>
+                <tr><td colSpan="5" className="text-center py-5 text-gray-500 italic bg-white">
+                Tidak ada data wasit.
+                </td></tr>
+
               )}
             </tbody>
           </table>

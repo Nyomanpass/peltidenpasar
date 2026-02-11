@@ -166,47 +166,77 @@ const confirmDeleteBagan = async () => {
 </div>
 
 {/* --- TAB FILTER KATEGORI --- */}
-<div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
-  {/* Navigasi Button Kategori (All / Single / Double) */}
-  <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-sm w-full sm:w-fit">
-    {/* Button SEMUA */}
-    <button
-      onClick={() => setFilterKategori("all")}
-      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
-        filterKategori === "all" 
-        ? "bg-white text-yellow-600 shadow-sm" 
-        : "text-gray-500 hover:text-gray-700"
-      }`}
-    >
-      Semua
-    </button>
+<div className="flex bg-gray-100 p-1 
+                rounded-xl 
+                border border-gray-200 
+                shadow-sm 
+                w-full sm:w-fit mb-5">
 
-    {/* Button SINGLE */}
-    <button
-      onClick={() => setFilterKategori("single")}
-      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
-        filterKategori === "single" 
-        ? "bg-white text-yellow-600 shadow-sm" 
+  {/* SEMUA */}
+  <button
+    onClick={() => setFilterKategori("all")}
+    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 
+                px-4 md:px-5 
+                py-2 md:py-2.5 
+                rounded-lg 
+                font-bold 
+                text-[11px] md:text-[12px] 
+                uppercase tracking-wide 
+                transition-all duration-300 ${
+      filterKategori === "all"
+        ? "bg-white text-yellow-600 shadow-sm"
         : "text-gray-500 hover:text-gray-700"
-      }`}
-    >
-      <User size={14} /> Single
-    </button>
+    }`}
+  >
+    Semua
+  </button>
 
-    {/* Button DOUBLE */}
-    <button
-      onClick={() => setFilterKategori("double")}
-      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
-        filterKategori === "double" 
-        ? "bg-white text-yellow-600 shadow-sm" 
+  {/* SINGLE */}
+  <button
+    onClick={() => setFilterKategori("single")}
+    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 
+                px-4 md:px-5 
+                py-2 md:py-2.5 
+                rounded-lg 
+                font-bold 
+                text-[11px] md:text-[12px] 
+                uppercase tracking-wide 
+                transition-all duration-300 ${
+      filterKategori === "single"
+        ? "bg-white text-yellow-600 shadow-sm"
         : "text-gray-500 hover:text-gray-700"
-      }`}
-    >
-      <Users2 size={14} /> Double
-    </button>
-  </div>
+    }`}
+  >
+    <span className="hidden md:inline">
+      <User size={14} />
+    </span>
+    Single
+  </button>
+
+  {/* DOUBLE */}
+  <button
+    onClick={() => setFilterKategori("double")}
+    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 
+                px-4 md:px-5 
+                py-2 md:py-2.5 
+                rounded-lg 
+                font-bold 
+                text-[11px] md:text-[12px] 
+                uppercase tracking-wide 
+                transition-all duration-300 ${
+      filterKategori === "double"
+        ? "bg-white text-yellow-600 shadow-sm"
+        : "text-gray-500 hover:text-gray-700"
+    }`}
+  >
+    <span className="hidden md:inline">
+      <Users2 size={14} />
+    </span>
+    Double
+  </button>
 
 </div>
+
 
    {/* --- FILTER DAN AKSI (ADMIN SECTION) --- */}
 {role === "admin" && (
@@ -247,7 +277,7 @@ const confirmDeleteBagan = async () => {
                       // Jika sudah ada, kita sembunyikan (return false)
                       return !sudahAda;
                   })
-                  
+
                   .map((k) => (
                       <option key={k.id} value={k.id}>
                           {k.nama}

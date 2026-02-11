@@ -13,6 +13,8 @@ const seedPeserta = async () => {
     await sequelize.authenticate();
     console.log("✅ Koneksi Berhasil!");
 
+     const tahunLahir = 2012; 
+
     const namaIndonesia = [
       "Budi Santoso", "Siti Aminah", "Agus Setiawan", "Dewi Lestari", "Rian Hidayat",
       "Putu Gede", "Made Rai", "Nyoman Wahyu", "Ketut Laras", "Anak Agung Oka",
@@ -36,8 +38,9 @@ const seedPeserta = async () => {
       dataPeserta.push({
         namaLengkap: nama,
         nomorWhatsapp: randomWA,
+        tanggalLahir: `${tahunLahir}-05-20`, 
         kelompokUmurId: 1, 
-        tournamentId: 10,   
+        tournamentId: 2,   
         fotoKartu: "dummy-ktp.jpg",
         buktiBayar: "dummy-bukti.jpg",
         status: "verified",

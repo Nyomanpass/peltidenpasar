@@ -7,6 +7,8 @@ function Sidebar({ isOpen, isCollapsed }) {
   const location = useLocation();
   const role = localStorage.getItem("role");
   const [openTournamentMenu, setOpenTournamentMenu] = useState(false);
+  const basePath = `/${role}`;
+
 
 
   const [tournaments, setTournaments] = useState([]);
@@ -249,15 +251,21 @@ if (item.children) {
 
     // khusus Bagan (list + detail)
     const isBaganActive =
-      item.label === "Bagan" &&
-      (currentPath.startsWith("/admin/bagan-peserta") ||
-      currentPath.startsWith("/admin/bagan-view"));
+        item.label === "Bagan" &&
+        (currentPath.startsWith(`${basePath}/bagan-peserta`) ||
+        currentPath.startsWith(`${basePath}/bagan-view`));
+
 
     // khusus Peserta (kalau mau sekalian aman)
-    const isPesertaActive =
-      item.label === "Peserta" &&
-      (currentPath.startsWith("/admin/peserta") ||
-      currentPath.startsWith("/admin/detail-peserta"));
+   const isPesertaActive =
+    item.label === "Peserta" &&
+    (
+      currentPath.startsWith(`${basePath}/peserta`) ||
+      currentPath.startsWith(`${basePath}/detail-peserta`) ||
+      currentPath.startsWith(`${basePath}/peserta-ganda`)
+    );
+
+
 
     const isActive = isExact || isBaganActive || isPesertaActive;
 

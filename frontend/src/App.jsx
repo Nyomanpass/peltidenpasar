@@ -33,6 +33,7 @@ import PesertaGanda from "./components/admin/PesertaGanda";
 import UiSettings from "./pages/UiSettings";
 
 
+
 //landing page
 import TournamentUser from "./pages/user/TournamentUser";
 import ContactPage from "./pages/user/ContactPage";
@@ -68,7 +69,7 @@ export default function App() {
           <Route path="/atlet" element={<Athlete/>}/>
           <Route path="/anggota" element={<Club/>}/>    
           <Route path="/tournament-detail" element={<TournamentDetailPage/>}/>
-          
+        
    
           <Route
             path="/admin"
@@ -93,6 +94,7 @@ export default function App() {
             <Route path="skor" element={<SkorPage/>}/>
             <Route path="peserta-ganda" element={<PesertaGanda />} />
             <Route path="uisettings" element={<UiSettings/>}/>
+            
           </Route>
 
           <Route
@@ -106,6 +108,7 @@ export default function App() {
             }
           >
             <Route path="peserta" element={<Peserta/>}/>
+            <Route path="peserta-ganda" element={<PesertaGanda />} />
             <Route path="jadwal-pertandingan" element={<JadwalPage/>}/>
             <Route path="skor" element={<SkorPage/>}/>
             <Route path="bagan-peserta" element={<BaganPage/>}/>

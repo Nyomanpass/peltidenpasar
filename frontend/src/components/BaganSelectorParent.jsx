@@ -17,13 +17,13 @@ export default function BaganSelectorParent({ tournamentId }) {
                     className="flex items-center text-yellow-600 hover:text-yellow-800 font-semibold mb-4 text-base sm:text-lg px-2 sm:px-4 py-2 rounded-lg transition"
                 >
                     <ChevronsRight size={18} className="rotate-180 mr-1 flex-shrink-0" />
-                    Kembali ke Daftar Bagan
+                Daftar Bagan
                 </button>
 
                 {/* Konten bagan scrollable horizontal jika perlu */}
-                <div className="overflow-x-auto">
+             
                     <BaganView baganId={selectedBaganId} />
-                </div>
+               
             </div>
         );
     }

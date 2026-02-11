@@ -131,17 +131,18 @@ export default function SettingScoreRule() {
   {/* TABLE */}
   <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
     <table className="min-w-full text-sm">
-      <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider">
-        <tr>
-          <th className="px-5 py-3 text-left">Nama</th>
-          <th className="px-5 py-3 text-center">Set</th>
-          <th className="px-5 py-3 text-center">Game</th>
-          <th className="px-5 py-3 text-center">TB</th>
-          <th className="px-5 py-3 text-center">Final TB</th>
-          <th className="px-5 py-3 text-center">Deuce</th>
-          <th className="px-5 py-3 text-center">Aksi</th>
-        </tr>
+    <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider">
+      <tr>
+      <th className="px-5 py-3 text-left">Nama</th>
+      <th className="px-5 py-3 text-center">Set</th>
+      <th className="px-5 py-3 text-center">Game</th>
+      <th className="px-5 py-3 text-center">TB</th>
+      <th className="px-5 py-3 text-center">Final TB</th>
+      <th className="px-5 py-3 text-center">Deuce</th>
+      <th className="px-5 py-3 text-center">Aksi</th>
+      </tr>
       </thead>
+
       <tbody className="divide-y divide-gray-100 bg-white">
         {rules.map(r => (
           <tr key={r.id} className="hover:bg-yellow-50/50 transition">
@@ -168,11 +169,9 @@ export default function SettingScoreRule() {
         ))}
 
         {rules.length === 0 && (
-          <tr>
-            <td colSpan="7" className="text-center py-5 text-gray-500 italic">
-              Belum ada score rule.
-            </td>
-          </tr>
+          <tr><td colSpan="7" className="text-center py-5 text-gray-500 italic">
+          Belum ada score rule.
+          </td></tr>
         )}
       </tbody>
     </table>

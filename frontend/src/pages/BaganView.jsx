@@ -108,101 +108,92 @@ export default function BaganView({baganId}) {
   }, [bagan]);
 
   
-  const handleExportPDF = async () => {
-    const bracketEl = document.getElementById(
-      isRoundRobin ? "roundrobin-pdf" : "bracket-container"
+const handleExportPDF = async () => {
+  const bracketEl = document.getElementById(
+    isRoundRobin ? "roundrobin-pdf" : "bracket-container"
+  );
+  const ketPdfEl = document.getElementById("keterangan-pdf");
+
+  if (!bracketEl || !bagan) return;
+
+  try {
+
+
+    await new Promise(r => setTimeout(r, 200));
+
+    if (isRoundRobin) {
+      bracketEl.style.display = "block";
+      bracketEl.style.position = "absolute";
+      bracketEl.style.left = "-9999px"; // supaya tidak terlihat user
+    }
+
+    const canvas = await html2canvas(bracketEl, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: "#ffffff"
+    });
+
+    const img = canvas.toDataURL("image/png", 1.0); // pakai PNG biar warna aman
+
+    const pdf = new jsPDF({
+      orientation: canvas.width > canvas.height ? "l" : "p",
+      unit: "px",
+      format: [canvas.width + 40, canvas.height + 140]
+    });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+
+    pdf.setFontSize(28);
+    pdf.text(
+      (bagan.Tournament?.name || "PELTI DENPASAR").toUpperCase(),
+      pageWidth / 2,
+      40,
+      { align: "center" }
     );
 
-    const ketPdfEl = document.getElementById("keterangan-pdf");
+    pdf.setFontSize(18);
+    pdf.text(bagan.nama, pageWidth / 2, 70, { align: "center" });
 
-    if (!bracketEl || !bagan) return;
+    pdf.addImage(img, "PNG", 20, 100, canvas.width, canvas.height);
 
-    try {
-     
-      if (isRoundRobin) {
-        bracketEl.style.display = "block";
-      }
+    if (ketPdfEl && !isRoundRobin) {
+      ketPdfEl.style.display = "block";
+      await new Promise(r => setTimeout(r, 200));
 
-      await new Promise(r => setTimeout(r, 100)); 
-
-    
-      const bracketCanvas = await html2canvas(bracketEl, {
+      const ketCanvas = await html2canvas(ketPdfEl, {
         scale: 2,
-        useCORS: true,
         backgroundColor: "#ffffff"
       });
 
-      const bracketImg = bracketCanvas.toDataURL("image/jpeg", 1.0);
+      pdf.addPage();
+      pdf.addImage(
+        ketCanvas.toDataURL("image/png", 1.0),
+        "PNG",
+        20,
+        40,
+        ketCanvas.width,
+        ketCanvas.height
+      );
 
-
-      const bw = bracketCanvas.width;
-      const bh = bracketCanvas.height;
-
-      if (!bw || !bh) {
-        throw new Error("Canvas kosong (width/height = 0)");
-      }
-
-      const paddingTop = 120;
-      const pdfWidth = bw + 60;
-      const pdfHeight = bh + paddingTop + 60;
-
-      const pdf = new jsPDF({
-        orientation: bw > bh ? "l" : "p",
-        unit: "pt",
-        format: [pdfWidth, pdfHeight]
-      });
-
-    
-      const namaTurnamen =
-      bagan.Tournament?.name || bagan.tournament_name || "PELTI DENPASAR";
-      const namaKategori = bagan.nama || "Kategori Umum";
-
-      pdf.setFontSize(36);
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(20, 50, 100);
-      pdf.text(namaTurnamen.toUpperCase(), pdfWidth / 2, 60, { align: "center" });
-
-      pdf.setFontSize(24);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(60, 60, 60);
-      pdf.text(namaKategori, pdfWidth / 2, 100, { align: "center" });
-
-      pdf.setDrawColor(200);
-      pdf.line(50, 120, pdfWidth - 50, 120);
-
-      pdf.addImage(bracketImg, "JPEG", 30, paddingTop, bw, bh);
-
-     
-      if (ketPdfEl && !isRoundRobin) {
-        ketPdfEl.style.display = "block";
-        await new Promise(r => setTimeout(r, 100));
-
-        const canvas = await html2canvas(ketPdfEl, {
-          scale: 2,
-          backgroundColor: "#ffffff"
-        });
-
-        const w = canvas.width;
-        const h = canvas.height;
-
-        pdf.addPage();
-        pdf.addImage(canvas.toDataURL("image/jpeg", 1.0), "JPEG", 30, 40, w, h);
-
-        ketPdfEl.style.display = "none";
-      }
-
-      pdf.save(`Bagan-${namaKategori.replace(/\s+/g, "-")}.pdf`);
-
-
-      if (isRoundRobin) {
-        bracketEl.style.display = "none";
-      }
-
-    } catch (err) {
-      console.error("Export PDF Error:", err);
-      alert("Gagal export PDF: " + err.message);
+      ketPdfEl.style.display = "none";
     }
-  };
+
+    pdf.save(`Bagan-${bagan.nama}.pdf`);
+
+    if (isRoundRobin) {
+      bracketEl.style.display = "none";
+      bracketEl.style.position = "";
+      bracketEl.style.left = "";
+    }
+
+
+
+  } catch (err) {
+    console.error(err);
+    alert("Export gagal. Coba reload halaman.");
+  }
+};
+
 
 
 
@@ -351,7 +342,7 @@ if (isRoundRobin) {
   return (
     <div className="min-h-screen w-full">
       <div className="max-full mx-auto mb-10">
-        <h1 className="text-3xl md:text-4xl font-extrabold mb-9 text-center text-gray-800">
+        <h1 className="text-xl md:text-4xl font-extrabold mb-9 text-center text-gray-800">
           {bagan.nama}
         </h1>
       
@@ -401,163 +392,203 @@ if (isRoundRobin) {
         {/* Bracket */}
         <div 
           id="bracket-container" 
-          className="w-full bg-white shadow-lg rounded-xl p-4 overflow-x-auto" 
+          className="w-full bg-white overflow-x-auto rounded-3xl" 
         >
           {isRoundRobin ? (
             /* TAMPILAN ROUND ROBIN (TABEL) */
             <div className="space-y-6">
-              <h2 className="text-xl font-bold text-gray-700 border-b pb-2">Bagan Pertandingan Round Robin</h2>
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 text-gray-600">
-                    <th className="p-4 border-b text-left">Match</th>
-                    <th className="p-4 border-b text-left">Peserta 1</th>
-                    <th className="p-4 border-b text-center">VS</th>
-                    <th className="p-4 border-b text-left">Peserta 2</th>
-                    <th className="p-4 border-b text-center">Skor</th>
-                    {role === "admin" && <th className="p-4 border-b text-center">Aksi</th>}
-                  </tr>
-                </thead>
-                  <tbody>
-                    {bagan.Matches.map((m, index) => (
-                      <tr key={m.id} className="hover:bg-blue-50 transition-colors">
-                        <td className="p-4 border-b font-medium text-gray-500">#{index + 1}</td>
-                        
-                        {/* PESERTA 1 (Kiri) */}
-                        <td className={`p-4 border-b font-semibold ${
-                          (isDouble ? m.winnerDoubleId === m.doubleTeam1Id : m.winnerId === m.peserta1Id) ? "text-blue-600" : ""
-                        }`}>
-                          {isDouble 
-                            ? (m.doubleTeam1?.namaTim || (m.doubleTeam1Id ? "TBD" : "BYE")) 
-                            : (m.peserta1?.namaLengkap || (m.peserta1Id ? "TBD" : "BYE"))}
-                        </td>
 
-                        <td className="p-4 border-b text-center text-gray-400 font-bold">VS</td>
+  <div className="w-full overflow-x-auto rounded-2xl md:border md:border-gray-200 md:shadow-md">
+    
+    <table className="min-w-[780px] w-full border-separate border-spacing-y-2 text-sm md:text-base">
+      
+      <thead>
+        <tr className="bg-gray-100 text-gray-700">
+          <th className="px-4 py-4 text-left">Match</th>
+          <th className="px-4 py-4 text-left">Peserta 1</th>
+          <th className="px-4 py-4 text-center">VS</th>
+          <th className="px-4 py-4 text-left">Peserta 2</th>
+          <th className="px-4 py-4 text-center">Skor</th>
+          {role === "admin" && (
+            <th className="px-4 py-4 text-center">Aksi</th>
+          )}
+        </tr>
+      </thead>
 
-                        {/* PESERTA 2 (Kanan) */}
-                        <td className={`p-4 border-b font-semibold ${
-                          (isDouble ? m.winnerDoubleId === m.doubleTeam2Id : m.winnerId === m.peserta2Id) ? "text-blue-600" : ""
-                        }`}>
-                          {isDouble 
-                            ? (m.doubleTeam2?.namaTim || (m.doubleTeam2Id ? "TBD" : "BYE")) 
-                            : (m.peserta2?.namaLengkap || (m.peserta2Id ? "TBD" : "BYE"))}
-                        </td>
+      <tbody>
+        {bagan.Matches.map((m, index) => (
+          <tr
+            key={m.id}
+            className="bg-white hover:bg-blue-50 transition-all rounded-xl shadow-sm"
+          >
+            <td className="px-4 py-5 font-semibold text-gray-500">
+              #{index + 1}
+            </td>
 
-                        <td className="p-4 border-b text-center">
-                          <span className="bg-gray-100 px-3 py-1 rounded-md font-mono font-bold">
-                            {formatSetScore(m)}
-                          </span>
-                        </td>
+            <td
+              className={`px-4 py-5 font-semibold text-md ${
+                (isDouble
+                  ? m.winnerDoubleId === m.doubleTeam1Id
+                  : m.winnerId === m.peserta1Id)
+                  ? "text-blue-600"
+                  : "text-gray-800"
+              }`}
+            >
+              {isDouble
+                ? (m.doubleTeam1?.namaTim ||
+                  (m.doubleTeam1Id ? "TBD" : "BYE"))
+                : (m.peserta1?.namaLengkap ||
+                  (m.peserta1Id ? "TBD" : "BYE"))}
+            </td>
 
-                       {role === "admin" && (
-                          <td className="p-4 border-b text-center">
-                              {(
-                                // untuk SINGLE
-                                (!isDouble && !m.winnerId) ||
-                                // untuk DOUBLE
-                                (isDouble && !m.winnerDoubleId)
-                              ) ? (
-                                <button 
-                                  onClick={() => {
-                                    setSelectedMatch(m);
-                                    setModalType("winner");
-                                  }}
-                                  className="text-sm bg-blue-100 text-blue-700 px-3 py-1 rounded-full hover:bg-blue-200"
-                                >
-                                  Input Skor
-                                </button>
-                              ) : (
-                                <span className="text-xs text-gray-400 italic">Selesai</span>
-                              )}
-                            </td>
-                          )}
+            <td className="px-4 py-5 text-center text-gray-400 font-bold text-md">
+              VS
+            </td>
 
-                      </tr>
-                    ))}
-                  </tbody>
-              </table>
-            </div>
-          ) : (
-            <Bracket
-              rounds={rounds}
-              renderSeedComponent={(props) => {
-                const match = props.seed.raw;
-                const isDouble = bagan.kategori === "double";
+            <td
+              className={`px-4 py-5 font-semibold text-md ${
+                (isDouble
+                  ? m.winnerDoubleId === m.doubleTeam2Id
+                  : m.winnerId === m.peserta2Id)
+                  ? "text-blue-600"
+                  : "text-gray-800"
+              }`}
+            >
+              {isDouble
+                ? (m.doubleTeam2?.namaTim ||
+                  (m.doubleTeam2Id ? "TBD" : "BYE"))
+                : (m.peserta2?.namaLengkap ||
+                  (m.peserta2Id ? "TBD" : "BYE"))}
+            </td>
 
-                return (
-                  <Seed
-                    {...props}
+            <td className="px-4 py-5 text-center">
+              <span className="bg-gray-100 px-4 py-2 rounded-lg font-bold text-sm shadow-sm">
+                {formatSetScore(m)}
+              </span>
+            </td>
+
+            {role === "admin" && (
+              <td className="px-4 py-5 text-center">
+                {(
+                  (!isDouble && !m.winnerId) ||
+                  (isDouble && !m.winnerDoubleId)
+                ) ? (
+                  <button
                     onClick={() => {
-                      setSelectedMatch(match);
-                      // Cek apakah kedua sisi ada isinya (baik Single maupun Double)
-                      const hasS1 = isDouble ? match.doubleTeam1Id : match.peserta1Id;
-                      const hasS2 = isDouble ? match.doubleTeam2Id : match.peserta2Id;
-                      
-                      const isFinished = isDouble
-                        ? !!match.winnerDoubleId
-                        : !!match.winnerId;
-
-                      if (hasS1 !== null && hasS2 !== null && !isFinished) {
-                        setModalType("winner");
-                      }
+                      setSelectedMatch(m);
+                      setModalType("winner");
                     }}
+                    className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-semibold hover:bg-blue-200 transition"
                   >
-                 <SeedItem>
-                  <div className="relative bg-white">
+                    Input Skor
+                  </button>
+                ) : (
+                  <span className="text-sm text-gray-400 italic">
+                    Selesai
+                  </span>
+                )}
+              </td>
+            )}
+          </tr>
+        ))}
+      </tbody>
 
-                    {/* BADGE SCORE (ABSOLUTE) */}
-                    {formatSetScore(match) && (
-                      <div className="absolute -top-3 -right-3 z-10">
-                        <span style={{
-                              color: "#000000"
-                            }}
-                          className="font-bold text-md px-2 py-0.5">
-                          {formatSetScore(match)}
-                        </span>
-                      </div>
-                    )}
+    </table>
+  </div>
 
-                    {/* --- TEAM 1 --- */}
-                    <SeedTeam
-                      className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
-                        ${
-                          (isDouble
-                            ? match.winnerDoubleId === match.doubleTeam1Id
-                            : match.winnerId === match.peserta1Id)
-                            ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                            : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                        }
-                      `}
-                    >
-                      {isDouble 
-                        ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
-                        : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
-                    </SeedTeam>
+</div>
 
-                    {/* --- TEAM 2 --- */}
-                    <SeedTeam
-                      className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
-                        ${
-                          (isDouble
-                            ? match.winnerDoubleId === match.doubleTeam2Id
-                            : match.winnerId === match.peserta2Id)
-                            ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                            : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                        }
-                      `}
-                    >
-                      {isDouble 
-                        ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
-                        : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
-                    </SeedTeam>
+          ) : (
+           
 
-                  </div>
-                </SeedItem>
+          <div
+                className="w-full overflow-hidden rounded-3xl"
+                style={{
+                  backgroundColor: "#ffffff",
+                  border: "1px solid #e5e7eb",
+                  boxShadow: "0 10px 30px rgba(0,0,0,0.08)"
+                }}
+              >
 
-                  </Seed>
-                );
+            {/* Wrapper scroll manual */}
+            <div 
+              className="overflow-x-auto" 
+              style={{ 
+                display: 'block', 
+                width: '100%',
+                WebkitOverflowScrolling: 'touch',
+                backgroundColor: '#ffffff' // HEX supaya PDF aman
               }}
-            />
+            >
+              
+              {/* Gunakan max-content agar div ini selebar total semua babak pertandingan */}
+            <div style={{ display: 'inline-block', minWidth: '100%' }} className="p-4 md:p-10">
+                
+                <Bracket
+                  rounds={rounds}
+                  /* Tambahkan properti mobileBreakpoint jika library mendukung untuk mematikannya */
+                  mobileBreakpoint={0} 
+                  renderSeedComponent={(props) => {
+                    const match = props.seed.raw;
+                    const isDouble = bagan.kategori === "double";
+
+                    return (
+                      <Seed
+                        {...props}
+                        onClick={() => {
+                          setSelectedMatch(match);
+                          const hasS1 = isDouble ? match.doubleTeam1Id : match.peserta1Id;
+                          const hasS2 = isDouble ? match.doubleTeam2Id : match.peserta2Id;
+                          const isFinished = isDouble ? !!match.winnerDoubleId : !!match.winnerId;
+
+                          if (hasS1 !== null && hasS2 !== null && !isFinished) {
+                            setModalType("winner");
+                          }
+                        }}
+                      >
+                        <SeedItem>
+                          <div className="relative" style={{ backgroundColor: "#ffffff" }}>
+                            {/* TAMPILAN ASLI KAMU (GAYA LAMA) */}
+                            {formatSetScore(match) && (
+                              <div className="absolute -top-3 -right-3 z-10">
+                                <span style={{ color: "#000000" }} className="font-bold text-md px-2 py-0.5">
+                                  {formatSetScore(match)}
+                                </span>
+                              </div>
+                            )}
+
+                            <SeedTeam
+                              className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
+                                ${(isDouble ? match.winnerDoubleId === match.doubleTeam1Id : match.winnerId === match.peserta1Id)
+                                  ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                                  : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                                }`}
+                            >
+                              {isDouble 
+                                ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
+                                : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
+                            </SeedTeam>
+
+                            <SeedTeam
+                              className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
+                                ${(isDouble ? match.winnerDoubleId === match.doubleTeam2Id : match.winnerId === match.peserta2Id)
+                                  ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                                  : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                                }`}
+                            >
+                              {isDouble 
+                                ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
+                                : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
+                            </SeedTeam>
+                          </div>
+                        </SeedItem>
+                      </Seed>
+                    );
+                  }}
+                />
+              </div>
+            </div>
+          </div>
           )}
         </div>
 
@@ -742,10 +773,6 @@ if (isRoundRobin) {
             width: "100%"
           }}
         >
-          <h2 style={{ fontSize: 20, marginBottom: 12, color: "#1f2937" }}>
-            Bagan Pertandingan Round Robin
-          </h2>
-
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ background: "#f3f4f6" }}>
@@ -772,7 +799,7 @@ if (isRoundRobin) {
                       : m.peserta2?.namaLengkap}
                   </td>
                   <td style={tdStyle}>
-                    {m.score1 ?? 0} - {m.score2 ?? 0}
+                   {formatSetScore(m)}
                   </td>
                 </tr>
               ))}
@@ -808,97 +835,161 @@ if (isRoundRobin) {
 
         {/* Hanya tampil jika BUKAN Round Robin */}
         {!isRoundRobin && (
-           <div
-                id="keterangan-container"
-                className="mt-16 border-t-2 border-gray-100 pt-8 px-6 bg-white"
-              >
+        <div
+          id="keterangan-container"
+          className="mt-12 md:mt-16 border-t border-gray-200 
+                    pt-8 md:pt-12 
+                    px-4 
+                    bg-white"
+        >
 
-            <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-              <Info size={22} className="text-blue-500" /> 
-              Keterangan Penempatan (Seeding & Plotting)
-            </h3>
+          {/* Title */}
+          <h3 className="text-lg sm:text-xl md:text-2xl 
+                        font-bold text-gray-800 
+                        mb-6 md:mb-8 
+                        flex items-center gap-2">
+            <Info size={20} className="text-blue-500" />
+            Keterangan Penempatan (Seeding & Plotting)
+          </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              
-              {/* Kolom Unggulan (Seed) */}
+          {/* Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
+
+            {/* Kolom Seed */}
+            <div className="space-y-4">
+              <p className="text-xs sm:text-sm 
+                            font-extrabold text-gray-400 
+                            uppercase tracking-widest 
+                            flex items-center gap-2">
+                <Star size={16} className="fill-yellow-400 text-yellow-400" />
+                Peserta Unggulan (Seeded)
+              </p>
+
               <div className="space-y-3">
-                <p className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                  <Star size={16} className="fill-yellow-400 text-yellow-400" /> 
-                  Peserta Unggulan (Seeded)
-                </p>
-                <div className="space-y-2">
-                  {(() => {
-                    const seededFinal = [];
-                    const seenIds = new Set();
+                {(() => {
+                  const seededFinal = [];
+                  const seenIds = new Set();
 
-                    // HANYA ambil dari Babak 1 (Round 1) bagan yang sedang tampil
-                    bagan.Matches.filter(m => m.round === 1).forEach((m) => {
-                      const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
-                      const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
-                      const id1 = isDouble ? m.doubleTeam1Id : m.peserta1Id;
-                      const id2 = isDouble ? m.doubleTeam2Id : m.peserta2Id;
+                  bagan.Matches.filter(m => m.round === 1).forEach((m) => {
+                    const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
+                    const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
+                    const id1 = isDouble ? m.doubleTeam1Id : m.peserta1Id;
+                    const id2 = isDouble ? m.doubleTeam2Id : m.peserta2Id;
 
-                      // Validasi: Harus ada ID-nya DAN status isSeeded-nya TRUE
-                      if (id1 && p1?.isSeeded && !seenIds.has(id1)) {
-                        seededFinal.push(p1);
-                        seenIds.add(id1);
-                      }
-                      if (id2 && p2?.isSeeded && !seenIds.has(id2)) {
-                        seededFinal.push(p2);
-                        seenIds.add(id2);
-                      }
-                    });
-
-                    if (seededFinal.length === 0) {
-                      return <p className="text-sm text-gray-400 italic">Tidak ada peserta unggulan.</p>;
+                    if (id1 && p1?.isSeeded && !seenIds.has(id1)) {
+                      seededFinal.push(p1);
+                      seenIds.add(id1);
                     }
+                    if (id2 && p2?.isSeeded && !seenIds.has(id2)) {
+                      seededFinal.push(p2);
+                      seenIds.add(id2);
+                    }
+                  });
 
-                    return seededFinal.map((p, idx) => (
-                      <div key={idx} className="flex justify-between items-center p-3 bg-white border border-yellow-200 rounded-xl shadow-sm">
-                        <span className="text-sm font-bold text-gray-800">
-                          {isDouble ? (p.namaTim || p.Player1?.namaLengkap) : p.namaLengkap}
-                        </span>
-                        <span className="text-[10px] bg-yellow-400 text-white px-2 py-0.5 rounded font-black">SEED</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
+                  if (seededFinal.length === 0) {
+                    return (
+                      <p className="text-sm text-gray-400 italic">
+                        Tidak ada peserta unggulan.
+                      </p>
+                    );
+                  }
+
+                  return seededFinal.map((p, idx) => (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center 
+                                p-3 md:p-4 
+                                bg-white 
+                                border border-yellow-200 
+                                rounded-xl 
+                                shadow-sm"
+                    >
+                      <span className="text-sm md:text-base 
+                                      font-semibold text-gray-800 break-words">
+                        {isDouble
+                          ? (p.namaTim || p.Player1?.namaLengkap)
+                          : p.namaLengkap}
+                      </span>
+
+                      <span className="text-[10px] md:text-xs 
+                                      bg-yellow-400 text-white 
+                                      px-2 py-1 
+                                      rounded-full 
+                                      font-bold">
+                        SEED
+                      </span>
+                    </div>
+                  ));
+                })()}
               </div>
+            </div>
 
-              {/* Kolom Plotting Manual (Non-Seed) */}
-              <div className="space-y-3">
-                <p className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                  <Users size={16} className="text-blue-500" /> 
-                  Penempatan Khusus (Non-Seed)
+            {/* Kolom Plotting */}
+            <div className="space-y-4">
+              <p className="text-xs sm:text-sm 
+                            font-extrabold text-gray-400 
+                            uppercase tracking-widest 
+                            flex items-center gap-2">
+                <Users size={16} className="text-blue-500" />
+                Penempatan Khusus (Non-Seed)
+              </p>
+
+              <div className="bg-gray-50 p-4 md:p-6 
+                              rounded-xl 
+                              border border-gray-100">
+                <p className="text-[11px] md:text-base 
+                              text-gray-600 
+                              leading-relaxed italic">
+                  Beberapa peserta telah dipisahkan posisinya secara manual 
+                  (Plotting) guna menghindari pertemuan dini antar rekan satu tim 
+                  atau instansi yang sama.
                 </p>
-                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                  <p className="text-sm text-gray-600 leading-relaxed italic">
-                    Beberapa peserta telah dipisahkan posisinya secara manual (Plotting) guna menghindari pertemuan dini antar rekan satu tim atau instansi yang sama.
-                  </p>
-                </div>
               </div>
             </div>
 
-            <div className="mt-12 pt-6 border-t border-gray-50 flex justify-between items-center text-[10px] text-gray-400 font-medium uppercase tracking-widest">
-              <span>PELTI DENPASAR OFFICIAL SYSTEM</span>
-              <span>{new Date().toLocaleString('id-ID')}</span>
-            </div>
           </div>
+
+          {/* Footer */}
+          <div className="mt-10 md:mt-14 
+                          pt-6 border-t border-gray-100 
+                          flex flex-col sm:flex-row 
+                          justify-between items-center 
+                          gap-3 
+                          text-[10px] sm:text-xs 
+                          text-gray-400 
+                          font-medium uppercase tracking-widest">
+            <span>PELTI DENPASAR OFFICIAL SYSTEM</span>
+            <span>{new Date().toLocaleString('id-ID')}</span>
+          </div>
+
+        </div>
+
         )}
 
         {/* 🏆 Juara */}
         {juara && (
-          <div className="mt-12 text-center bg-white p-6 rounded-xl shadow-lg border-2 border-yellow-400">
-            <h2 className="text-3xl font-bold text-yellow-600 animate-bounce">
-              🏆 Juara
-            </h2>
-            <p className="text-2xl font-semibold text-gray-900 mt-2">{isRoundRobin
-              ? (isDouble
-                  ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
-                  : juaraRR?.namaLengkap)
-              : juara}
-            </p>
-          </div>
+          <div className="mt-8 md:mt-12 text-center bg-white p-5 md:p-8 
+                rounded-xl md:rounded-2xl 
+                shadow-md md:shadow-lg 
+                border-2 border-yellow-400">
+
+              <h2 className="text-xl sm:text-2xl md:text-3xl 
+                            font-bold text-yellow-600">
+                🏆 Juara
+              </h2>
+
+              <p className="text-base sm:text-lg md:text-2xl 
+                            font-semibold text-gray-900 
+                            mt-2 md:mt-3 break-words">
+                {isRoundRobin
+                  ? (isDouble
+                      ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
+                      : juaraRR?.namaLengkap)
+                  : juara}
+              </p>
+
+            </div>
+
         )}
       </div>
 

@@ -53,7 +53,7 @@ function Hero() {
   if (slides.length === 0) return null;
 
   return (
-    <section className="w-full mt-16 md:mt-30 h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden">
+    <section className="w-full mt-16 md:mt-28 h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden">
       {slides.map((slide, index) => (
         <div
           key={slide.idSlider}

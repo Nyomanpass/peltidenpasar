@@ -255,47 +255,93 @@ if (availableTournaments.length === 0) {
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
           
           {/* KOLOM KIRI: BRANDING & INFO (50%) */}
-          <div className="relative bg-secondary p-8 lg:p-16 flex flex-col justify-center items-center text-white overflow-hidden">
-            <div className="absolute top-0 -left-12 w-64 h-64 bg-primary/20 rounded-full transform -translate-y-1/2 blur-2xl"></div>
-            <div className="absolute bottom-0 -right-12 w-64 h-64 bg-primary/20 rounded-full transform translate-y-1/2 blur-2xl"></div>
+        <div className="relative bg-secondary 
+                        px-6 py-12 sm:px-10 sm:py-16 lg:px-16 lg:py-20 
+                        flex flex-col justify-center items-center 
+                        text-white overflow-hidden">
 
-            <div className="relative z-10 w-full max-w-md flex flex-col items-center text-center">
-              <div className="flex flex-col items-center mb-8">
-                <img src="/logo.png" alt="Logo" className="w-20 h-20 mb-4 drop-shadow-lg p-2 rounded-2xl bg-white/10" />
-                <h1 className="text-2xl font-black tracking-tighter">PELTI DENPASAR</h1>
-                <p className="text-sm uppercase tracking-[0.2em] text-blue-200">Persatuan Lawn Tenis Indonesia</p>
-              </div>
+          {/* Background Glow */}
+          <div className="absolute top-0 -left-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 -right-20 w-72 h-72 bg-primary/10 rounded-full blur-3xl"></div>
 
-              <div className="mb-10">
-                <h1 className="text-3xl lg:text-4xl font-extrabold leading-tight mb-4 italic">Ayo Gabung, Jadi Juara Baru!</h1>
-                <p className="text-blue-100 text-sm opacity-80 leading-relaxed">
-                  Raih gelar juara Turnamen Tenis PELTI Denpasar di kategori umur Anda.
-                </p>
-              </div>
-              
-              <div className="hidden lg:block w-full space-y-4">
-                {[
-                  "Lengkapi data diri sesuai identitas.",
-                  "Pilih Kelompok Umur yang tersedia.",
-                  "Upload bukti identitas (KK/KTP).",
-                  "Lakukan pembayaran (untuk turnamen berbayar).",
-                ].map((text, i) => (
-                  <div key={i} className="flex items-center justify-center gap-4 group bg-white/5 p-3 rounded-2xl border border-white/10">
-                    <span className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-primary rounded-xl text-white text-xs font-black shadow-lg">
-                      {i + 1}
-                    </span>
-                    <p className="text-sm font-medium text-left w-64">{text}</p>
-                  </div>
-                ))}
-              </div>
+          <div className="relative z-10 w-full max-w-lg flex flex-col items-center text-center">
+
+            {/* Logo & Title */}
+            <div className="flex flex-col items-center mb-10">
+              <img 
+                src="/logo.png" 
+                alt="Logo" 
+                className="w-16 h-16 sm:w-20 sm:h-20 mb-4 drop-shadow-lg p-2 rounded-2xl bg-white/10" 
+              />
+
+              <h1 className="text-xl sm:text-2xl font-black tracking-tight">
+                PELTI DENPASAR
+              </h1>
+
+              <p className="text-[10px] sm:text-xs uppercase tracking-[0.25em] text-blue-200 mt-1">
+                Persatuan Lawn Tenis Indonesia
+              </p>
             </div>
+
+            {/* Headline */}
+            <div className="mb-10">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl 
+                            font-extrabold 
+                            leading-snug 
+                            mb-4">
+                Ayo Gabung, Jadi Juara Baru!
+              </h2>
+
+              <p className="text-blue-100 text-sm sm:text-base 
+                            opacity-90 
+                            leading-relaxed 
+                            max-w-md mx-auto">
+                Raih gelar juara Turnamen Tenis PELTI Denpasar 
+                di kategori umur Anda.
+              </p>
+            </div>
+
+            {/* Steps */}
+            <div className="hidden lg:block w-full space-y-4 mt-4">
+              {[
+                "Lengkapi data diri sesuai identitas.",
+                "Pilih Kelompok Umur yang tersedia.",
+                "Upload bukti identitas (KK/KTP).",
+                "Lakukan pembayaran (untuk turnamen berbayar).",
+              ].map((text, i) => (
+                <div 
+                  key={i} 
+                  className="flex items-start gap-4 
+                            bg-white/5 
+                            p-4 
+                            rounded-2xl 
+                            border border-white/10 
+                            backdrop-blur-sm 
+                            transition-all duration-300 hover:bg-white/10"
+                >
+                  <span className="flex-shrink-0 w-8 h-8 
+                                  flex items-center justify-center 
+                                  bg-primary rounded-xl 
+                                  text-white text-xs font-black shadow-lg">
+                    {i + 1}
+                  </span>
+
+                  <p className="text-sm font-medium text-left leading-relaxed">
+                    {text}
+                  </p>
+                </div>
+              ))}
+            </div>
+
           </div>
+        </div>
+
 
           {/* KOLOM KANAN: FORMULIR (50%) */}
           <div className="flex-1 p-6  bg-white flex flex-col justify-center items-center">
             <div className="w-full max-w-2xl">
               <div className="mb-10 text-center lg:text-left">
-                <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Formulir Pendaftaran</h2>
+                <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-2 tracking-tight">Formulir Pendaftaran</h2>
                 <p className="text-slate-500 text-sm italic">Lengkapi data peserta dengan benar untuk verifikasi.</p>
                 <div className="w-16 h-1 bg-primary rounded-full mt-4 mx-auto lg:mx-0"></div>
               </div>

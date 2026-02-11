@@ -121,48 +121,78 @@ const JuaraPage = () => {
         
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
   
-  {/* FILTER KATEGORI */}
-    <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
-  {/* Navigasi Button Kategori (All / Single / Double) */}
-  <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-sm w-full sm:w-fit">
-    {/* Button SEMUA */}
-    <button
-      onClick={() => setFilterKategori("all")}
-      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
-        filterKategori === "all" 
-        ? "bg-white text-yellow-600 shadow-sm" 
-        : "text-gray-500 hover:text-gray-700"
-      }`}
-    >
-      Semua
-    </button>
+{/* FILTER KATEGORI */}
+<div className="flex bg-gray-100 p-1 
+                rounded-xl 
+                border border-gray-200 
+                shadow-sm 
+                w-full sm:w-fit mb-5 md:mb-0">
 
-    {/* Button SINGLE */}
-    <button
-      onClick={() => setFilterKategori("single")}
-      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
-        filterKategori === "single" 
-        ? "bg-white text-yellow-600 shadow-sm" 
+  {/* SEMUA */}
+  <button
+    onClick={() => setFilterKategori("all")}
+    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 
+                px-4 md:px-5 
+                py-2 md:py-2.5 
+                rounded-lg 
+                font-bold 
+                text-[11px] md:text-[12px] 
+                uppercase tracking-wide 
+                transition-all duration-300 ${
+      filterKategori === "all"
+        ? "bg-white text-yellow-600 shadow-sm"
         : "text-gray-500 hover:text-gray-700"
-      }`}
-    >
-      <User size={14} /> Single
-    </button>
+    }`}
+  >
+    Semua
+  </button>
 
-    {/* Button DOUBLE */}
-    <button
-      onClick={() => setFilterKategori("double")}
-      className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-black text-[10px] uppercase tracking-wider transition-all duration-300 ${
-        filterKategori === "double" 
-        ? "bg-white text-yellow-600 shadow-sm" 
+  {/* SINGLE */}
+  <button
+    onClick={() => setFilterKategori("single")}
+    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 
+                px-4 md:px-5 
+                py-2 md:py-2.5 
+                rounded-lg 
+                font-bold 
+                text-[11px] md:text-[12px] 
+                uppercase tracking-wide 
+                transition-all duration-300 ${
+      filterKategori === "single"
+        ? "bg-white text-yellow-600 shadow-sm"
         : "text-gray-500 hover:text-gray-700"
-      }`}
-    >
-      <Users2 size={14} /> Double
-    </button>
-  </div>
+    }`}
+  >
+    <span className="hidden md:inline">
+      <User size={14} />
+    </span>
+    Single
+  </button>
+
+  {/* DOUBLE */}
+  <button
+    onClick={() => setFilterKategori("double")}
+    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 
+                px-4 md:px-5 
+                py-2 md:py-2.5 
+                rounded-lg 
+                font-bold 
+                text-[11px] md:text-[12px] 
+                uppercase tracking-wide 
+                transition-all duration-300 ${
+      filterKategori === "double"
+        ? "bg-white text-yellow-600 shadow-sm"
+        : "text-gray-500 hover:text-gray-700"
+    }`}
+  >
+    <span className="hidden md:inline">
+      <Users2 size={14} />
+    </span>
+    Double
+  </button>
 
 </div>
+
 
   {/* TOMBOL PDF */}
   
@@ -239,21 +269,26 @@ const JuaraPage = () => {
                 <div className="bg-yellow-500 p-4 md:p-6 rounded-xl text-center text-white">
                   <Trophy size={24} className="mx-auto mb-2 md:w-8 md:h-8" />
                   <h3 className="font-bold uppercase text-[8px] md:text-[10px] mb-1 opacity-90">Juara 1</h3>
-                  <p className="text-xs md:text-lg font-black truncate">{renderWinnerName(winners.juara1)}</p>
+                  <p className="text-xs md:text-lg font-black break-words leading-snug">
+                    {renderWinnerName(winners.juara1)}
+                  </p>
                 </div>
                 
                 {/* Juara 2 - perak */}
                 <div className="bg-orange-50 p-4 md:p-6 rounded-xl text-center text-orange-800 border border-orange-200">
                   <Crown size={24} className="mx-auto mb-2 text-orange-400 md:w-8 md:h-8" />
                   <h3 className="font-bold uppercase text-[8px] md:text-[10px] mb-1 opacity-70">Juara 2</h3>
-                  <p className="text-xs md:text-lg font-black truncate">{renderWinnerName(winners.juara2)}</p>
+                  <p className="text-xs md:text-lg font-black break-words leading-snug">
+                    {renderWinnerName(winners.juara2)}
+                  </p>
+
                 </div>
 
                     {/* Juara 3 - perunggu */}
                 <div className="bg-gray-100 p-4 md:p-6 rounded-xl text-center text-gray-700 border border-gray-200">
                   <Award size={24} className="mx-auto mb-2 text-gray-400 md:w-8 md:h-8" />
                   <h3 className="font-bold uppercase text-[8px] md:text-[10px] mb-1 opacity-70">Juara 3</h3>
-                  <p className="text-xs md:text-lg font-black">
+                  <p className="text-xs md:text-lg font-black break-words leading-snug">
                     {Array.isArray(winners.juara3) 
                       ? winners.juara3.filter(x => x).map(renderWinnerName).join(" & ") 
                       : renderWinnerName(winners.juara3)}

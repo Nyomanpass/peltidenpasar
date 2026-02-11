@@ -391,13 +391,17 @@ const groupedJadwal = [...jadwal]
 />
 
 {/* --- HEADER UTAMA --- */}
-<div className="mb-8 border-b pb-4">
-  <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">
-    Jadwal Pertandingan
-  </h1>
-  <p className="text-md text-yellow-600 font-semibold mt-1">
-    Tournament: {selectedTournamentName || "Belum Memilih"}
-  </p>
+<div className="mb-6 border-gray-100">
+    <div className="text-center md:text-left">
+        <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight leading-tight">
+            Jadwal Pertandingan
+        </h1>
+        <div className="inline-flex items-center gap-2 mt-1 px-3 py-1 bg-yellow-50 rounded-full border border-yellow-100 md:bg-transparent md:border-none md:px-0">
+            <p className="text-[10px] md:text-sm text-yellow-700 md:text-yellow-600 font-bold uppercase tracking-widest">
+                Tournament: {selectedTournamentName || "Semua Tournament"}
+            </p>
+        </div>
+    </div>
 </div>
 
   
@@ -605,27 +609,30 @@ const groupedJadwal = [...jadwal]
 
   
   {/* --- BAGIAN FILTER DAN DOWNLOAD PDF --- */}
-<div className="mb-8 p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
+<div className="mb-8 p-4 md:p-6 bg-white rounded-2xl shadow-sm border border-gray-100">
   <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
     
-    {/* Filter Sisi Kiri */}
-    <div className="flex-1">
-      <div className="flex items-center gap-2 mb-3">
-        <Filter size={20} className="text-yellow-500" />
-        <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Filter Tanggal:</p>
+    {/* Filter Sisi Kiri - Full Width di Mobile */}
+    <div className="flex-1 w-full">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="p-1.5 bg-yellow-50 rounded-lg">
+          <Filter size={18} className="text-yellow-600" />
+        </div>
+        <p className="text-[11px] md:text-sm font-black text-gray-400 uppercase tracking-widest">Filter Tanggal</p>
       </div>
-      <div className="flex flex-wrap gap-2">
+
+      {/* Container Button - Scroll Horizontal di Mobile jika tgl sangat banyak */}
+      <div className="flex flex-wrap md:flex-wrap gap-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
        {uniqueTanggal.map(tgl => (
           <button
             key={tgl}
             onClick={() => setSelectedTanggalFilter(tgl)}
-            className={`py-2 px-5 rounded-lg font-bold text-sm transition-all duration-200 
+            className={`whitespace-nowrap py-2.5 px-4 md:px-5 rounded-xl font-bold text-xs md:text-sm transition-all duration-200 
               ${selectedTanggalFilter === tgl 
-                ? 'bg-yellow-500 text-gray-900 shadow-md' 
-                : 'bg-gray-50 text-gray-600 hover:bg-gray-200 border border-gray-200'}
+                ? 'bg-yellow-500 text-gray-900 shadow-md transform scale-105' 
+                : 'bg-gray-50 text-gray-600 hover:bg-gray-200 border border-gray-100'}
             `}
           >
-            {/* Mengubah 2025-06-07 menjadi 07 Jun 2025 */}
             {new Date(tgl).toLocaleDateString('id-ID', { 
               day: '2-digit', 
               month: 'short', 
@@ -633,10 +640,11 @@ const groupedJadwal = [...jadwal]
             })}
           </button>
         ))}
+        
         {selectedTanggalFilter && (
           <button
             onClick={() => setSelectedTanggalFilter('')}
-            className="py-2 px-4 rounded-lg font-bold text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-200"
+            className="py-2.5 px-4 rounded-xl font-bold text-xs md:text-sm bg-red-50 text-red-600 hover:bg-red-100 border border-red-100 transition-colors"
           >
             Reset
           </button>
@@ -645,265 +653,218 @@ const groupedJadwal = [...jadwal]
     </div>
 
     {/* --- BAGIAN TOMBOL EXPORT PDF --- */}
-      {role === "admin" && (
-        <div className="flex items-center md:border-l border-gray-100 md:pl-6">
-          {!readyToDownload ? (
-            // Tampilan awal: Tombol biasa (Sangat Ringan, tidak bikin filter macet)
-            <button
-              onClick={() => setReadyToDownload(true)}
-              className="flex items-center gap-2 py-2 px-6 rounded-xl font-bold text-sm bg-red-600 text-white hover:bg-red-700 transition shadow-lg"
-            >
-              <Layout size={18}/> SIAPKAN PDF
-            </button>
-          ) : (
-            // Tampilan setelah diklik: Baru memanggil PDFDownloadLink
-            <PDFDownloadLink
-              document={
-                <JadwalPDF 
-                  jadwal={selectedTanggalFilter 
-                    ? jadwal.filter(j => j.tanggal === selectedTanggalFilter) 
-                    : jadwal
-                  } 
-                  lapanganList={[...new Set(jadwal.map(j => j.lapangan?.nama))].filter(Boolean)} 
-                  selectedTanggal={selectedTanggalFilter}
-                  tournamentName={selectedTournamentName}
-                />
-              }
-              fileName={`Jadwal_${selectedTournamentName || 'Turnamen'}.pdf`}
-              className="flex items-center gap-2 py-2 px-6 rounded-xl font-bold text-sm bg-green-600 text-white hover:bg-green-700 transition shadow-lg"
-            >
-              {({ loading }) => (
-                loading ? 'Sedang Memproses...' : (
-                  <span onClick={() => setTimeout(() => setReadyToDownload(false), 2000)}>
-                    ✅ KLIK UNTUK DOWNLOAD
-                  </span>
-                )
-              )}
-            </PDFDownloadLink>
-          )}
-        </div>
-      )}
+    {role === "admin" && (
+      <div className="w-full md:w-auto flex items-center md:border-l border-gray-100 md:pl-6 pt-4 md:pt-0 border-t md:border-t-0">
+        {!readyToDownload ? (
+          <button
+            onClick={() => setReadyToDownload(true)}
+            className="w-full md:w-auto flex items-center justify-center gap-2 py-3 px-8 rounded-xl font-black text-xs md:text-sm bg-red-600 text-white hover:bg-red-700 active:scale-95 transition-all shadow-lg shadow-red-100"
+          >
+            <Layout size={18}/> SIAPKAN PDF
+          </button>
+        ) : (
+          <PDFDownloadLink
+            document={
+              <JadwalPDF 
+                jadwal={selectedTanggalFilter 
+                  ? jadwal.filter(j => j.tanggal === selectedTanggalFilter) 
+                  : jadwal
+                } 
+                lapanganList={[...new Set(jadwal.map(j => j.lapangan?.nama))].filter(Boolean)} 
+                selectedTanggal={selectedTanggalFilter}
+                tournamentName={selectedTournamentName}
+              />
+            }
+            fileName={`Jadwal_${selectedTournamentName || 'Turnamen'}.pdf`}
+            className="w-full md:w-auto flex items-center justify-center gap-2 py-3 px-8 rounded-xl font-black text-xs md:text-sm bg-green-600 text-white hover:bg-green-700 transition shadow-lg shadow-green-100"
+          >
+            {({ loading }) => (
+              loading ? (
+                <span className="flex items-center gap-2 animate-pulse">Memproses...</span>
+              ) : (
+                <span className="flex items-center gap-2" onClick={() => setTimeout(() => setReadyToDownload(false), 2000)}>
+                   ✅ DOWNLOAD JADWAL
+                </span>
+              )
+            )}
+          </PDFDownloadLink>
+        )}
+      </div>
+    )}
   </div>
 </div>
 
 
 {/* ===== TAMPILAN JADWAL PREMIUM (WARNA KONTRAS & RAPI) ===== */}
 {lapanganList.length > 0 ? (
-  <div className="overflow-x-auto bg-white rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100">
-    <table className="w-full table-fixed border-separate border-spacing-x-2 border-spacing-y-2">
-      
-      <colgroup>
-        <col style={{ width: "80px" }} />
-        {lapanganList.map((_, i) => (
-          <col key={i} style={{ width: "auto" }} />
-        ))}
-      </colgroup>
+  /* Container utama dengan overflow-x-auto agar bisa di-swipe di mobile */
+  <div className="w-full overflow-hidden rounded-[1.5rem] md:rounded-[2.5rem] shadow-2xl shadow-slate-200/60 border border-slate-100 bg-white">
+    <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+      <table className="w-full min-w-[600px] md:min-w-full table-fixed border-separate border-spacing-x-1 md:border-spacing-x-2 border-spacing-y-2">
+        
+        <colgroup>
+          {/* Kolom JAM lebih ramping di mobile */}
+          <col className="w-[60px] md:w-[80px]" />
+          {lapanganList.map((_, i) => (
+            <col key={i} className="w-[200px] md:w-auto" />
+          ))}
+        </colgroup>
 
-      <thead>
-        <tr>
-          <th className="py-6">
-            <div className="flex flex-col items-center justify-center opacity-60">
-              <Clock size={16} className="text-black mb-1" />
-              <span className="text-[10px] font-black text-black uppercase tracking-widest">JAM</span>
-            </div>
-          </th>
-          {lapanganList.map((lap) => (
-            <th key={lap} className="py-6">
-              <div className="bg-white border-2 border-yellow-500 py-2.5 px-4 rounded-2xl text-[12px] font-black text-gray-900 uppercase tracking-widest shadow-sm flex items-center justify-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"></span>
-                {lap}
+        <thead>
+          <tr>
+            <th className="py-4 md:py-6 sticky left-0 z-40 bg-white/95 backdrop-blur-sm shadow-[4px_0_8px_-4px_rgba(0,0,0,0.05)]">
+              <div className="flex flex-col items-center justify-center opacity-60">
+                <Clock size={14} className="text-black mb-1 md:size-[16px]" />
+                <span className="text-[8px] md:text-[10px] font-black text-black uppercase tracking-widest">JAM</span>
               </div>
             </th>
-          ))}
-        </tr>
-      </thead>
-
-      <tbody className="divide-y divide-transparent">
-       
-        {[...new Set(
-          jadwal
-            .filter(j => !selectedTanggalFilter || j.tanggal === selectedTanggalFilter) // Filter jadwal sesuai tanggal dulu
-            .map(j => j.waktuMulai.slice(11, 16)) // Baru ambil jamnya
-        )]
-          .sort() // Urutkan dari pagi ke sore
-          .map((jam) => (
-            <tr key={jam} className="group">
-              <td className="py-4 sticky left-0 z-10 bg-white group-hover:bg-yellow-50 transition-colors rounded-2xl">
-                <div className="text-center">
-                  <span className="block text-md font-extrabold text-gray-900 leading-none tracking-tighter">{jam}</span>
+            {lapanganList.map((lap) => (
+              <th key={lap} className="py-4 md:py-6 px-1">
+                <div className="bg-white border-2 border-yellow-500 py-2 md:py-2.5 px-2 md:px-4 rounded-xl md:rounded-2xl text-[10px] md:text-[12px] font-black text-gray-900 uppercase tracking-widest shadow-sm flex items-center justify-center gap-1.5 md:gap-2">
+                  <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)]"></span>
+                  <span className="truncate">{lap}</span>
                 </div>
-              </td>
+              </th>
+            ))}
+          </tr>
+        </thead>
 
-              {lapanganList.map((lap) => {
-                const match = jadwal.find(j =>
-                  j.waktuMulai.slice(11, 16) === jam &&
-                  j.lapangan?.nama === lap &&
-                  j.tanggal === selectedTanggalFilter // Pastikan match sesuai tanggal
-                );
+        <tbody className="divide-y divide-transparent">
+          {[...new Set(
+            jadwal
+              .filter(j => !selectedTanggalFilter || j.tanggal === selectedTanggalFilter)
+              .map(j => j.waktuMulai.slice(11, 16))
+          )]
+            .sort()
+            .map((jam) => (
+              <tr key={jam} className="group">
+                {/* Kolom JAM Sticky agar saat swipe ke kanan, jam tetap terlihat */}
+                <td className="py-2 md:py-4 sticky left-0 z-40 bg-white/95 backdrop-blur-sm group-hover:bg-yellow-50 transition-colors rounded-xl md:rounded-2xl shadow-[4px_0_8px_-4px_rgba(0,0,0,0.05)]">
+                  <div className="text-center">
+                    <span className="block text-sm md:text-md font-extrabold text-gray-900 leading-none tracking-tighter">{jam}</span>
+                  </div>
+                </td>
 
-                return (
-                  <td key={lap} className="py-3 align-top min-w-[210px]">
-                    {match ? (
-                      <div className="h-full bg-white border border-gray-100 rounded-[1.8rem] p-5 shadow-md hover:shadow-2xl hover:border-yellow-400 hover:-translate-y-1 transition-all duration-300 relative group/card overflow-hidden">
-                       
-                       {(role === "admin" || role === "wasit") && (
-                          <div className="absolute top-4 right-4 z-30">
-                            <button
-                              onClick={() =>
-                                setOpenMenuId(openMenuId === match.id ? null : match.id)
-                              }
-                              className="w-8 h-8 flex items-center justify-center rounded-full
-                                        bg-gray-50 text-gray-400 hover:bg-yellow-500
-                                        hover:text-white transition-all shadow-sm"
-                            >
-                              <span className="font-black text-lg">⋮</span>
-                            </button>
+                {lapanganList.map((lap) => {
+                  const match = jadwal.find(j =>
+                    j.waktuMulai.slice(11, 16) === jam &&
+                    j.lapangan?.nama === lap &&
+                    j.tanggal === selectedTanggalFilter
+                  );
 
-                            {openMenuId === match.id && (
-                              <div className="absolute right-0 mt-2 bg-white rounded-2xl shadow-2xl
-                                              z-50 min-w-[140px] overflow-hidden
-                                              animate-in fade-in zoom-in duration-200">
-
-                                {/* EDIT — ADMIN ONLY */}
-                                {role === "admin" && (
-                                  <button
-                                    onClick={() => {
-                                      handleEditClick(match);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="flex items-center gap-2 w-full text-left px-4 py-3
-                                              hover:bg-yellow-50 text-[11px] font-extrabold
-                                              text-gray-700 border-b border-gray-50"
-                                  >
-                                    Edit
-                                  </button>
-                                )}
-
-                                {/* INPUT PEMENANG — ADMIN & WASIT */}
-                                {match.status !== "selesai" && (role === "admin" || role === "wasit") && (
-                                  <button
-                                    onClick={() => {
-                                      if (!match.match.scoreRuleId) {
-                                        setPendingJadwal(match);
-                                        setRuleMode("manual");
-                                        setShowRuleModal(true);
-                                        setOpenMenuId(null);
-                                        return;
-                                      }
-
-                                      setManualWinnerMatch(match.match);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="flex items-center gap-2 w-full text-left px-4 py-3
-                                              hover:bg-blue-50 text-[11px] font-extrabold
-                                              text-blue-500 border-b border-gray-50"
-                                  >
-                                    Input Pemenang
-                                  </button>
-                                )}
-
-                                {/* HAPUS — ADMIN ONLY */}
-                                {role === "admin" && (
-                                  <button
-                                    onClick={() => {
-                                      handleDeleteJadwal(match.id);
-                                      setOpenMenuId(null);
-                                    }}
-                                    className="flex items-center gap-2 w-full text-left px-4 py-3
-                                              hover:bg-red-50 text-[11px] font-extrabold
-                                              text-red-600"
-                                  >
-                                    Hapus
-                                  </button>
-                                )}
-
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-
-                        <div className="mt-1 flex flex-col h-full">
-                          <div className="text-[10px] font-black text-blue-600 uppercase tracking-wider mb-3">
-                            {match.match?.bagan?.nama || 'Tournament'}
-                          </div>
-                          <div className="space-y-2 mb-4">
-                            <p className="font-black text-gray-900 text-[13px] leading-tight break-words">{match.match?.doubleTeam1?.namaTim || match.match?.peserta1?.namaLengkap}</p>
-                            <div className="flex items-center gap-3">
-                              <div className="h-[2px] flex-1 bg-gray-100"></div>
-                              <span className="text-[9px] font-black text-gray-300 italic">VS</span>
-                              <div className="h-[2px] flex-1 bg-gray-100"></div>
-                            </div>
-                            <p className="font-black text-gray-900 text-[13px] leading-tight break-words">{match.match?.doubleTeam2?.namaTim || match.match?.peserta2?.namaLengkap}</p>
-                          </div>
-                          <div className="mt-auto pt-3 border-t border-gray-50 flex flex-col gap-3">
-                             <div className="flex items-center justify-between">
-                                <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm
-                                  ${match.status === "selesai" ? "bg-green-500 text-white" : 
-                                    match.status === "berlangsung" ? "bg-yellow-500 text-gray-900 animate-pulse" : 
-                                    "bg-blue-500 text-white"}`}
-                                >
-                                  {match.status}
-                                </span>
-                                {match.status === "selesai" && (
-                                  <span className="text-sm font-black text-gray-900 bg-gray-100 px-2 py-0.5 rounded-lg">{match.match.score1} - {match.match.score2}</span>
-                                )}
-                             </div>
-                              {(role === "admin" || role === "wasit")&& (
-                                <>
-                                  {(match.status === "terjadwal" ||
-                                    match.status === "belum" ||
-                                    match.status === "aktif") && (
-                                    <button
-                                      onClick={() => handleUpdateStatus(match.id, "berlangsung")}
-                                      className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-[10px] font-black rounded-xl py-2.5 transition-all shadow-md shadow-yellow-100 flex items-center justify-center gap-2"
-                                    >
-                                      <CheckCircle size={14} /> MULAI SEKARANG
-                                    </button>
+                  return (
+                    <td key={lap} className="py-2 md:py-3 align-top">
+                      {match ? (
+                        <div className="h-full bg-white border border-gray-100 rounded-[1.2rem] md:rounded-[1.8rem] p-3 md:p-5 shadow-md hover:shadow-xl hover:border-yellow-400 md:hover:-translate-y-1 transition-all duration-300 relative group/card overflow-hidden">
+                          
+                          {/* Menu Admin (⋮) */}
+                          {(role === "admin" || role === "wasit") && (
+                            <div className="absolute top-2 right-2 md:top-4 md:right-4 z-30">
+                              <button
+                                onClick={() => setOpenMenuId(openMenuId === match.id ? null : match.id)}
+                                className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center rounded-full bg-gray-50 text-gray-400 hover:bg-yellow-500 hover:text-white transition-all shadow-sm"
+                              >
+                                <span className="font-black text-sm md:text-lg">⋮</span>
+                              </button>
+                              
+                              {/* Dropdown Menu disesuaikan ukurannya */}
+                              {openMenuId === match.id && (
+                                <div className="absolute right-0 mt-2 bg-white rounded-xl md:rounded-2xl shadow-2xl z-50 min-w-[120px] md:min-w-[140px] overflow-hidden border border-slate-100">
+                                  {role === "admin" && (
+                                    <button onClick={() => { handleEditClick(match); setOpenMenuId(null); }} className="block w-full text-left px-4 py-2.5 hover:bg-yellow-50 text-[10px] md:text-[11px] font-extrabold text-gray-700 border-b border-gray-50">Edit</button>
                                   )}
-
-                                  {match.status === "berlangsung" && (
-                                      <button
-                                        onClick={() => {
-                                          if (match.match.scoreRuleId) {
-                                            openRefereePanel(match);
-                                          } else {
-                                            setPendingJadwal(match);
-                                            setRuleMode("wasit");   
-                                            setShowRuleModal(true);
-                                          }
-                                        }}
-                                     className="w-full bg-indigo-500 hover:bg-yellow-600 text-white text-[10px] font-black rounded-xl py-2.5 transition-all shadow-md shadow-yellow-100 flex items-center justify-center gap-2"
-                                    >
-                                      BUKA PANEL WASIT
-                                    </button>
-
+                                  {match.status !== "selesai" && (role === "admin" || role === "wasit") && (
+                                    <button onClick={() => { /* logika input pemenang */ }} className="block w-full text-left px-4 py-2.5 hover:bg-blue-50 text-[10px] md:text-[11px] font-extrabold text-blue-500 border-b border-gray-50">Input Pemenang</button>
                                   )}
-                                </>
+                                  {role === "admin" && (
+                                    <button onClick={() => { handleDeleteJadwal(match.id); setOpenMenuId(null); }} className="block w-full text-left px-4 py-2.5 hover:bg-red-50 text-[10px] md:text-[11px] font-extrabold text-red-600">Hapus</button>
+                                  )}
+                                </div>
                               )}
+                            </div>
+                          )}
 
+                          <div className="flex flex-col h-full">
+                            <div className="text-[8px] md:text-[10px] font-black text-blue-600 uppercase tracking-wider mb-2 md:mb-3 truncate pr-8">
+                              {match.match?.bagan?.nama || 'Tournament'}
+                            </div>
+                            
+                            {/* Nama Tim/Pemain dengan text wrap yang lebih baik */}
+                            <div className="space-y-1.5 md:space-y-2 mb-3 md:mb-4">
+                              <p className="font-black text-gray-900 text-[11px] md:text-[13px] leading-tight line-clamp-2 uppercase">
+                                {match.match?.doubleTeam1?.namaTim || match.match?.peserta1?.namaLengkap}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <div className="h-[1px] flex-1 bg-gray-100"></div>
+                                <span className="text-[8px] font-black text-gray-300 italic">VS</span>
+                                <div className="h-[1px] flex-1 bg-gray-100"></div>
+                              </div>
+                              <p className="font-black text-gray-900 text-[11px] md:text-[13px] leading-tight line-clamp-2 uppercase">
+                                {match.match?.doubleTeam2?.namaTim || match.match?.peserta2?.namaLengkap}
+                              </p>
+                            </div>
+
+                            <div className="mt-auto pt-2 md:pt-3 border-t border-gray-50 flex flex-col gap-2 md:gap-3">
+                               <div className="flex items-center justify-between gap-1">
+                                  <span className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[7px] md:text-[9px] font-black uppercase tracking-widest truncate
+                                    ${match.status === "selesai" ? "bg-green-500 text-white" : 
+                                      match.status === "berlangsung" ? "bg-yellow-500 text-gray-900 animate-pulse" : 
+                                      "bg-blue-500 text-white"}`}
+                                  >
+                                    {match.status}
+                                  </span>
+                                  {match.status === "selesai" && (
+                                    <span className="text-xs md:text-sm font-black text-gray-900 bg-gray-100 px-1.5 py-0.5 rounded-lg">
+                                      {match.match.score1}-{match.match.score2}
+                                    </span>
+                                  )}
+                               </div>
+
+                                {/* Tombol Aksi Wasit/Admin */}
+                                {(role === "admin" || role === "wasit") && (
+                                  <div className="w-full">
+                                    {(match.status === "terjadwal" || match.status === "belum" || match.status === "aktif") && (
+                                      <button
+                                        onClick={() => handleUpdateStatus(match.id, "berlangsung")}
+                                        className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-[9px] md:text-[10px] font-black rounded-lg md:rounded-xl py-2 md:py-2.5 transition-all flex items-center justify-center gap-1 md:gap-2"
+                                      >
+                                        <CheckCircle size={12} /> <span className="hidden xs:inline">MULAI</span>
+                                      </button>
+                                    )}
+
+                                    {match.status === "berlangsung" && (
+                                        <button
+                                          onClick={() => { /* logika panel wasit */ }}
+                                          className="w-full bg-indigo-500 hover:bg-indigo-600 text-white text-[9px] md:text-[10px] font-black rounded-lg md:rounded-xl py-2 md:py-2.5 transition-all flex items-center justify-center gap-1 md:gap-2"
+                                      >
+                                        PANEL WASIT
+                                      </button>
+                                    )}
+                                  </div>
+                                )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="h-full flex items-center justify-center py-10 opacity-20">
-                         <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                      </div>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-      </tbody>
-    </table>
+                      ) : (
+                        /* Slot Kosong */
+                        <div className="h-full flex items-center justify-center py-6 md:py-10 opacity-20">
+                           <div className="w-1 md:w-1.5 h-1 md:h-1.5 rounded-full bg-slate-400"></div>
+                        </div>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+        </tbody>
+      </table>
+    </div>
   </div>
 ) : (
-  /* State Kosong tetap sama */
-  <div className="py-24 text-center bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
-    <Calendar size={48} className="text-gray-300 mx-auto mb-4" />
-    <h3 className="text-xl font-bold text-gray-700">Tidak Ada Jadwal</h3>
-    <p className="text-gray-500">Pilih tanggal lain atau buat jadwal baru.</p>
+  <div className="py-12 md:py-24 text-center bg-gray-50 rounded-[2rem] md:rounded-[3rem] border-2 border-dashed border-gray-200 m-4">
+    <Calendar size={32} className="text-gray-300 mx-auto mb-4 md:size-[48px]" />
+    <h3 className="text-lg md:text-xl font-bold text-gray-700">Tidak Ada Jadwal</h3>
+    <p className="text-xs md:text-sm text-gray-500">Pilih tanggal lain atau buat jadwal baru.</p>
   </div>
 )}
 

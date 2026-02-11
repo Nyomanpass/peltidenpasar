@@ -8,7 +8,7 @@ export default function DashboardLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-gray-50 overflow-visible relative">
+    <div className="flex min-h-screen overflow-visible relative">
       <Sidebar isOpen={isOpen} isCollapsed={isCollapsed} />
 
       <div

@@ -75,23 +75,51 @@ const TournamentDetailPage = () => {
                                     
                                     {/* Sub-Navigasi Single/Double */}
                                     <div className="flex bg-gray-100 p-1 rounded-2xl border border-gray-200">
+
                                         <button
                                             onClick={() => setSubTabPeserta('single')}
-                                            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 md:px-6 py-2.5 md:py-2 rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all duration-300 ${
-                                                subTabPeserta === 'single' ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                                            className={`flex-1 md:flex-none flex items-center justify-center gap-2 
+                                                        px-5 md:px-6 
+                                                        py-2.5 md:py-2 
+                                                        rounded-xl 
+                                                        font-black 
+                                                        text-[10px] md:text-xs 
+                                                        uppercase tracking-widest 
+                                                        transition-all duration-300 ${
+                                            subTabPeserta === 'single'
+                                                ? "bg-white text-yellow-600 shadow-sm"
+                                                : "text-gray-500 hover:text-gray-700"
                                             }`}
                                         >
-                                            <User size={16} /> Single
+                                            <span className="hidden md:inline">
+                                            <User size={16} />
+                                            </span>
+                                            Single
                                         </button>
+
                                         <button
                                             onClick={() => setSubTabPeserta('ganda')}
-                                            className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-5 md:px-6 py-2.5 md:py-2 rounded-xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all duration-300 ${
-                                                subTabPeserta === 'ganda' ? "bg-white text-yellow-600 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                                            className={`flex-1 md:flex-none flex items-center justify-center gap-2 
+                                                        px-5 md:px-6 
+                                                        py-2.5 md:py-2 
+                                                        rounded-xl 
+                                                        font-black 
+                                                        text-[10px] md:text-xs 
+                                                        uppercase tracking-widest 
+                                                        transition-all duration-300 ${
+                                            subTabPeserta === 'ganda'
+                                                ? "bg-white text-yellow-600 shadow-sm"
+                                                : "text-gray-500 hover:text-gray-700"
                                             }`}
                                         >
-                                            <Users2 size={16} /> Double
+                                            <span className="hidden md:inline">
+                                            <Users2 size={16} />
+                                            </span>
+                                            Double
                                         </button>
+
                                     </div>
+
 
                                     {/* Input Pencarian */}
                                     <div className="relative w-full md:w-64 group">
