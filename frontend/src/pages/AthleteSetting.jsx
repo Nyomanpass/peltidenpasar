@@ -18,7 +18,7 @@ const [formData, setFormData] = useState({
   name: "",
   birthDate: "",
   gender: "Male",
-  category: "",
+  kelompokUmurId: "",
   phoneNumber: "",
   address: "",
   club: "",
@@ -101,7 +101,7 @@ const resetForm = () => {
     name: "",
     birthDate: "",
     gender: "male",
-    category: "U-10",
+    kelompokUmurId: "",
     phoneNumber: "",
     address: "",
     club: "",
@@ -118,7 +118,7 @@ const resetForm = () => {
         name: athlete.name || "",
         birthDate: athlete.birthDate ? athlete.birthDate.slice(0, 10) : "",
         gender: athlete.gender || "male",
-        category: athlete.category || "U-10",
+        kelompokUmurId: athlete.kelompokUmurId || "",
         phoneNumber: athlete.phoneNumber || "",
         address: athlete.address || "",
         club: athlete.club || "",
@@ -138,64 +138,49 @@ const resetForm = () => {
       resetForm();
     }
   };
-const calculateAge = (birthDate) => {
-  const today = new Date();
-  const birth = new Date(birthDate);
 
-  let age = today.getFullYear() - birth.getFullYear();
-  const monthDiff = today.getMonth() - birth.getMonth();
-  const dayDiff = today.getDate() - birth.getDate();
+  const calculateAge = (birthDate) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
 
-  // jika belum ulang tahun tahun ini
-  if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-    age--;
-  }
+    return today.getFullYear() - birth.getFullYear();
+  };
 
-  return age;
-};
 
- const handleSubmit = async (e) => {
+
+const handleSubmit = async (e) => {
   e.preventDefault();
 
-   const age = calculateAge(formData.birthDate);
+  const age = calculateAge(formData.birthDate);
 
-  // cek kategori
-  const category = formData.category;
-  let valid = true;
-  let message = "";
+  // ambil data kelompok umur berdasarkan ID
+  const selectedKelompok = kelompokUmurList.find(
+    (k) => k.id == formData.kelompokUmurId
+  );
 
-  if (category === "U-10" && age > 10) {
-    valid = false;
-    message = "Umur atlet melebihi batas kategori U-10";
-  } else if (category === "U-12" && age > 12) {
-    valid = false;
-    message = "Umur atlet melebihi batas kategori U-12";
-  } else if (category === "U-14" && age > 14) {
-    valid = false;
-    message = "Umur atlet melebihi batas kategori U-14";
-  } else if (category === "U-16" && age > 16) {
-    valid = false;
-    message = "Umur atlet melebihi batas kategori U-16";
-  }
-
-  if (!valid) {
-    alert(message);
+  if (!selectedKelompok) {
+    alert("Pilih kategori terlebih dahulu");
     return;
   }
-  // ======================
-  // PROSES SUBMIT
-  // ======================
+
+  // validasi umur berdasarkan database
+  if (age > selectedKelompok.umur) {
+    alert(
+      `Umur atlet (${age} tahun) melebihi batas kategori ${selectedKelompok.nama}`
+    );
+    return;
+  }
+
   try {
     const fd = new FormData();
     fd.append("name", formData.name);
     fd.append("birthDate", formData.birthDate);
     fd.append("gender", formData.gender);
-    fd.append("category", formData.category);
+    fd.append("kelompokUmurId", formData.kelompokUmurId);
     fd.append("phoneNumber", formData.phoneNumber);
     fd.append("address", formData.address);
     fd.append("club", formData.club);
     if (formData.photo) fd.append("photo", formData.photo);
-
 
     if (editingId) {
       await api.put(`/athlete/update/${editingId}`, fd, {
@@ -313,26 +298,27 @@ const calculateAge = (birthDate) => {
           </div>
 
           {/* Category */}
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold mb-1">Kategori</label>
-            <select
-              value={formData.category}
-              onChange={(e) =>
-                setFormData({ ...formData, category: e.target.value })
-              }
-              className="border border-gray-300 px-4 py-3 rounded-xl shadow-sm 
-              focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none"
-            >
-              <option value="">-- Pilih Kategori --</option>
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold mb-1">Kategori</label>
+          <select
+            value={formData.kelompokUmurId}
+            onChange={(e) =>
+              setFormData({ ...formData, kelompokUmurId: e.target.value })
+            }
+            className="border border-gray-300 px-4 py-3 rounded-xl shadow-sm 
+            focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none"
+            required
+          >
+            <option value="">-- Pilih Kategori --</option>
 
-              {kelompokUmurList.map((k) => (
-                <option key={k.id} value={k.nama}>
-                  {k.nama}
-                </option>
-              ))}
+            {kelompokUmurList.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.nama}
+              </option>
+            ))}
+          </select>
+        </div>
 
-            </select>
-          </div>
 
           {/* Phone Number */}
           <div className="flex flex-col">
@@ -432,8 +418,9 @@ const calculateAge = (birthDate) => {
                 </td>
 
                 <td className="px-5 py-3 text-center">
-                  {a.category}
+                  {a.kelompokUmur?.nama || "-"}
                 </td>
+
 
                 <td className="px-5 py-3 text-center capitalize">
                   {a.gender}
@@ -595,11 +582,9 @@ const calculateAge = (birthDate) => {
             <div style={{ fontSize: "16px", fontWeight: "bold" }}>
               {selectedAthlete.name}
             </div>
-
             <div style={{ fontSize: "12px", marginBottom: "6px" }}>
-              {selectedAthlete.category}
+              {selectedAthlete.kelompokUmur?.nama}
             </div>
-
             <div style={{ fontSize: "12px" }}>
               Gender: {selectedAthlete.gender}
             </div>

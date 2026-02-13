@@ -4,14 +4,15 @@ import Footer from "../../components/Footer";
 import api from "../../api";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-import { X, FileDown } from "lucide-react";
+import { X, FileDown, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function Athlete() {
   const [athletes, setAthletes] = useState([]);
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [genderFilter, setGenderFilter] = useState("all");
+  const [collapsedGroups, setCollapsedGroups] = useState({});
   const [selectedAthlete, setSelectedAthlete] = useState(null);
   const role = localStorage.getItem("role");
+  const [kelompokUmur, setKelompokUmur] = useState([]);
+
 
   const fetchAthletes = async () => {
     try {
@@ -22,8 +23,26 @@ export default function Athlete() {
     }
   };
 
+  const toggleGroup = (id) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  const fetchKelompokUmur = async () => {
+    try {
+      const res = await api.get("/kelompok-umur");
+      setKelompokUmur(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+
   useEffect(() => {
     fetchAthletes();
+    fetchKelompokUmur();
   }, []);
 
   const handleExportPDF = async () => {
@@ -48,11 +67,11 @@ export default function Athlete() {
     pdf.save(`kartu-atlet-${selectedAthlete.name}.pdf`);
   };
 
-  const filteredAthletes = athletes.filter((a) => {
-    const categoryMatch = categoryFilter === "all" || a.category === categoryFilter;
-    const genderMatch = genderFilter === "all" || a.gender === genderFilter;
-    return categoryMatch && genderMatch;
-  });
+  const totalAthletes = athletes.length;
+
+
+
+
 
   return (
     <>
@@ -124,75 +143,105 @@ export default function Athlete() {
           <h3 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center">
             Daftar Atlet
           </h3>
-
-          {/* FILTER */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center mb-6">
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-gray-300 bg-white shadow-sm text-sm sm:text-base w-full sm:w-auto"
-            >
-              <option value="all">Semua Kategori</option>
-              {["U-10", "U-12", "U-14", "U-16", "Open"].map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={genderFilter}
-              onChange={(e) => setGenderFilter(e.target.value)}
-              className="px-3 py-2 sm:px-4 sm:py-3 rounded-xl border border-gray-300 bg-white shadow-sm text-sm sm:text-base w-full sm:w-auto"
-            >
-              <option value="all">Semua Gender</option>
-              <option value="male">Laki-laki</option>
-              <option value="female">Perempuan</option>
-            </select>
-          </div>
+        
 
           {/* GRID ATLET */}
-          {filteredAthletes.length === 0 ? (
-            <p className="text-center text-gray-500 text-sm sm:text-base">
-              Tidak ada data atlet sesuai filter.
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-              {filteredAthletes.map((a) => (
+ {totalAthletes === 0 ? (
+  <div className="text-center py-20">
+    <h3 className="text-lg font-bold text-gray-600">
+      Belum ada atlet terdaftar
+    </h3>
+   
+  </div>
+    ) : (
+    <div className="space-y-6">
+      {kelompokUmur.map((ku) => {
+       const athletesByGroup = athletes.filter(
+          (a) => a.kelompokUmurId === ku.id
+        );
+
+
+        if (athletesByGroup.length === 0) return null;
+
+        const isCollapsed = collapsedGroups[ku.id];
+
+        return (
+          <div
+            key={ku.id}
+            className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden transition-all"
+          >
+            {/* HEADER */}
+            <button
+              onClick={() => toggleGroup(ku.id)}
+              className="w-full flex items-center justify-between px-6 py-5 bg-gray-50 hover:bg-gray-100 transition-all"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-yellow-500 text-white rounded-xl flex items-center justify-center font-black text-sm">
+                  {ku.nama.substring(0, 2).toUpperCase()}
+                </div>
+
+                <div className="text-left">
+                  <h2 className="font-black text-gray-900 uppercase text-sm tracking-wide">
+                    {ku.nama}
+                  </h2>
+                  <span className="text-[10px] text-yellow-600 font-bold uppercase tracking-widest">
+                    {athletesByGroup.length} Atlet
+                  </span>
+                </div>
+              </div>
+
+              <div className="text-gray-400 transition-transform duration-300">
+                {isCollapsed ? (
+                  <ChevronDown size={20} />
+                ) : (
+                  <ChevronUp size={20} />
+                )}
+              </div>
+            </button>
+
+            {/* CONTENT */}
+            {!isCollapsed && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-6 border-t border-gray-50">
+                {athletesByGroup.map((a) => (
                 <div
                   key={a.id}
                   onClick={() => setSelectedAthlete(a)}
-                  className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden cursor-pointer"
+                  className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-center"
                 >
-                  <div className="h-24 sm:h-28 md:h-32 bg-gray-100">
+                  {/* Container Foto - Dibuat Aspek Rasio 1:1 (Kotak) */}
+                  <div className="relative w-full aspect-square mb-3 overflow-hidden rounded-xl bg-gray-50">
                     {a.photo ? (
                       <img
                         src={a.photo}
                         alt={a.name}
-                        className="w-full h-full object-cover"
+                        // Menggunakan object-contain agar gambar tidak terpotong meski ukurannya beda
+                        className="w-full h-full object-contain" 
                       />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs sm:text-sm">
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] text-center p-2">
                         Tidak ada foto
                       </div>
                     )}
                   </div>
 
-                  <div className="p-2 sm:p-3 text-center">
-                    <h4 className="font-semibold text-sm sm:text-base text-gray-800 line-clamp-2 leading-snug">
+                  {/* Informasi Atlet */}
+                  <div className="text-center w-full">
+                    <h4 className="font-bold text-xs md:text-sm text-gray-800 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center justify-center">
                       {a.name}
                     </h4>
-                    <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
-                      {a.category}
-                    </p>
-                    <span className="inline-block mt-1 text-[9px] sm:text-[11px] px-2 py-1 bg-gray-100 rounded-full capitalize text-gray-600">
-                      {a.gender}
-                    </span>
+                   
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+    )}
+
+
         </div>
       </section>
 
@@ -225,7 +274,7 @@ export default function Athlete() {
                 )}
                 <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4">
                   <span className="inline-block text-xs sm:text-sm px-3 sm:px-5 py-1 sm:py-2 bg-yellow-400/95 text-black rounded-full font-extrabold shadow-lg">
-                    {selectedAthlete.category}
+                    {selectedAthlete.kelompokUmur?.nama}
                   </span>
                 </div>
               </div>
@@ -313,7 +362,7 @@ export default function Athlete() {
                   </div>
 
                   <div style={{ fontSize: "12px", marginBottom: "6px" }}>
-                    {selectedAthlete.category}
+                    {selectedAthlete.kelompokUmur?.nama}
                   </div>
 
                   <div style={{ fontSize: "12px" }}>

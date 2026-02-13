@@ -774,7 +774,19 @@ const groupedJadwal = [...jadwal]
                                     <button onClick={() => { handleEditClick(match); setOpenMenuId(null); }} className="block w-full text-left px-4 py-2.5 hover:bg-yellow-50 text-[10px] md:text-[11px] font-extrabold text-gray-700 border-b border-gray-50">Edit</button>
                                   )}
                                   {match.status !== "selesai" && (role === "admin" || role === "wasit") && (
-                                    <button onClick={() => { /* logika input pemenang */ }} className="block w-full text-left px-4 py-2.5 hover:bg-blue-50 text-[10px] md:text-[11px] font-extrabold text-blue-500 border-b border-gray-50">Input Pemenang</button>
+                                    <button onClick={() => {
+                                        setPendingJadwal(match);
+                                        setRuleMode("manual");
+
+                                        if (!match.match.scoreRuleId) {
+                                          setShowRuleModal(true);
+                                        } else {
+                                          setManualWinnerMatch(match.match);
+                                        }
+
+                                        setOpenMenuId(null);
+                                      }}
+                                    className="block w-full text-left px-4 py-2.5 hover:bg-blue-50 text-[10px] md:text-[11px] font-extrabold text-blue-500 border-b border-gray-50">Input Pemenang</button>
                                   )}
                                   {role === "admin" && (
                                     <button onClick={() => { handleDeleteJadwal(match.id); setOpenMenuId(null); }} className="block w-full text-left px-4 py-2.5 hover:bg-red-50 text-[10px] md:text-[11px] font-extrabold text-red-600">Hapus</button>
@@ -828,13 +840,29 @@ const groupedJadwal = [...jadwal]
                                         onClick={() => handleUpdateStatus(match.id, "berlangsung")}
                                         className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-[9px] md:text-[10px] font-black rounded-lg md:rounded-xl py-2 md:py-2.5 transition-all flex items-center justify-center gap-1 md:gap-2"
                                       >
-                                        <CheckCircle size={12} /> <span className="hidden xs:inline">MULAI</span>
+                                            <CheckCircle size={16} className="md:w-[18px] md:h-[18px] text-white" />
+                                            <span className="tracking-wide text-white">MULAI</span>
+
                                       </button>
                                     )}
 
                                     {match.status === "berlangsung" && (
                                         <button
-                                          onClick={() => { /* logika panel wasit */ }}
+                                           onClick={() => {
+                                              // simpan jadwal yg diklik
+                                              setPendingJadwal(match);
+
+                                              // tentukan mode wasit
+                                              setRuleMode("wasit");
+
+                                              // kalau match belum punya rule → buka modal pilih rule
+                                              if (!match.match.scoreRuleId) {
+                                                setShowRuleModal(true);
+                                              } else {
+                                                // kalau sudah ada rule → langsung buka panel wasit
+                                                openRefereePanel(match);
+                                              }
+                                            }}
                                           className="w-full bg-indigo-500 hover:bg-indigo-600 text-white text-[9px] md:text-[10px] font-black rounded-lg md:rounded-xl py-2 md:py-2.5 transition-all flex items-center justify-center gap-1 md:gap-2"
                                       >
                                         PANEL WASIT

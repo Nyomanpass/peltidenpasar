@@ -7,6 +7,8 @@ import { Jadwal } from "./JadwalModel.js";
 import { Match } from "./MatchModel.js";
 import { Bagan } from "./BaganModel.js";
 import { ScoreRule } from "./ScoreRuleModel.js"; // ✅ TAMBAH INI
+import { Athlete } from "./AthleteModel.js";
+
 
 
 // -------------------
@@ -45,6 +47,21 @@ Match.belongsTo(ScoreRule, { foreignKey: "scoreRuleId", as: "scoreRule" });
 
 
 // -------------------
+// 🔹 Relasi Athlete
+// -------------------
+KelompokUmur.hasMany(Athlete, { 
+  foreignKey: "kelompokUmurId", 
+  as: "athletes" 
+});
+
+Athlete.belongsTo(KelompokUmur, { 
+  foreignKey: "kelompokUmurId", 
+  as: "kelompokUmur" 
+});
+
+
+
+// -------------------
 // 🔹 Export semua model
 // -------------------
 export {
@@ -56,4 +73,5 @@ export {
   Match,
   Bagan,
   ScoreRule,
+  Athlete,
 };

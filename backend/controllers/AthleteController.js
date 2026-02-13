@@ -1,4 +1,5 @@
 import { Athlete } from "../models/AthleteModel.js";
+import { KelompokUmur } from "../models/KelompokUmurModel.js";
 import fs from "fs";
 import path from "path";
 
@@ -13,7 +14,16 @@ const getFullImageUrl = (req, imagePath) => {
 // ======================
 export const getAthletes = async (req, res) => {
   try {
-    const athletes = await Athlete.findAll({ order: [["id", "ASC"]] });
+    const athletes = await Athlete.findAll({
+      include: [
+        {
+          model: KelompokUmur,
+          as: "kelompokUmur",
+          attributes: ["id", "nama"],
+        },
+      ],
+      order: [["id", "ASC"]],
+    });
 
     const result = athletes.map((a) => ({
       ...a.toJSON(),
@@ -27,12 +37,22 @@ export const getAthletes = async (req, res) => {
   }
 };
 
+
 // ======================
 // GET ATHLETE BY ID
 // ======================
 export const getAthleteById = async (req, res) => {
   try {
-    const athlete = await Athlete.findByPk(req.params.id);
+    const athlete = await Athlete.findByPk(req.params.id, {
+      include: [
+        {
+          model: KelompokUmur,
+          as: "kelompokUmur",
+          attributes: ["id", "nama"],
+        },
+      ],
+    });
+
 
     if (!athlete) {
       return res.status(404).json({ message: "Athlete tidak ditemukan" });
@@ -57,7 +77,7 @@ export const createAthlete = async (req, res) => {
       name,
       birthDate,
       gender,
-      category,
+      kelompokUmurId,
       phoneNumber,
       address,
       club
@@ -72,7 +92,7 @@ export const createAthlete = async (req, res) => {
       name,
       birthDate,
       gender,
-      category,
+      kelompokUmurId,
       phoneNumber,
       address,
       club,
@@ -104,7 +124,7 @@ export const updateAthlete = async (req, res) => {
       name,
       birthDate,
       gender,
-      category,
+      kelompokUmurId,
       phoneNumber,
       address,
       club
@@ -122,7 +142,7 @@ export const updateAthlete = async (req, res) => {
     athlete.name = name;
     athlete.birthDate = birthDate;
     athlete.gender = gender;
-    athlete.category = category;
+    athlete.kelompokUmurId = kelompokUmurId;
     athlete.phoneNumber = phoneNumber;
     athlete.address = address;
     athlete.club = club;
