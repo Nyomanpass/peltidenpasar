@@ -4,7 +4,7 @@ import api from "../api";
 
 const TournamentComming = () => {
   const [tournaments, setTournaments] = useState([]);
-  const BASE_URL = "http://localhost:5004";
+  const BASE_URL = import.meta.env.VITE_API_URL;
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";

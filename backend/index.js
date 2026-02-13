@@ -13,6 +13,8 @@ import './models/SliderModel.js';
 import "./models/AthleteModel.js";
 import "./models/ClubModel.js";
 
+const PORT = process.env.PORT || 5004;
+
 
 // autentication
 import authRoutes from "./routes/AuthRoutes.js";
@@ -115,11 +117,11 @@ const start = async () => {
     console.log("✅ Database connected");
     console.log(Object.keys(sequelize.models));
 
-    await sequelize.sync();
+    // await sequelize.sync();
     // await sequelize.sync({ force: true });
 
-    // await sequelize.sync({ alter: true });
-    app.listen(5004, () => console.log("Server berjalan di port 5004"));
+    await sequelize.sync({ alter: true });
+    app.listen(PORT, () => console.log("Server berjalan di port 5004"));
   } catch (error) {
     console.error("❌ Error saat menjalankan server:", error);
   }

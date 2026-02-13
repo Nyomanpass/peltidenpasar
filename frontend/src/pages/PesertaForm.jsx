@@ -24,6 +24,7 @@ function PesertaForm({ onSuccess }) {
     tanggalLahir: "",
     kelompokUmurId: "",
     tournamentId: "",
+    asalSekolah: "",
     fotoKartu: null,
     buktiBayar: null,
   });
@@ -143,7 +144,7 @@ function PesertaForm({ onSuccess }) {
       
       setFormData({
         namaLengkap: "", nomorWhatsapp: "", tanggalLahir: "",
-        kelompokUmurId: "", tournamentId: "", fotoKartu: null, buktiBayar: null,
+        kelompokUmurId: "", tournamentId: "",   asalSekolah: "",  fotoKartu: null, buktiBayar: null,
       });
       setPreviewFoto(null);
       setPreviewBayar(null);
@@ -436,6 +437,25 @@ if (availableTournaments.length === 0) {
                     </select>
                   </div>
                 </div>
+
+                {/* ASAL SEKOLAH (MUNCUL JIKA TOURNAMENT WAJIB SEKOLAH) */}
+                {selectedTournament?.requireSchool && (
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">
+                      Asal Sekolah
+                    </label>
+                    <input
+                      type="text"
+                      name="asalSekolah"
+                      value={formData.asalSekolah}
+                      onChange={handleChange}
+                      placeholder="Contoh: SMA Negeri 1 Denpasar"
+                      required
+                      className="w-full border-2 border-slate-100 p-3.5 rounded-xl outline-none focus:border-primary transition text-sm shadow-sm"
+                    />
+                  </div>
+                )}
+
 
                 {/* FOTO IDENTITAS */}
                 <div className="space-y-3 p-5 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">

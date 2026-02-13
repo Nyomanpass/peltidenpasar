@@ -31,6 +31,11 @@ export default function BaganView({baganId}) {
   const [alertMessage, setAlertMessage] = useState("");
   const [showLockConfirm, setShowLockConfirm] = useState(false);
 
+  const [drawStage, setDrawStage] = useState("rolling"); 
+  const [rollingName, setRollingName] = useState("");
+  const [currentSlotInfo, setCurrentSlotInfo] = useState(null);
+
+
 
 
 
@@ -217,24 +222,120 @@ const handleLockBagan = async () => {
 
 
   // Lakukan pengundian menggunakan axios
-  const handleUndian = async (seededPeserta, byeSlots) => {
-    setIsSeedingLoading(true); // Atur state loading pengundian menjadi true
-    setModalType(null);
-    try {
-      const res = await api.post(`/bagan/${id}/undian`, { seededPeserta, byeSlots });
-      if (res.status !== 200) throw new Error("Gagal melakukan pengundian.");
+const handleUndian = async (seededPeserta, byeSlots) => {
+  setIsSeedingLoading(true);
+  setDrawStage("rolling");
+  setModalType(null);
 
-      // Menambahkan delay 6 detik (6000 ms) untuk simulasi loading
-      await new Promise(resolve => setTimeout(resolve, 6000));
-      
-      await loadBagan();
-    } catch (error) {
-      console.error(error);
-      alert(error.message);
-    } finally {
-      setIsSeedingLoading(false); // Atur state loading pengundian menjadi false setelah selesai
-    }
+  try {
+    await api.post(`/bagan/${id}/undian`, { seededPeserta, byeSlots });
+
+    const res = await api.get(`/bagan/${finalId}`);
+    const newBagan = res.data;
+
+    startVisualDraw(newBagan);
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const startVisualDraw = (newBagan) => {
+
+  const matches = newBagan.Matches
+    .filter(m => m.round === 1);
+
+  if (!matches.length) return;
+
+  setDrawStage("rolling");
+
+  let speed = 80;
+  let totalTime = 0;
+  let rollingInterval;
+
+  const startRolling = () => {
+    rollingInterval = setInterval(() => {
+      const randomMatch =
+        matches[Math.floor(Math.random() * matches.length)];
+
+      const p1 = randomMatch.peserta1?.namaLengkap || "BYE";
+      const p2 = randomMatch.peserta2?.namaLengkap || "BYE";
+
+      setRollingName(`${p1} VS ${p2}`);
+    }, speed);
   };
+
+  startRolling();
+
+  const slowdownTimer = setInterval(() => {
+    totalTime += 1000;
+
+    if (totalTime >= 3000) {
+      speed += 40;
+      clearInterval(rollingInterval);
+      startRolling();
+    }
+
+    if (totalTime >= 10000) {
+      clearInterval(rollingInterval);
+      clearInterval(slowdownTimer);
+
+      setDrawStage("slots");
+
+      // 🔥 PENTING: kirim matches sesuai urutan array
+      revealSlots([...matches], newBagan);
+    }
+  }, 1000);
+};
+
+
+
+const revealSlots = (matches, newBagan) => {
+  let index = 0;
+
+  // 🔥 TAMPILKAN SLOT 1 LANGSUNG
+  if (matches.length > 0) {
+    const firstMatch = matches[0];
+
+    setCurrentSlotInfo({
+      slot: 1,
+      p1: firstMatch.peserta1?.namaLengkap || "BYE",
+      p2: firstMatch.peserta2?.namaLengkap || "BYE"
+    });
+
+    index = 1; // lanjut dari slot 2
+  }
+
+  const slotInterval = setInterval(() => {
+
+    if (index >= matches.length) {
+      clearInterval(slotInterval);
+
+      setTimeout(() => {
+        setBagan(newBagan);
+        setIsSeedingLoading(false);
+        setDrawStage("done");
+      }, 1500);
+
+      return;
+    }
+
+    const match = matches[index];
+
+    setCurrentSlotInfo({
+      slot: index + 1,
+      p1: match.peserta1?.namaLengkap || "BYE",
+      p2: match.peserta2?.namaLengkap || "BYE"
+    });
+
+    index++;
+
+  }, 2000);
+};
+
+
+
+
 
   if (!bagan) {
     return <div className="p-6 text-center text-gray-500">⏳ Loading...</div>;
@@ -1019,49 +1120,123 @@ if (isRoundRobin) {
       )}
 
       {/* Loading Modal Pop-up */}
-      {isSeedingLoading && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-md">
-    
-    <div className="relative bg-white rounded-[2.5rem] px-20 py-16 shadow-[0_30px_80px_rgba(0,0,0,0.45)] flex flex-col items-center w-[900px] h-[680px]">
+{isSeedingLoading && (
+  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-md">
 
-      {/* LOADER BESAR */}
-      <div className="relative w-36 h-36 mb-12">
-        <div className="absolute inset-0 rounded-full border-[8px] border-yellow-400/30"></div>
-        <div className="absolute inset-0 rounded-full border-[8px] border-yellow-500 border-t-transparent animate-spin"></div>
+    <div className="relative bg-white/95 backdrop-blur-xl rounded-[2.5rem] px-20 py-16 w-[900px] text-center shadow-[0_30px_100px_rgba(0,0,0,0.6)] border border-yellow-400/40 overflow-hidden">
 
-        <div className="absolute inset-6 rounded-full bg-yellow-50 flex items-center justify-center shadow-inner">
-          <img
-            src="/logo.png"
-            alt="Logo"
-            className="w-20 h-20 object-contain"
-          />
+      {/* Glow Background */}
+     
+
+      {/* HEADER */}
+      <div className="mb-10 relative z-10">
+        <h2 className="text-4xl font-extrabold text-yellow-500 tracking-wide">
+          LIVE DRAW CEREMONY
+        </h2>
+        <p className="text-gray-500 mt-3 text-lg tracking-wide">
+          Sistem Pengundian Resmi & Transparan
+        </p>
+      </div>
+
+      {/* 🔄 ROLLING MODE */}
+      {drawStage === "rolling" && (
+        <div className="relative z-10">
+
+          {/* Logo + Spinner */}
+          <div className="relative w-40 h-40 mx-auto mb-12">
+            <div className="absolute inset-0 rounded-full border-[6px] border-yellow-400/30"></div>
+            <div className="absolute inset-0 rounded-full border-[6px] border-yellow-500 border-t-transparent animate-spin"></div>
+
+            <div className="absolute inset-6 rounded-full bg-white flex items-center justify-center shadow-inner">
+              <img
+                src="/logo.png"
+                alt="Logo"
+                className="w-20 h-20 object-contain"
+              />
+            </div>
+          </div>
+
+          {/* VERTICAL MATCH DISPLAY */}
+          <div className="flex flex-col items-center justify-center transition-all duration-300">
+
+            {/* Peserta 1 */}
+            <div className="text-4xl font-bold text-gray-800">
+              {rollingName?.split(" VS ")[0]}
+            </div>
+
+            {/* VS */}
+            <div className="my-8 relative">
+              <div className="absolute inset-0 blur-xl bg-yellow-400 opacity-40 rounded-full"></div>
+              <div className="relative px-10 py-2 rounded-full 
+                              bg-gradient-to-r from-yellow-500 to-orange-500 
+                              text-white font-extrabold text-2xl shadow-xl tracking-widest">
+                VS
+              </div>
+            </div>
+
+            {/* Peserta 2 */}
+            <div className="text-4xl font-bold text-gray-800">
+              {rollingName?.split(" VS ")[1]}
+            </div>
+
+          </div>
+
+          <p className="mt-10 text-gray-400 tracking-[0.3em] uppercase text-sm">
+            Mengacak Peserta...
+          </p>
+
         </div>
-      </div>
+      )}
 
-      {/* JUDUL */}
-      <h2 className="text-4xl font-extrabold text-gray-800 tracking-wide text-center">
-        Sedang Melakukan Pengundian
-      </h2>
+      {/* 🎯 SLOT MODE */}
+      {drawStage === "slots" && currentSlotInfo && (
+        <div className="relative z-10">
 
-      {/* SUBTITLE */}
-      <p className="mt-5 text-lg text-gray-500 text-center leading-relaxed max-w-xl">
-        Sistem sedang menyusun bagan pertandingan secara otomatis dan adil
-      </p>
+          <h3 className="text-2xl font-bold text-gray-600 mb-8 tracking-widest">
+            SLOT {currentSlotInfo.slot}
+          </h3>
 
-      {/* DOT PROGRESS */}
-      <div className="flex gap-3 mt-10">
-        <span className="w-4 h-4 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-        <span className="w-4 h-4 bg-yellow-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-        <span className="w-4 h-4 bg-yellow-400 rounded-full animate-bounce" />
-      </div>
+          <div className="flex flex-col items-center justify-center">
+
+            {/* Peserta 1 */}
+            <div className="text-4xl font-extrabold text-gray-800">
+              {currentSlotInfo.p1}
+            </div>
+
+            {/* VS */}
+            <div className="my-8 relative">
+              <div className="absolute inset-0 blur-xl bg-yellow-400 opacity-40 rounded-full"></div>
+              <div className="relative px-10 py-2 rounded-full 
+                              bg-gradient-to-r from-yellow-500 to-orange-500 
+                              text-white font-extrabold text-2xl shadow-xl tracking-widest">
+                VS
+              </div>
+            </div>
+
+            {/* Peserta 2 */}
+            <div className="text-4xl font-extrabold text-gray-800">
+              {currentSlotInfo.p2}
+            </div>
+
+          </div>
+
+          <p className="mt-10 text-gray-400 tracking-[0.3em] uppercase text-sm">
+            Slot Telah Ditentukan
+          </p>
+
+        </div>
+      )}
 
       {/* FOOTER */}
-      <div className="mt-12 text-sm text-gray-400 tracking-[0.3em] uppercase">
+      <div className="mt-16 text-xs text-gray-400 tracking-[0.4em] uppercase relative z-10">
         PELTI DENPASAR OFFICIAL SYSTEM
       </div>
+
     </div>
   </div>
 )}
+
+
 
 
 {showLockConfirm && (

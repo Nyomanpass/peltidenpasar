@@ -42,6 +42,11 @@ export const Tournament = sequelize.define("Tournament", {
     allowNull: false
   },
 
+  requireSchool: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+
   level: {
     type: DataTypes.ENUM("local", "nasional", "internasional"),
     defaultValue: "local",

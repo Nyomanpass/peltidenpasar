@@ -13,6 +13,10 @@ export const Peserta = sequelize.define("Peserta", {
     allowNull: false,
     references: { model: "kelompok_umur", key: "id" },
   },
+  asalSekolah: {
+    type: DataTypes.STRING(150),
+    allowNull: true
+  },
   fotoKartu: { type: DataTypes.STRING, allowNull: true },
   buktiBayar: { 
   type: DataTypes.STRING, 

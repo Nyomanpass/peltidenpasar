@@ -60,7 +60,8 @@ export const createTournament = async (req, res) => {
       type,
       level,        // ✅ AMBIL LEVEL
       nominal,
-      bank_info
+      bank_info,
+      requireSchool
     } = req.body;
 
     console.log("LEVEL DITERIMA:", level); // debug
@@ -78,7 +79,8 @@ export const createTournament = async (req, res) => {
       type: type || "gratis",
       level: level || "local",   // ✅ SIMPAN LEVEL
       nominal: nominal || 0,
-      bank_info: bank_info || null
+      bank_info: bank_info || null,
+      requireSchool: requireSchool === "true" || requireSchool === true  
     });
 
     res.status(201).json(newTournament);
@@ -104,7 +106,8 @@ export const updateTournament = async (req, res) => {
       type,
       level,      // ✅ AMBIL LEVEL
       nominal,
-      bank_info
+      bank_info,
+      requireSchool
     } = req.body;
 
     if (req.file) {
@@ -125,7 +128,10 @@ export const updateTournament = async (req, res) => {
       type: type || tournament.type,
       level: level || tournament.level,   // ✅ UPDATE LEVEL
       nominal: (nominal !== undefined) ? nominal : tournament.nominal,
-      bank_info: (bank_info !== undefined) ? bank_info : tournament.bank_info
+      bank_info: (bank_info !== undefined) ? bank_info : tournament.bank_info,
+      requireSchool: requireSchool !== undefined
+      ? (requireSchool === "true" || requireSchool === true)
+      : tournament.requireSchool
     });
 
     res.status(200).json({ message: "Tournament updated", data: tournament });

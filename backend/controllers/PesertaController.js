@@ -55,7 +55,7 @@ export const getPesertaById = async (req, res) => {
 
 export const createPeserta = async (req, res) => {
   try {
-    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId } = req.body;
+    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId, asalSekolah  } = req.body;
     
     // Gunakan Optional Chaining ?. untuk keamanan
     const fotoKartu = req.files?.fotoKartu ? req.files.fotoKartu[0].path : null;
@@ -67,6 +67,7 @@ export const createPeserta = async (req, res) => {
       tanggalLahir,
       kelompokUmurId,
       tournamentId,
+      asalSekolah: asalSekolah || null,  
       fotoKartu,
       buktiBayar, 
       status: "pending"
@@ -84,7 +85,7 @@ export const updatePeserta = async (req, res) => {
     const peserta = await Peserta.findByPk(req.params.id);
     if (!peserta) return res.status(404).json({ message: "Peserta tidak ditemukan" });
 
-    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId, status } = req.body;
+    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId, status, asalSekolah } = req.body;
 
     // 1. Logika Update FOTO KARTU (Cek req.files)
     if (req.files?.fotoKartu) {
@@ -109,6 +110,7 @@ export const updatePeserta = async (req, res) => {
       tanggalLahir: tanggalLahir || peserta.tanggalLahir,
       kelompokUmurId: kelompokUmurId || peserta.kelompokUmurId,
       tournamentId: tournamentId || peserta.tournamentId,
+      asalSekolah: asalSekolah ?? peserta.asalSekolah, 
       status: status || peserta.status,
       fotoKartu: peserta.fotoKartu,
       buktiBayar: peserta.buktiBayar
@@ -194,7 +196,7 @@ export const getPesertaByKelompokUmur = async (req, res) => {
         {
           model: Peserta,
           as: "peserta",
-          attributes: ["id", "namaLengkap", "status", "kelompokUmurId", "tournamentId", 'nomorWhatsapp', 'tanggalLahir'],
+          attributes: ["id", "namaLengkap", "status", "kelompokUmurId", "tournamentId", "asalSekolah", 'nomorWhatsapp', 'tanggalLahir'],
           where: pesertaFilter,
           required: false, // supaya kelompok umur tetap muncul meskipun tidak ada peserta
         },
@@ -227,6 +229,16 @@ export const getPesertaFiltered = async (req, res) => {
 
     const peserta = await Peserta.findAll({
       where: whereClause,
+       attributes: [
+        "id",
+        "namaLengkap",
+        "asalSekolah",   
+        "status",
+        "kelompokUmurId",
+        "tournamentId",
+        "nomorWhatsapp",
+        "tanggalLahir"
+      ],
       include: [
         { 
           model: KelompokUmur,

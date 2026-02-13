@@ -7,7 +7,8 @@ import { useLocation } from "react-router-dom";
 function Tournament() {
   const [tournaments, setTournaments] = useState([]);
   const [preview, setPreview] = useState(null);
-  const BASE_URL = "http://localhost:5004";
+  const BASE_URL = import.meta.env.VITE_API_URL;
+
 
   const location = useLocation();
   const query = new URLSearchParams(location.search);
@@ -26,6 +27,7 @@ function Tournament() {
     level: level || "",
     nominal: "",    
     bank_info: "",  
+    requireSchool: false,
   });
 
   const [editingId, setEditingId] = useState(null);
@@ -91,6 +93,8 @@ function Tournament() {
       formData.append("level", form.level); 
       formData.append("nominal", form.nominal);
       formData.append("bank_info", form.bank_info);
+      formData.append("requireSchool", form.requireSchool);
+
 
       if (form.poster) {
         formData.append("poster", form.poster);
@@ -138,7 +142,8 @@ function Tournament() {
       type: t.type || "gratis",
       level: t.level || level || "", 
       nominal: t.nominal || 0,
-      bank_info: t.bank_info || ""
+      bank_info: t.bank_info || "",
+      requireSchool: t.requireSchool || false   
     });
     setEditingId(t.id);
     if (t.poster) {
@@ -161,7 +166,8 @@ function Tournament() {
       type: "gratis",
       level: level || "",   
       nominal: 0,
-      bank_info: ""
+      bank_info: "",
+      requireSchool: false   
     });
     setPreview(null);
     setEditingId(null);
@@ -276,6 +282,26 @@ function Tournament() {
                     <option value="berbayar">Berbayar</option>
                 </select>
             </div>
+
+            {/* Require School Toggle */}
+            <div className="flex items-center gap-3 mt-2">
+              <input
+                type="checkbox"
+                id="requireSchool"
+                checked={form.requireSchool}
+                onChange={(e) =>
+                  setForm({ ...form, requireSchool: e.target.checked })
+                }
+                className="w-4 h-4 accent-yellow-500"
+              />
+              <label
+                htmlFor="requireSchool"
+                className="text-sm font-semibold text-gray-700"
+              >
+                Wajib Isi Asal Sekolah Saat Pendaftaran
+              </label>
+            </div>
+
 
             {/* Jika Admin pilih Berbayar, Munculkan ini */}
             {form.type === "berbayar" && (
@@ -392,7 +418,7 @@ function Tournament() {
                         <td className="px-4 py-3 text-center w-24">
                             {t.poster ? (
                                 <img
-                                    src={`http://localhost:5004/${t.poster}`}
+                                    src={`${BASE_URL}/${t.poster}`}
                                     alt={t.name}
                                     className="h-16 w-16 object-cover mx-auto rounded-md shadow-md"
                                 />
