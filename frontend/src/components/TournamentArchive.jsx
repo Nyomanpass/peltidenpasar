@@ -8,6 +8,7 @@ function TournamentArchive() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const navigate = useNavigate();
+    const BASE_URL = import.meta.env.VITE_API_URL;
 
     useEffect(() => {
         fetchTournaments();
@@ -92,7 +93,7 @@ function TournamentArchive() {
       <div className="relative h-48 lg:h-56 w-full overflow-hidden">
         {t.poster ? (
           <img
-            src={`http://localhost:5004/${t.poster}`}
+            src={`${BASE_URL}/${t.poster}`} 
             alt={t.name}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
