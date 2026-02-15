@@ -994,25 +994,27 @@ const groupedJadwal = [...jadwal]
 )}
 
 
+{/* MODAL KONFIRMASI HAPUS JADWAL (Style Raksasa & Mewah) */}
 {confirmDelete.show && (
   <AlertMessage
     type="warning"
-    message="Apakah Anda yakin ingin menghapus jadwal ini?"
+    message="Hapus jadwal ini. Match akan kembali ke daftar tersedia untuk dijadwalkan ulang."
     onClose={() => setConfirmDelete({ show: false, jadwalId: null })}
   >
-    <button
-      onClick={() => setConfirmDelete({ show: false, jadwalId: null })}
-      className="px-5 py-2 rounded-xl bg-gray-200 font-bold hover:bg-gray-300 transition"
-    >
-      Batal
-    </button>
-
-    <button
-      onClick={confirmDeleteJadwal}
-      className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
-    >
-      Hapus
-    </button>
+    <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
+      <button
+        onClick={() => setConfirmDelete({ show: false, jadwalId: null })}
+        className="flex-1 order-2 sm:order-1 min-h-[56px] px-8 py-4 rounded-2xl bg-gray-100 text-gray-800 font-black text-sm uppercase tracking-tighter hover:bg-gray-200 active:scale-95 transition-all"
+      >
+        Batal
+      </button>
+      <button
+        onClick={confirmDeleteJadwal}
+        className="flex-1 order-1 sm:order-2 min-h-[56px] px-8 py-4 rounded-2xl bg-red-600 text-white font-black text-sm uppercase tracking-tighter shadow-[0_10px_20px_rgba(220,38,38,0.3)] hover:bg-red-700 active:scale-95 transition-all flex items-center justify-center gap-2"
+      >
+        <XCircle size={20} /> Ya, Hapus
+      </button>
+    </div>
   </AlertMessage>
 )}
 

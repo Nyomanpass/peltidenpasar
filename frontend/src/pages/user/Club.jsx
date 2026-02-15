@@ -39,10 +39,10 @@ export default function Club() {
 
   <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
     <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-2">
-      Anggota
+      Kolektif Club
     </h2>
     <p className="max-w-xl text-xs sm:text-sm md:text-base opacity-90">
-      Berikut adalah daftar klub tenis yang tergabung secara resmi
+      Berikut adalah daftar Club tenis yang tergabung secara resmi
       bersama PELTI Denpasar.
     </p>
   </div>

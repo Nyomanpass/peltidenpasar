@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { PlusCircle, Edit, Image } from "lucide-react";
+import { Trash2, Edit, Image, PlusCircle } from "lucide-react";
 import api from "../api";
 import { format } from "date-fns";
 import { useRef } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import AlertMessage from "../components/AlertMessage";
 
 
 export default function NewsSetting() {
@@ -16,13 +17,23 @@ export default function NewsSetting() {
     title: "",
     desc: "",
     image: null,
-    tanggalUpload: format(new Date(), "yyyy-MM-dd"),
+    tanggalUpload: format(new Date(), "yyyy-MM-dd")
   });
   const [editingId, setEditingId] = useState(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null });
+
+  const [formKey, setFormKey] = useState(0);
+  const fileInputRef = useRef(null);
+
+
+
 
   const fetchNews = async () => {
     try {
@@ -44,9 +55,18 @@ export default function NewsSetting() {
       image: null,
       tanggalUpload: format(new Date(), "yyyy-MM-dd"),
     });
+
     setEditingId(null);
-    setPreviewImage(null);
+
+    // 🔥 Reset file input secara manual
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    // 🔥 Paksa React rebuild seluruh form
+    setFormKey(prev => prev + 1);
   };
+
 
   const openForm = (news = null) => {
     if (news) {
@@ -84,30 +104,41 @@ export default function NewsSetting() {
         await api.put(`/news/update/${editingId}`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        setSuccess("News berhasil diperbarui");
       } else {
         await api.post("/news/create", fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        setSuccess("News berhasil ditambahkan");
       }
 
+     
       resetForm();
-      setModalOpen(false);
       fetchNews();
       setCurrentPage(1);
+
     } catch (err) {
       console.error(err);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Apakah yakin ingin menghapus news ini?")) return;
+  const handleDelete = (id) => {
+    setConfirmDelete({ show: true, id });
+  };
+
+  const handleConfirmDelete = async () => {
     try {
-      await api.delete(`/news/delete/${id}`);
+      await api.delete(`/news/delete/${confirmDelete.id}`);
+      setSuccess("News berhasil dihapus");
       fetchNews();
     } catch (err) {
-      console.error(err);
+      setError("Gagal menghapus news");
+    } finally {
+      setConfirmDelete({ show: false, id: null });
     }
   };
+
+
 
   // ======================
   // PAGINATION (MAX 5)
@@ -164,13 +195,35 @@ export default function NewsSetting() {
 
   return (
     <div className="bg-white shadow-2xl max-width-5xl rounded-2xl p-8 border border-gray-100">
+      {success && (
+        <AlertMessage
+          type="success"
+          message={success}
+          onClose={() => setSuccess("")}
+        />
+      )}
+
+      {error && (
+        <AlertMessage
+          type="error"
+          message={error}
+          onClose={() => setError("")}
+        />
+      )}
+
       {/* Header */}
       <h1 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3 flex items-center gap-2">
         <PlusCircle size={24} className="text-blue-600" /> Tambah / Kelola News
       </h1>
 
       {/* Form */}
-      <form onSubmit={handleSubmit}  ref={formRef} className="mb-8 flex flex-col gap-4">
+      <form
+        key={formKey}
+        onSubmit={handleSubmit}
+        ref={formRef}
+        className="mb-8 flex flex-col gap-4"
+      >
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex flex-col">
             <label className="text-sm font-semibold text-gray-700 mb-1">
@@ -210,6 +263,7 @@ export default function NewsSetting() {
               Gambar
             </label>
             <input
+              ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={(e) =>
@@ -310,7 +364,7 @@ export default function NewsSetting() {
                     onClick={() => handleDelete(n.idNews)}
                     className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg shadow-md transition"
                   >
-                    <PlusCircle size={16} />
+                    <Trash2 size={16} />
                   </button>
                   {n.image && (
                     <button
@@ -378,6 +432,32 @@ export default function NewsSetting() {
           />
         </div>
       )}
+      {confirmDelete.show && (
+        <AlertMessage
+          type="warning"
+          message="Yakin ingin menghapus news ini? Data tidak bisa dikembalikan."
+          onClose={() => setConfirmDelete({ show: false, id: null })}
+        >
+          <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
+            
+            <button
+              onClick={() => setConfirmDelete({ show: false, id: null })}
+              className="flex-1 px-6 py-3 rounded-xl bg-gray-100 text-gray-800 font-bold hover:bg-gray-200 transition"
+            >
+              Batal
+            </button>
+
+            <button
+              onClick={handleConfirmDelete}
+              className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+            >
+              Ya, Hapus
+            </button>
+
+          </div>
+        </AlertMessage>
+      )}
+
     </div>
   );
 }

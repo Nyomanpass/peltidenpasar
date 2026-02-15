@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import { ChevronLeft, History, Trophy, RotateCcw, RefreshCw} from 'lucide-react';
+import AlertMessage from '../components/AlertMessage';
 
 const RefereeForm = ({ match, onFinish, onBack }) => {
   // State Skor Utama
@@ -9,7 +10,6 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
   const [p1Game, setP1Game] = useState(0);
   const [p2Game, setP2Game] = useState(0);
   
-  // State Set (Best of Three)
   const [currentSet, setCurrentSet] = useState(1);
   const [setMenangP1, setSetMenangP1] = useState(0);
   const [setMenangP2, setSetMenangP2] = useState(0);
@@ -30,7 +30,10 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
   const [setScores, setSetScores] = useState([]);
   const [showMenu, setShowMenu] = useState(false);
 
-
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [confirmUndo, setConfirmUndo] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
 
 
 
@@ -63,9 +66,7 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
     });
   }, [match.id]);
 
-  const handleResetMatch = async () => {
-  if (!window.confirm("Reset semua skor ke awal?")) return;
-
+const handleResetMatch = async () => {
   try {
     await api.delete(`/reset-match/${match.id}`);
 
@@ -78,11 +79,14 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
     setSetMenangP2(0);
     setSetScores([]);
 
-    alert("Match berhasil di-reset");
+   setSuccess("Match berhasil di-reset");
   } catch (err) {
-    alert("Gagal reset match");
+    setError("Gagal reset match");
     console.error(err);
+  } finally{
+    setConfirmReset(false);
   }
+
 };
 
 const handlePoint = async (player) => {
@@ -210,7 +214,7 @@ const handlePoint = async (player) => {
         } catch (e) { console.error(e); }
 
         // Setelah kirim log penutup, baru persiapkan untuk set baru
-        alert(`Set ${nSetKe} Selesai! Skor: ${nG1}-${nG2}`);
+        setSuccess(`Set ${nSetKe} selesai! Skor ${nG1}-${nG2}`);
         nSetKe++;
         nG1 = 0; nG2 = 0; 
         logKeterangan = "Start New Set";
@@ -268,7 +272,7 @@ const handlePoint = async (player) => {
 };
 
   const handleUndo = async () => {
-    if (window.confirm("Undo poin terakhir?")) {
+   
       try {
         await api.delete(`/undo-point/${match.id}`);
         const response = await api.get(`/match-log/${match.id}`);
@@ -282,14 +286,37 @@ const handlePoint = async (player) => {
           setP1Point("0"); setP2Point("0"); setP1Game(0); setP2Game(0);
           setCurrentSet(1); setSetMenangP1(0); setSetMenangP2(0);
         }
-      } catch (err) { alert("Tidak bisa undo."); }
-    }
+         setSuccess("Undo berhasil. Poin terakhir dibatalkan.");
+      } catch (err) { 
+        setError("Tidak bisa undo poin.");
+      } finally {
+        setConfirmUndo(false);
+      }
+    
   };
 
   if (isLoading) return <div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-white">Loading...</div>;
 
   return (
  <div className="fixed inset-0 bg-[#0a0f1e] z-[1000] text-white font-sans flex items-center justify-center p-4 overflow-hidden">
+    {success && (
+      <AlertMessage
+        type="success"
+        message={success}
+        onClose={() => setSuccess("")}
+      />
+    )}
+
+    {error && (
+      <AlertMessage
+        type="error"
+        message={error}
+        onClose={() => setError("")}
+      />
+    )}
+
+
+
   {/* Header Indikator Status - Dibuat lebih melayang */}
   <div className="text-center mt-4 h-6">
     {scoreRule && p1Game === scoreRule.gamePerSet - 1 && p2Game === scoreRule.gamePerSet - 1 && (
@@ -331,7 +358,7 @@ const handlePoint = async (player) => {
   <button
     onClick={() => {
       setShowMenu(false);
-      handleUndo();
+      setConfirmUndo(true)
     }}
     className="w-full text-left px-5 py-4 hover:bg-slate-800 text-sm flex items-center gap-3 transition-colors border-b border-slate-800 group"
   >
@@ -343,7 +370,7 @@ const handlePoint = async (player) => {
   <button
     onClick={() => {
       setShowMenu(false);
-      handleResetMatch();
+      setConfirmReset(true);
     }}
     className="w-full text-left px-5 py-4 hover:bg-red-950/40 text-sm flex items-center gap-3 transition-colors group"
   >
@@ -607,6 +634,57 @@ const handlePoint = async (player) => {
       </div>
     </div>
   )}
+
+
+  {confirmUndo && (
+  <AlertMessage
+    type="warning"
+    message="Yakin ingin meng-undo poin terakhir?"
+    onClose={() => setConfirmUndo(false)}
+  >
+    <div className="flex gap-4 mt-6">
+      <button
+        onClick={() => setConfirmUndo(false)}
+        className="flex-1 px-4 py-3 rounded-xl bg-slate-700 text-white font-bold hover:bg-slate-600 transition"
+      >
+        Batal
+      </button>
+
+      <button
+        onClick={handleUndo}
+        className="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-blue-500 transition"
+      >
+        Ya, Undo
+      </button>
+    </div>
+  </AlertMessage>
+)}
+
+{confirmReset && (
+  <AlertMessage
+    type="warning"
+    message="Yakin ingin mereset semua skor? Data pertandingan akan kembali ke awal."
+    onClose={() => setConfirmReset(false)}
+  >
+    <div className="flex gap-4 mt-6">
+      <button
+        onClick={() => setConfirmReset(false)}
+        className="flex-1 px-4 py-3 rounded-xl bg-slate-700 text-white font-bold hover:bg-slate-600 transition"
+      >
+        Batal
+      </button>
+
+      <button
+        onClick={handleResetMatch}
+        className="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-500 transition"
+      >
+        Ya, Reset
+      </button>
+    </div>
+  </AlertMessage>
+)}
+
+
 </div>
   );
 };

@@ -145,8 +145,23 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
       )}
 
       {/* ALERT & CONTENT TABLE (Gunakan finalSearch di sini) */}
-      <AlertMessage type="success" message={success} onClose={() => setSuccess("")} />
-      <AlertMessage type="error" message={error} onClose={() => setError("")} />
+      {/* --- NOTIFIKASI SUKSES (Pojok Kanan Atas - 8 Detik) --- */}
+      {success && (
+        <AlertMessage 
+          type="success" 
+          message={success} 
+          onClose={() => setSuccess("")} 
+        />
+      )}
+
+      {/* --- NOTIFIKASI ERROR (Pojok Kanan Atas - 8 Detik) --- */}
+      {error && (
+        <AlertMessage 
+          type="error" 
+          message={error} 
+          onClose={() => setError("")} 
+        />
+      )}
 
       {(() => {
         const allPesertaRaw = kelompokUmur.flatMap(ku => ku.peserta || []);
@@ -286,10 +301,24 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
 
       {/* MODAL KONFIRMASI HAPUS TETAP SAMA */}
       {confirmDelete.show && (
-        <AlertMessage type="warning" message="Hapus data?" onClose={() => setConfirmDelete({ show: false, pesertaId: null })}>
-           <div className="flex gap-2 mt-4">
-            <button onClick={() => setConfirmDelete({ show: false, pesertaId: null })} className="flex-1 px-4 py-2 rounded-xl bg-gray-100 text-gray-600 font-bold text-xs uppercase">Batal</button>
-            <button onClick={handleConfirmDelete} className="flex-1 px-4 py-2 rounded-xl bg-red-600 text-white font-bold text-xs uppercase shadow-lg shadow-red-200">Hapus</button>
+        <AlertMessage 
+          type="warning" 
+          message="Yakin mau menghapus peserta ini? Data yang sudah dihapus tidak bisa dikembalikan." 
+          onClose={() => setConfirmDelete({ show: false, pesertaId: null })}
+        >
+         <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
+            <button
+              onClick={() => setConfirmDelete({ show: false, pesertaId: null })}
+              className="flex-1 order-2 sm:order-1 min-h-[56px] px-8 py-4 rounded-2xl bg-gray-100 text-gray-800 font-black text-sm uppercase tracking-tighter hover:bg-gray-200 active:scale-95 transition-all border-2 border-transparent"
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleConfirmDelete}
+              className="flex-1 order-1 sm:order-2 min-h-[56px] px-8 py-4 rounded-2xl bg-red-600 text-white font-black text-sm uppercase tracking-tighter shadow-[0_10px_20px_rgba(220,38,38,0.3)] hover:bg-red-700 active:scale-95 transition-all"
+            >
+              Ya, Hapus
+            </button>
           </div>
         </AlertMessage>
       )}

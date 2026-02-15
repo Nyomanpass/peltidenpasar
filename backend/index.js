@@ -2,11 +2,11 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { sequelize } from "./config/Database.js";
+import "./models/index.js";
 import "./models/UserModel.js";
 import './models/KelompokUmurModel.js';
 import './models/PesertaModel.js';
 import './models/JadwalModel.js'
-import "./models/index.js";
 import "./models/MatchScoreLog.js";
 import './models/NewsModel.js';
 import './models/SliderModel.js';

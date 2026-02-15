@@ -1,12 +1,18 @@
 import { useState, useEffect } from "react";
-import { PlusCircle, Edit, Image } from "lucide-react";
+import { PlusCircle, Edit, Image, Trash2 } from "lucide-react";
 import api from "../api";
 import { useRef } from "react";
+import AlertMessage from "../components/AlertMessage";
 
 export default function SliderSetting() {
   const [sliderList, setSliderList] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
   const formRef = useRef(null);
+
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null });
+
 
 
   const [formData, setFormData] = useState({
@@ -95,29 +101,41 @@ export default function SliderSetting() {
         await api.put(`/slider/update/${editingId}`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        setSuccess("Slider berhasil diperbarui");
       } else {
         await api.post("/slider/create", fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        setSuccess("Slider berhasil ditambahkan");
       }
 
       resetForm();
       fetchSlider();
       setCurrentPage(1);
+
     } catch (err) {
-      console.error(err);
+      setError("Terjadi kesalahan saat menyimpan slider");
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Yakin ingin menghapus slider ini?")) return;
+
+  const handleDelete = (id) => {
+    setConfirmDelete({ show: true, id });
+  };
+
+  const handleConfirmDelete = async () => {
     try {
-      await api.delete(`/slider/delete/${id}`);
+      await api.delete(`/slider/delete/${confirmDelete.id}`);
+      setSuccess("Slider berhasil dihapus");
       fetchSlider();
     } catch (err) {
-      console.error(err);
+      setError("Gagal menghapus slider");
+    } finally {
+      setConfirmDelete({ show: false, id: null });
     }
   };
+
+
 
   // ======================
   // PAGINATION LOGIC
@@ -144,6 +162,24 @@ export default function SliderSetting() {
 
   return (
     <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100">
+
+      {success && (
+        <AlertMessage
+          type="success"
+          message={success}
+          onClose={() => setSuccess("")}
+        />
+      )}
+
+      {error && (
+        <AlertMessage
+          type="error"
+          message={error}
+          onClose={() => setError("")}
+        />
+      )}
+
+
       {/* Header */}
       <h1 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3 flex items-center gap-2">
         <PlusCircle size={24} className="text-blue-600" />
@@ -307,7 +343,7 @@ export default function SliderSetting() {
                 onClick={() => handleDelete(s.idSlider)}
                 className="bg-red-600 text-white px-3 py-2 rounded-lg"
               >
-                <PlusCircle size={16} />
+                <Trash2 size={16} />
               </button>
               {s.image && (
                 <button
@@ -358,6 +394,33 @@ export default function SliderSetting() {
           />
         </div>
       )}
+
+      {confirmDelete.show && (
+        <AlertMessage
+          type="warning"
+          message="Yakin ingin menghapus slider ini? Data tidak bisa dikembalikan."
+          onClose={() => setConfirmDelete({ show: false, id: null })}
+        >
+          <div className="flex flex-col sm:flex-row gap-4 w-full mt-6">
+            
+            <button
+              onClick={() => setConfirmDelete({ show: false, id: null })}
+              className="flex-1 px-6 py-3 rounded-xl bg-gray-100 text-gray-800 font-bold hover:bg-gray-200 transition"
+            >
+              Batal
+            </button>
+
+            <button
+              onClick={handleConfirmDelete}
+              className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+            >
+              Ya, Hapus
+            </button>
+
+          </div>
+        </AlertMessage>
+      )}
+
     </div>
   );
 }

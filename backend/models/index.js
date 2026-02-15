@@ -6,7 +6,7 @@ import { Lapangan } from "./LapanganModel.js";
 import { Jadwal } from "./JadwalModel.js";
 import { Match } from "./MatchModel.js";
 import { Bagan } from "./BaganModel.js";
-import { ScoreRule } from "./ScoreRuleModel.js"; // ✅ TAMBAH INI
+import { ScoreRule } from "./ScoreRuleModel.js"; 
 import { Athlete } from "./AthleteModel.js";
 
 
@@ -14,25 +14,25 @@ import { Athlete } from "./AthleteModel.js";
 // -------------------
 // 🔹 Relasi Tournament
 // -------------------
-Tournament.hasMany(Peserta, { foreignKey: "tournamentId", as: "peserta" });
+Tournament.hasMany(Peserta, { foreignKey: "tournamentId", as: "peserta", onDelete: "RESTRICT"});
 Peserta.belongsTo(Tournament, { foreignKey: "tournamentId", as: "tournament" });
 
-Tournament.hasMany(Bagan, { foreignKey: "tournamentId", as: "bagan" });
-Bagan.belongsTo(Tournament, { foreignKey: "tournamentId", as: "tournament" });
+Tournament.hasMany(Bagan, { foreignKey: "tournamentId", as: "bagan",  onDelete: "RESTRICT"  });
+Bagan.belongsTo(Tournament, { foreignKey: "tournamentId", as: "tournament"});
 
-Tournament.hasMany(Match, { foreignKey: "tournamentId", as: "matches" });
-Match.belongsTo(Tournament, { foreignKey: "tournamentId", as: "tournament" });
+Tournament.hasMany(Match, { foreignKey: "tournamentId", as: "matches",  onDelete: "RESTRICT"  });
+Match.belongsTo(Tournament, { foreignKey: "tournamentId", as: "tournament"});
 
-Tournament.hasMany(Jadwal, { foreignKey: "tournamentId", as: "jadwal" });
-Jadwal.belongsTo(Tournament, { foreignKey: "tournamentId", as: "tournament" });
+Tournament.hasMany(Jadwal, { foreignKey: "tournamentId", as: "jadwal",  onDelete: "RESTRICT"  });
+Jadwal.belongsTo(Tournament, { foreignKey: "tournamentId", as: "tournament"});
 
 // -------------------
 // 🔹 Relasi lain (sudah ada)
 // -------------------
-KelompokUmur.hasMany(Peserta, { foreignKey: "kelompokUmurId", as: "peserta" });
+KelompokUmur.hasMany(Peserta, { foreignKey: "kelompokUmurId", as: "peserta", onDelete: "RESTRICT" });
 Peserta.belongsTo(KelompokUmur, { foreignKey: "kelompokUmurId", as: "kelompokUmur" });
 
-Lapangan.hasMany(Jadwal, { foreignKey: "lapanganId", as: "jadwal" });
+Lapangan.hasMany(Jadwal, { foreignKey: "lapanganId", as: "jadwal", onDelete: "RESTRICT" });
 Jadwal.belongsTo(Lapangan, { foreignKey: "lapanganId", as: "lapangan" });
 
 Match.hasOne(Jadwal, { foreignKey: "matchId", as: "jadwal" });

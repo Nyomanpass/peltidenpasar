@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import api from "../../api";
 import { Edit, Trash2, Upload, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import AlertMessage from "../../components/AlertMessage";
 
 
 function Tournament() {
@@ -13,6 +14,10 @@ function Tournament() {
   const location = useLocation();
   const query = new URLSearchParams(location.search);
   const level = query.get("level"); 
+
+  const [success, setSuccess] = useState("");
+  const [errorAlert, setErrorAlert] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null, name: "" });
 
 
   const [form, setForm] = useState({
@@ -81,6 +86,8 @@ function Tournament() {
   // 🔹 Tambah / Update
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setErrorAlert("");
+    setSuccess("");
     try {
       const formData = new FormData();
       formData.append("name", form.name);
@@ -104,28 +111,36 @@ function Tournament() {
         await api.put(`/tournaments/${editingId}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        setTimeout(() => setSuccess(`Perubahan pada "${form.name}" berhasil disimpan!`), 100);
       } else {
         await api.post("/tournaments", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+        setTimeout(() => setSuccess(`Turnamen "${form.name}" berhasil dipublikasikan!`), 100);
       }
 
       resetForm();
       fetchTournaments();
     } catch (err) {
-      console.error("Gagal simpan data:", err);
+       setErrorAlert("Gagal menyimpan data turnamen. Periksa kembali inputan.");
     }
   };
 
   // 🔹 Hapus
-  const handleDelete = async (id) => {
-    if (window.confirm("Yakin ingin menghapus turnamen ini?")) {
-      try {
-        await api.delete(`/tournaments/${id}`);
-        fetchTournaments();
-      } catch (err) {
-        console.error("Gagal hapus data:", err);
-      }
+  const handleDeleteConfirm = async () => {
+    try {
+      await api.delete(`/tournaments/${confirmDelete.id}`);
+      
+      // Munculkan pesan sukses
+      setSuccess(`Turnamen "${confirmDelete.name}" telah dihapus.`);
+      
+      fetchTournaments();
+    } catch (err) {
+      console.error("Gagal hapus data:", err);
+      setErrorAlert("Gagal menghapus turnamen. Mungkin data masih digunakan di bagian lain.");
+    } finally {
+      // Tutup modal konfirmasi
+      setConfirmDelete({ show: false, id: null, name: "" });
     }
   };
 
@@ -175,7 +190,33 @@ function Tournament() {
 
   return (
   <div className="mx-auto"> {/* Max width sedikit diperluas */}
+    {/* --- TOAST ALERTS --- */}
+      {success && <AlertMessage type="success" message={success} onClose={() => setSuccess("")} />}
+      {errorAlert && <AlertMessage type="error" message={errorAlert} onClose={() => setErrorAlert("")} />}
 
+      {/* --- MODAL HAPUS RAKSASA --- */}
+      {confirmDelete.show && (
+        <AlertMessage 
+          type="warning" 
+          message={`Hapus turnamen "${confirmDelete.name}"? Semua data pendaftaran terkait mungkin akan terdampak.`} 
+          onClose={() => setConfirmDelete({ show: false, id: null, name: "" })}
+        >
+          <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
+            <button
+              onClick={() => setConfirmDelete({ show: false, id: null, name: "" })}
+              className="flex-1 order-2 sm:order-1 min-h-[56px] px-8 py-4 rounded-2xl bg-gray-100 text-gray-800 font-black text-sm uppercase tracking-tighter hover:bg-gray-200 active:scale-95 transition-all"
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleDeleteConfirm}
+              className="flex-1 order-1 sm:order-2 min-h-[56px] px-8 py-4 rounded-2xl bg-red-600 text-white font-black text-sm uppercase tracking-tighter shadow-lg hover:bg-red-700 active:scale-95 transition-all"
+            >
+              Ya, Hapus
+            </button>
+          </div>
+        </AlertMessage>
+      )}
     {/* --- FORM SECTION --- */}
     <div className="bg-white p-8 rounded-2xl shadow-2xl mb-10 border border-gray-100">
         <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3">
@@ -451,7 +492,11 @@ function Tournament() {
                                 <Edit size={16} />
                             </button>
                             <button
-                                onClick={() => handleDelete(t.id)}
+                                onClick={() => setConfirmDelete({ 
+                                  show: true, 
+                                  id: t.id, 
+                                  name: t.name 
+                                })}
                                 className="p-2 text-red-500 rounded-full hover:bg-red-50 transition-colors"
                                 title="Hapus"
                             >

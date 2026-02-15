@@ -3,6 +3,9 @@ import api from "../api";
 import { X, CheckCircle, Upload, CreditCard, Loader2, AlertCircle } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import AlertMessage from "../components/AlertMessage";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+
 
 
 function PesertaForm({ onSuccess }) {
@@ -15,7 +18,10 @@ function PesertaForm({ onSuccess }) {
   
   const location = useLocation();
   const query = new URLSearchParams(location.search);
-  const tournamentNameFromUrl = query.get("tournament");
+
+
+const [tournamentStatus, setTournamentStatus] = useState("checking");
+
 
 
   const [formData, setFormData] = useState({
@@ -50,38 +56,31 @@ function PesertaForm({ onSuccess }) {
     }
   };
 
+
   const fetchTournament = async () => {
   try {
     const res = await api.get("/tournaments");
     const activeTournaments = res.data.filter(t => t.status === "aktif");
+
     setTournamentList(activeTournaments);
 
-    // ✅ AUTO PILIH DARI URL (BERDASARKAN NAME)
-    if (tournamentNameFromUrl) {
-      const decodedName = decodeURIComponent(tournamentNameFromUrl);
+    const available = activeTournaments.filter(t => {
+      const deadline = getDeadline(t.start_date);
+      return new Date() <= deadline;
+    });
 
-      const found = activeTournaments.find(
-        (t) => t.name === decodedName
-      );
-
-      if (found) {
-        const deadline = getDeadline(found.start_date);
-        const isClosed = new Date() > deadline;
-
-        if (!isClosed) {
-          setSelectedTournament(found);
-          setFormData(prev => ({
-            ...prev,
-            tournamentId: found.id.toString()
-          }));
-        }
-      }
+    if (available.length === 0) {
+      setTournamentStatus("closed");
+    } else {
+      setTournamentStatus("open");
     }
 
   } catch (err) {
-    console.error("Fetch tournament error:", err);
+    console.error(err);
+    setTournamentStatus("closed");
   }
 };
+
 
 
   const handleTournamentChange = (e) => {
@@ -122,8 +121,36 @@ function PesertaForm({ onSuccess }) {
     }
   };
 
+  const calculateAge = (birthDate) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+
+    return today.getFullYear() - birth.getFullYear();
+  };
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    const age = calculateAge(formData.tanggalLahir);
+
+    const selectedKelompok = kelompokList.find(
+      (k) => k.id == formData.kelompokUmurId
+    );
+
+    if (!selectedKelompok) {
+      setError("Pilih kategori terlebih dahulu");
+      return;
+    }
+
+    if (age > selectedKelompok.umur) {
+      setError(
+        `Umur peserta (${age} tahun) melebihi batas kategori ${selectedKelompok.nama}`
+      );
+      return;
+    }
+
+  
     if (selectedTournament?.type === "berbayar" && !formData.buktiBayar) {
       setError("Harap unggah bukti pembayaran terlebih dahulu!");
       return;
@@ -174,8 +201,13 @@ function PesertaForm({ onSuccess }) {
       return new Date() <= deadline;
   });
 
+
+  if (tournamentStatus === "checking") {
+  return null; // atau loader kosong
+}
+
   // Jika Loading selesai tapi tidak ada turnamen yang pendaftarannya buka
-if (availableTournaments.length === 0) {
+if (tournamentStatus === "closed") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden p-6">
         
@@ -240,18 +272,22 @@ if (availableTournaments.length === 0) {
 
   return (
     <div className="bg-gray-50 font-sans min-h-screen">
+       
+        {success && (
           <AlertMessage
             type="success"
             message={success}
             onClose={() => setSuccess("")}
           />
+        )}
 
+        {error && (
           <AlertMessage
             type="error"
             message={error}
             onClose={() => setError("")}
           />
-
+        )}
       <div className="bg-white shadow-2xl w-full min-h-screen">
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
           
@@ -425,10 +461,39 @@ if (availableTournaments.length === 0) {
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">Tanggal Lahir</label>
-                    <input type="date" name="tanggalLahir" value={formData.tanggalLahir} onChange={handleChange} className="w-full border-2 border-slate-100 p-3.5 rounded-xl outline-none focus:border-primary transition text-sm shadow-sm" required />
+                 <div className="space-y-2 w-full">
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">
+                      Tanggal Lahir
+                    </label>
+
+                    <div className="w-full">
+                      <DatePicker
+                        selected={
+                          formData.tanggalLahir
+                            ? new Date(formData.tanggalLahir)
+                            : null
+                        }
+                        onChange={(date) =>
+                          setFormData({
+                            ...formData,
+                            tanggalLahir: date.toISOString().split("T")[0],
+                          })
+                        }
+                        dateFormat="yyyy-MM-dd"
+                        showYearDropdown
+                        showMonthDropdown
+                        dropdownMode="select"
+                        scrollableYearDropdown
+                        yearDropdownItemNumber={100}
+                        placeholderText="Pilih Tanggal Lahir"
+                        popperPlacement="bottom-start"
+                        className="w-full border-2 border-slate-100 bg-slate-50 p-3.5 rounded-xl outline-none focus:border-primary transition text-sm shadow-sm"
+                        wrapperClassName="w-full"
+                        required
+                      />
+                    </div>
                   </div>
+
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase ml-1">Kelompok Umur</label>
                     <select name="kelompokUmurId" value={formData.kelompokUmurId} onChange={handleChange} className="w-full border-2 border-slate-100 p-3.5 rounded-xl bg-white outline-none focus:border-primary transition text-sm shadow-sm font-medium" required>

@@ -84,6 +84,14 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
   const toggleGroup = (id) => setCollapsedGroups(prev => ({ ...prev, [id]: !prev[id] }));
   const toggleModalGroup = (id) => setCollapsedPlayers(prev => ({ ...prev, [id]: !prev[id] }));
 
+
+  const hitungUmurSederhana = (tanggalLahir) => {
+    if (!tanggalLahir) return 0;
+    const tahunLahir = new Date(tanggalLahir).getFullYear();
+    const tahunSekarang = new Date().getFullYear();
+    return tahunSekarang - tahunLahir;
+  };
+
   // Map untuk mengecek siapa saja yang sudah punya pasangan di kategori tertentu
   const pairedMap = doubleTeams.reduce((acc, team) => {
     if (!acc[team.kelompokUmurId]) acc[team.kelompokUmurId] = new Set();
@@ -186,8 +194,14 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
         </div>
       )}
 
-      {/* ALERT MESSAGES */}
-      <AlertMessage type={alert.type} message={alert.message} onClose={() => setAlert({ ...alert, show: false })} />
+      {/* Alert otomatis (Success/Error) */}
+      {alert.show && (
+        <AlertMessage 
+          type={alert.type} 
+          message={alert.message} 
+          onClose={() => setAlert({ show: false, type: 'success', message: '' })} 
+        />
+      )}
 
       {/* TOOLBAR BUAT TIM */}
       {isAdmin && (
@@ -349,38 +363,76 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    {kelompokUmur.map(group => {
-                      const pairedInKU = pairedMap[selectedTargetKU] || new Set();
-                      const available = (group.peserta || []).filter(p => 
-                        !pairedInKU.has(p.id) && p.namaLengkap.toLowerCase().includes(modalSearchTerm.toLowerCase())
-                      );
-                      if (available.length === 0) return null;
-                      return (
-                        <div key={group.id} className="border border-gray-100 rounded-xl p-3">
-                          <p className="text-[9px] font-black text-gray-400 uppercase mb-2">{group.nama}</p>
-                          <div className="grid grid-cols-1 gap-1">
-                            {available.map(p => (
+                <div className="space-y-4">
+                  {kelompokUmur.map(group => {
+                    const pairedInKU = pairedMap[selectedTargetKU] || new Set();
+                    const targetKUData = masterKU.find(k => k.id === selectedTargetKU);
+                    const batasUmurKategori = targetKUData ? targetKUData.umur : 999;
+
+                    const available = (group.peserta || []).filter(p => 
+                      !pairedInKU.has(p.id) && p.namaLengkap.toLowerCase().includes(modalSearchTerm.toLowerCase())
+                    );
+
+                    if (available.length === 0) return null;
+
+                    return (
+                      <div key={group.id} className="border border-gray-100 rounded-2xl p-4 bg-white/50">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">
+                          Asal Kategori: {group.nama}
+                        </p>
+                        
+                        {/* GRID SISTEM: 1 Kolom di HP, 2 Kolom di Laptop */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {available.map(p => {
+                            const umurUser = hitungUmurSederhana(p.tanggalLahir);
+                            const isOverAge = umurUser > batasUmurKategori;
+                            const isSelected = selectedPlayers.includes(p.id);
+
+                            return (
                               <button
                                 key={p.id}
+                                disabled={isOverAge}
                                 onClick={() => {
-                                  if (selectedPlayers.includes(p.id)) {
+                                  if (isSelected) {
                                     setSelectedPlayers(selectedPlayers.filter(id => id !== p.id));
                                   } else if (selectedPlayers.length < 2) {
                                     setSelectedPlayers([...selectedPlayers, p.id]);
                                   }
                                 }}
-                                className={`flex items-center justify-between p-2 rounded-lg text-xs font-bold transition-all ${selectedPlayers.includes(p.id) ? 'bg-yellow-500 text-white' : 'hover:bg-gray-50 text-gray-700'}`}
+                                className={`flex items-center justify-between p-3 rounded-xl text-xs font-bold transition-all border
+                                  ${isOverAge 
+                                    ? 'bg-red-50 text-red-400 border-red-100 cursor-not-allowed opacity-80' 
+                                    : isSelected 
+                                      ? 'bg-yellow-500 text-white border-yellow-600 shadow-md scale-[1.02]' 
+                                      : 'bg-white hover:bg-yellow-50 text-gray-700 border-gray-100 hover:border-yellow-200'
+                                  }`}
                               >
-                                <span>{p.namaLengkap}</span>
-                                {selectedPlayers.includes(p.id) && <User size={12} />}
+                                <div className="flex flex-col text-left overflow-hidden">
+                                  <span className="truncate pr-2">{p.namaLengkap}</span>
+                                  <span className={`text-[9px] font-bold mt-0.5 ${isOverAge ? 'text-red-500' : 'text-gray-400'}`}>
+                                    Lahir: {new Date(p.tanggalLahir).getFullYear()} • {umurUser} Thn
+                                  </span>
+                                </div>
+
+                                <div className="flex-shrink-0 flex items-center gap-2">
+                                  {isOverAge ? (
+                                    <span className="bg-red-500 text-white text-[7px] px-1.5 py-0.5 rounded-full font-black uppercase">
+                                      Over
+                                    </span>
+                                  ) : isSelected ? (
+                                    <div className="bg-white/20 p-1 rounded-full">
+                                      <User size={12} className="text-white" />
+                                    </div>
+                                  ) : null}
+                                </div>
                               </button>
-                            ))}
-                          </div>
+                            );
+                          })}
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    );
+                  })}
+                </div>
                 </div>
               )}
             </div>
@@ -399,15 +451,28 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
         </div>
       )}
 
-      {/* MODAL DELETE */}
       {confirmDelete.show && (
-        <AlertMessage type="warning" message="Hapus tim ganda ini?" onClose={() => setConfirmDelete({ show: false, teamId: null })}>
-          <div className="flex gap-2 mt-4">
-            <button onClick={() => setConfirmDelete({ show: false, teamId: null })} className="flex-1 px-4 py-2 rounded-xl bg-gray-100 text-gray-600 font-black text-[10px] uppercase">Batal</button>
-            <button onClick={handleDeleteTeam} className="flex-1 px-4 py-2 rounded-xl bg-red-600 text-white font-black text-[10px] uppercase shadow-lg shadow-red-200">Hapus</button>
-          </div>
-        </AlertMessage>
-      )}
+  <AlertMessage
+    type="warning"
+    message={`Apakah Anda yakin ingin menghapus tim ganda ini? Data yang dihapus tidak dapat dikembalikan.`}
+    onClose={() => setConfirmDelete({ show: false, teamId: null })}
+  >
+    <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
+      <button
+        onClick={() => setConfirmDelete({ show: false, teamId: null })}
+        className="flex-1 order-2 sm:order-1 min-h-[56px] px-8 py-4 rounded-2xl bg-gray-100 text-gray-800 font-black text-sm uppercase tracking-tighter hover:bg-gray-200 active:scale-95 transition-all"
+      >
+        Batal
+      </button>
+      <button
+        onClick={handleDeleteTeam}
+        className="flex-1 order-1 sm:order-2 min-h-[56px] px-8 py-4 rounded-2xl bg-red-600 text-white font-black text-sm uppercase tracking-tighter shadow-[0_10px_20px_rgba(220,38,38,0.3)] hover:bg-red-700 active:scale-95 transition-all"
+      >
+        Ya, Hapus Tim
+      </button>
+    </div>
+  </AlertMessage>
+)}
     </div>
   );
 }

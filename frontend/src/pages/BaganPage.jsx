@@ -138,17 +138,22 @@ const confirmDeleteBagan = async () => {
   return (
     <div className="min-h-screen"> 
 
-    <AlertMessage
+  
+{success && (
+  <AlertMessage
     type="success"
     message={success}
     onClose={() => setSuccess("")}
-    />
+  />
+)}
 
-    <AlertMessage
+{error && (
+  <AlertMessage
     type="error"
     message={error}
     onClose={() => setError("")}
-    />
+  />
+)}
 
     
  {/* --- HEADER UTAMA --- */}
@@ -376,24 +381,25 @@ const confirmDeleteBagan = async () => {
   })()}
 </div>
 
- {confirmDelete.show && (
+{confirmDelete.show && (
   <AlertMessage
     type="warning"
-    message="Yakin mau menghapus bagan ini?"
+    message="Yakin mau menghapus bagan ini? Bagan yang dihapus tidak dapat dikembalikan."
     onClose={() => setConfirmDelete({ show: false, baganId: null })}
   >
-    <div className="flex gap-3 justify-center mt-4">
+    {/* Tombol diperbesar dengan padding h-4 (tinggi) dan font-extrabold */}
+    <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
       <button
         onClick={() => setConfirmDelete({ show: false, baganId: null })}
-        className="px-5 py-2 rounded-xl bg-gray-200 font-bold hover:bg-gray-300 transition"
+        className="flex-1 order-2 sm:order-1 px-6 py-4 rounded-2xl bg-gray-100 text-gray-700 font-extrabold text-xs uppercase tracking-widest hover:bg-gray-200 active:scale-95 transition-all"
       >
         Batal
       </button>
       <button
         onClick={confirmDeleteBagan}
-        className="px-5 py-2 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+        className="flex-1 order-1 sm:order-2 px-6 py-4 rounded-2xl bg-red-600 text-white font-extrabold text-xs uppercase tracking-widest shadow-xl shadow-red-200 hover:bg-red-700 active:scale-95 transition-all"
       >
-        Hapus
+        Ya, Hapus
       </button>
     </div>
   </AlertMessage>

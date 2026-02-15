@@ -3,6 +3,7 @@ import { PlusCircle, FileDown, Trash2, Edit, Image } from "lucide-react";
 import api from "../api";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import AlertMessage from "../components/AlertMessage";
 
 
 export default function AthleteSetting() {
@@ -11,6 +12,11 @@ export default function AthleteSetting() {
   const formRef = useRef(null);
   const [kelompokUmurList, setKelompokUmurList] = useState([]);
   const [selectedAthlete, setSelectedAthlete] = useState(null);
+
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null });
+
 
 
 
@@ -147,69 +153,78 @@ const resetForm = () => {
   };
 
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+    const age = calculateAge(formData.birthDate);
 
-  const age = calculateAge(formData.birthDate);
-
-  // ambil data kelompok umur berdasarkan ID
-  const selectedKelompok = kelompokUmurList.find(
-    (k) => k.id == formData.kelompokUmurId
-  );
-
-  if (!selectedKelompok) {
-    alert("Pilih kategori terlebih dahulu");
-    return;
-  }
-
-  // validasi umur berdasarkan database
-  if (age > selectedKelompok.umur) {
-    alert(
-      `Umur atlet (${age} tahun) melebihi batas kategori ${selectedKelompok.nama}`
+    const selectedKelompok = kelompokUmurList.find(
+      (k) => k.id == formData.kelompokUmurId
     );
-    return;
-  }
 
-  try {
-    const fd = new FormData();
-    fd.append("name", formData.name);
-    fd.append("birthDate", formData.birthDate);
-    fd.append("gender", formData.gender);
-    fd.append("kelompokUmurId", formData.kelompokUmurId);
-    fd.append("phoneNumber", formData.phoneNumber);
-    fd.append("address", formData.address);
-    fd.append("club", formData.club);
-    if (formData.photo) fd.append("photo", formData.photo);
-
-    if (editingId) {
-      await api.put(`/athlete/update/${editingId}`, fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-    } else {
-      await api.post("/athlete/create", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+    if (!selectedKelompok) {
+      setError("Pilih kategori terlebih dahulu");
+      return;
     }
 
-    resetForm();
-    fetchAthletes();
-    setCurrentPage(1);
-  } catch (err) {
-    console.error(err);
-  }
-};
+    if (age > selectedKelompok.umur) {
+      setError(
+        `Umur atlet (${age} tahun) melebihi batas kategori ${selectedKelompok.nama}`
+      );
+      return;
+    }
 
-
-  const handleDelete = async (id) => {
-    if (!confirm("Yakin ingin menghapus atlet ini?")) return;
     try {
-      await api.delete(`/athlete/delete/${id}`);
+      const fd = new FormData();
+      fd.append("name", formData.name);
+      fd.append("birthDate", formData.birthDate);
+      fd.append("gender", formData.gender);
+      fd.append("kelompokUmurId", formData.kelompokUmurId);
+      fd.append("phoneNumber", formData.phoneNumber);
+      fd.append("address", formData.address);
+      fd.append("club", formData.club);
+      if (formData.photo) fd.append("photo", formData.photo);
+
+      if (editingId) {
+        await api.put(`/athlete/update/${editingId}`, fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        setSuccess("Atlet berhasil diperbarui");
+      } else {
+        await api.post("/athlete/create", fd, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        setSuccess("Atlet berhasil ditambahkan");
+      }
+
+      resetForm();
       fetchAthletes();
+      setCurrentPage(1);
+
     } catch (err) {
-      console.error(err);
+      setError("Terjadi kesalahan saat menyimpan atlet");
     }
   };
+
+
+
+  const handleDelete = (id) => {
+    setConfirmDelete({ show: true, id });
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`/athlete/delete/${confirmDelete.id}`);
+      setSuccess("Atlet berhasil dihapus");
+      fetchAthletes();
+    } catch (err) {
+      setError("Gagal menghapus atlet");
+    } finally {
+      setConfirmDelete({ show: false, id: null });
+    }
+  };
+
+
 
   // ======================
   // PAGINATION LOGIC
@@ -236,6 +251,24 @@ const handleSubmit = async (e) => {
 
   return (
     <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100">
+
+      {success && (
+        <AlertMessage
+          type="success"
+          message={success}
+          onClose={() => setSuccess("")}
+        />
+      )}
+
+      {error && (
+        <AlertMessage
+          type="error"
+          message={error}
+          onClose={() => setError("")}
+        />
+      )}
+
+
       {/* Header */}
       <h1 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3 flex items-center gap-2">
         <PlusCircle size={24} className="text-blue-600" />
@@ -608,6 +641,33 @@ const handleSubmit = async (e) => {
         </div>
       </div>
     )}
+
+    {confirmDelete.show && (
+  <AlertMessage
+    type="warning"
+    message="Yakin ingin menghapus atlet ini? Data tidak bisa dikembalikan."
+    onClose={() => setConfirmDelete({ show: false, id: null })}
+  >
+    <div className="flex flex-col sm:flex-row gap-4 w-full mt-6">
+      
+      <button
+        onClick={() => setConfirmDelete({ show: false, id: null })}
+        className="flex-1 px-6 py-3 rounded-xl bg-gray-100 text-gray-800 font-bold hover:bg-gray-200 transition"
+      >
+        Batal
+      </button>
+
+      <button
+        onClick={handleConfirmDelete}
+        className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+      >
+        Ya, Hapus
+      </button>
+
+    </div>
+  </AlertMessage>
+)}
+
 
     </div>
   );

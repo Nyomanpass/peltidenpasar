@@ -1,7 +1,7 @@
 // models/PesertaModel.js
 import { DataTypes } from "sequelize";
 import { sequelize } from "../config/Database.js";
-import { Tournament } from "./TournamentModel.js";
+
 
 export const Peserta = sequelize.define("Peserta", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -11,8 +11,13 @@ export const Peserta = sequelize.define("Peserta", {
   kelompokUmurId: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    references: { model: "kelompok_umur", key: "id" },
   },
+
+  tournamentId: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+
   asalSekolah: {
     type: DataTypes.STRING(150),
     allowNull: true
@@ -38,5 +43,4 @@ export const Peserta = sequelize.define("Peserta", {
   timestamps: true,
 });
 
-Tournament.hasMany(Peserta, { foreignKey: "tournamentId", onDelete: "CASCADE" });
-Peserta.belongsTo(Tournament, { foreignKey: "tournamentId" });
+

@@ -123,11 +123,11 @@ const BASE_URL = import.meta.env.VITE_API_URL;
     await api.put(`/peserta/${id}/verify`, { status: "verified" });
     setPeserta(p => ({ ...p, status: "verified" }));
     fetchPendingTotal();
-    setSuccess(`Peserta ${peserta.namaLengkap} berhasil diverifikasi ✅`);
+    setSuccess(`Peserta ${peserta.namaLengkap} berhasil diverifikasi!`); 
     setShowVerifyConfirm(false);
   } catch (err) {
     console.error(err);
-    setError("Gagal memverifikasi peserta.");
+    setErrorAlert("Gagal memverifikasi peserta."); 
     setShowVerifyConfirm(false);
   }
 };
@@ -136,7 +136,7 @@ const BASE_URL = import.meta.env.VITE_API_URL;
   // HANDLER TOLAK (REJECT)
   const handleReject = async () => {
     if (!rejectMessage) {
-      setError("Mohon masukkan alasan penolakan.");
+      setErrorAlert("Mohon masukkan alasan penolakan.");
       return;
     }
 
@@ -168,17 +168,22 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 
   return (
     <div className="mx-auto p-4 md:p-6 min-h-screen font-sans">
+       
+      {success && (
         <AlertMessage
           type="success"
           message={success}
           onClose={() => setSuccess("")}
         />
+      )}
 
+      {errorAlert && (
         <AlertMessage
           type="error"
           message={errorAlert}
           onClose={() => setErrorAlert("")}
         />
+      )}
 
       {/* Modal Popup Gambar (Tetap sama) */}
       {modalImage && (
@@ -435,37 +440,27 @@ const BASE_URL = import.meta.env.VITE_API_URL;
 )}
 
 {showVerifyConfirm && (
-  <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-    <div className="bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full animate-in fade-in zoom-in">
-
-      <h2 className="text-lg font-bold text-gray-800 mb-2">
-        Konfirmasi Verifikasi
-      </h2>
-      <p className="text-sm text-gray-600 mb-6">
-        Yakin ingin memverifikasi peserta:
-        <span className="font-bold"> {peserta.namaLengkap}</span> ?
-      </p>
-
-      <div className="flex gap-3 justify-end">
-        <button
-          onClick={() => setShowVerifyConfirm(false)}
-          className="px-4 py-2 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
-        >
-          Batal
-        </button>
-
-        <button
-          onClick={handleVerify}
-          className="px-4 py-2 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700"
-        >
-          Ya, Verifikasi
-        </button>
-      </div>
-
+  <AlertMessage
+    type="warning"
+    message={`Pastikan data dan dokumen ${peserta.namaLengkap} sudah sesuai. Setelah diverifikasi, peserta akan masuk ke daftar siap tanding.`}
+    onClose={() => setShowVerifyConfirm(false)}
+  >
+    <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
+      <button
+        onClick={() => setShowVerifyConfirm(false)}
+        className="flex-1 order-2 sm:order-1 min-h-[56px] px-8 py-4 rounded-2xl bg-gray-100 text-gray-800 font-black text-sm uppercase tracking-tighter hover:bg-gray-200 active:scale-95 transition-all"
+      >
+        Batal
+      </button>
+      <button
+        onClick={handleVerify}
+        className="flex-1 order-1 sm:order-2 min-h-[56px] px-8 py-4 rounded-2xl bg-green-600 text-white font-black text-sm uppercase tracking-tighter shadow-[0_10px_20px_rgba(22,163,74,0.3)] hover:bg-green-700 active:scale-95 transition-all"
+      >
+        Ya, Verifikasi
+      </button>
     </div>
-  </div>
+  </AlertMessage>
 )}
-
 
 
     </div>

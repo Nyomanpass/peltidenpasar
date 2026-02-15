@@ -8,6 +8,12 @@ export const Jadwal = sequelize.define("Jadwal", {
     primaryKey: true,
     autoIncrement: true,
   },
+  
+  tournamentId: {  
+    type: DataTypes.INTEGER,
+    allowNull: false,
+  },
+
   matchId: {
     type: DataTypes.INTEGER,
     allowNull: false,
@@ -37,6 +43,3 @@ export const Jadwal = sequelize.define("Jadwal", {
   tableName: "jadwals",
   timestamps: true,
 });
-
-Tournament.hasMany(Jadwal, { foreignKey: "tournamentId", onDelete: "CASCADE" });
-Jadwal.belongsTo(Tournament, { foreignKey: "tournamentId" });

@@ -3,6 +3,9 @@ import { useEffect, useState } from "react";
 import api from "../api";
 import { Edit, Trash2, PlusCircle, Users, MapPin, XCircle, CheckCircle,  Eye, EyeOff } from "lucide-react";
 import SettingScoreRule from "../components/admin/SettingScoreRule";
+import AlertMessage from "../components/AlertMessage";
+
+
 
 export default function Settings() {
   // ================= Kelompok Umur =================
@@ -16,6 +19,10 @@ export default function Settings() {
   const [passwordWasit, setPasswordWasit] = useState("");
   const [editingWasitId, setEditingWasitId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null, type: null });
 
 
 
@@ -41,12 +48,14 @@ export default function Settings() {
     if (editingWasitId) {
       // UPDATE
       await api.put(`/wasit/${editingWasitId}`, payload);
+      setSuccess("Wasit berhasil diperbarui");
     } else {
       // CREATE
       await api.post("/wasit", {
         ...payload,
         password: passwordWasit,
       });
+      setSuccess("Wasit berhasil ditambahkan");
     }
 
     setNamaWasit("");
@@ -64,6 +73,7 @@ export default function Settings() {
 
   const deleteWasit = async (id) => {
     await api.delete(`/wasit/${id}`);
+    setSuccess("Wasit berhasil dihapus");
     fetchWasit();
   };
 
@@ -73,9 +83,6 @@ export default function Settings() {
     setPasswordWasit(""); 
     setEditingWasitId(w.id);
   };
-
-
-
 
 
 
@@ -100,32 +107,36 @@ export default function Settings() {
 
         if (editingUmurId) {
           await api.put(`/kelompok-umur/${editingUmurId}`, payload);
+           setSuccess("Kelompok umur berhasil diupdate");
         } else {
           await api.post("/kelompok-umur", payload);
+          setSuccess("Kelompok umur berhasil ditambahkan");
         }
         
-        // Reset Form
+
         setNamaUmur("");
         setUmur("");
         setEditingUmurId(null);
         fetchKelompokUmur();
       } catch (error) {
-        console.error(error);
+        setError("Gagal menyimpan kelompok umur");
       }
     };
 
   const handleDeleteUmur = async (id) => {
     try {
       await api.delete(`/kelompok-umur/${id}`);
+      setSuccess("Kelompok umur berhasil dihapus");
       fetchKelompokUmur();
     } catch (error) {
+      setError("Gagal menghapus kelompok umur, masih ada data peserta");
       console.error(error);
     }
   };
 
   const handleEditUmur = (item) => {
       setNamaUmur(item.nama);
-      setUmur(item.umur); // <-- MASUKKAN DATA UMUR KE FORM
+      setUmur(item.umur); 
       setEditingUmurId(item.id);
     }
 
@@ -152,11 +163,13 @@ export default function Settings() {
           nama: namaLapangan,
           lokasi: lokasiLapangan,
         });
+         setSuccess("Lapangan berhasil diedit");
       } else {
         await api.post("/lapangan", {
           nama: namaLapangan,
           lokasi: lokasiLapangan,
         });
+         setSuccess("Lapangan berhasil dbuat");
       }
       setNamaLapangan("");
       setLokasiLapangan("");
@@ -170,8 +183,10 @@ export default function Settings() {
   const handleDeleteLapangan = async (id) => {
     try {
       await api.delete(`/lapangan/${id}`);
+      setSuccess("Lapangan berhasil dihapus");
       fetchLapangan();
     } catch (error) {
+      setError("Gagal menghapus lapangan, masih ada data jadwal");
       console.error(error);
     }
   };
@@ -189,8 +204,40 @@ export default function Settings() {
     fetchWasit();
   }, []);
 
+
+ const handleConfirmDelete = async () => {
+  try {
+
+    if (confirmDelete.type === "umur") {
+      await handleDeleteUmur(confirmDelete.id);
+    }
+
+    if (confirmDelete.type === "lapangan") {
+      await handleDeleteLapangan(confirmDelete.id);
+    }
+
+    if (confirmDelete.type === "wasit") {
+      await deleteWasit(confirmDelete.id);
+    }
+
+  } catch (error) {
+    setError("Gagal menghapus data");
+  } finally {
+    setConfirmDelete({ show: false, id: null, type: null });
+  }
+};
+
+
+
   return (
 <div className="font-sans bg-gray-50 min-h-screen">
+
+    {success && (
+        <AlertMessage type="success" message={success} onClose={() => setSuccess("")} />
+      )}
+      {error && (
+        <AlertMessage type="error" message={error} onClose={() => setError("")} />
+      )}
 
   <div className="space-y-12 mx-auto">
     
@@ -281,7 +328,7 @@ export default function Settings() {
                         <Edit size={16} />
                       </button>
                       <button
-                        onClick={() => handleDeleteUmur(item.id)}
+                        onClick={() => setConfirmDelete({ show: true, id: item.id, type: "umur" })}
                         className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg shadow-md transition"
                         title="Hapus"
                       >
@@ -294,6 +341,7 @@ export default function Settings() {
             </table>
           </div>
         </div>
+
 
     {/* --- 2. SETTINGS LAPANGAN --- */}
     <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100">
@@ -382,7 +430,7 @@ export default function Settings() {
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => handleDeleteLapangan(item.id)}
+                     onClick={() => setConfirmDelete({ show: true, id: item.id, type: "lapangan" })}
                     className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg shadow-md transition"
                     title="Hapus"
                   >
@@ -544,7 +592,7 @@ export default function Settings() {
                     </button>
 
                     <button
-                      onClick={() => deleteWasit(w.id)}
+                      onClick={() => setConfirmDelete({ show: true, id: w.id, type: "wasit" })}
                       className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg shadow-md transition"
                       title="Hapus"
                     >
@@ -568,6 +616,33 @@ export default function Settings() {
       <SettingScoreRule/>
 
   </div>
+
+  {confirmDelete.show && (
+  <AlertMessage
+    type="warning"
+    message="Yakin ingin menghapus data ini? Data yang sudah dihapus tidak bisa dikembalikan."
+    onClose={() => setConfirmDelete({ show: false, id: null, type: null })}
+  >
+    <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
+      
+      <button
+        onClick={() => setConfirmDelete({ show: false, id: null, type: null })}
+        className="flex-1 px-6 py-3 rounded-xl bg-gray-100 text-gray-800 font-bold hover:bg-gray-200 transition"
+      >
+        Batal
+      </button>
+
+      <button
+        onClick={handleConfirmDelete}
+        className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+      >
+        Ya, Hapus
+      </button>
+
+    </div>
+  </AlertMessage>
+)}
+
 </div>
 
   );

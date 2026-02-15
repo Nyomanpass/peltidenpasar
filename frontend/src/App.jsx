@@ -81,7 +81,7 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            {/* <Route path="verify" element={<PesertaList/>}/> */}
+           
             <Route path="tournament" element={<Tournament/>}/>
             <Route path="detail-peserta/:id" element={<DetailPeserta/>}/>
             <Route path="peserta" element={<Peserta/>}/>

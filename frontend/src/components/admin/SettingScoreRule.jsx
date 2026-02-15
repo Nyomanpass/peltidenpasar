@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import api from "../../api";
+import { Settings as SettingsIcon } from "lucide-react"; // Import dengan alias agar tidak bentrok dengan nama komponen
+import AlertMessage from "../AlertMessage";
 
 export default function SettingScoreRule() {
+
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null });
+
+
   const [rules, setRules] = useState([]);
   const [form, setForm] = useState({
     name: "",
@@ -24,6 +32,7 @@ export default function SettingScoreRule() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     await api.post("/score-rules", form);
+    setSuccess("Score rule berhasil ditambahkan");
     fetchRules();
     setForm({
       name: "",
@@ -36,15 +45,47 @@ export default function SettingScoreRule() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Hapus rule ini?")) return;
-    await api.delete(`/score-rules/${id}`);
-    fetchRules();
+    setConfirmDelete({ show: true, id });
   };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await api.delete(`/score-rules/${confirmDelete.id}`);
+      setSuccess("Score rule berhasil dihapus");
+      fetchRules();
+    } catch (err) {
+      setError("Gagal menghapus score rule");
+    } finally {
+      setConfirmDelete({ show: false, id: null });
+    }
+  };
+
+
 
   return (
     <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100 mt-10">
+      {success && (
+  <AlertMessage
+    type="success"
+    message={success}
+    onClose={() => setSuccess("")}
+  />
+)}
+
+{error && (
+  <AlertMessage
+    type="error"
+    message={error}
+    onClose={() => setError("")}
+  />
+)}
+
   <h1 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3 flex items-center gap-2">
-    ⚙ Settings Score Rules
+    <SettingsIcon 
+      size={24} 
+      className="text-blue-600 group-hover:rotate-90 transition-transform duration-500" 
+    />
+    Settings Score Rules
   </h1>
 
   {/* FORM */}
@@ -176,6 +217,32 @@ export default function SettingScoreRule() {
       </tbody>
     </table>
   </div>
+  {confirmDelete.show && (
+  <AlertMessage
+    type="warning"
+    message="Yakin ingin menghapus score rule ini? Data tidak bisa dikembalikan."
+    onClose={() => setConfirmDelete({ show: false, id: null })}
+  >
+    <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
+      
+      <button
+        onClick={() => setConfirmDelete({ show: false, id: null })}
+        className="flex-1 px-6 py-3 rounded-xl bg-gray-100 text-gray-800 font-bold hover:bg-gray-200 transition"
+      >
+        Batal
+      </button>
+
+      <button
+        onClick={handleConfirmDelete}
+        className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+      >
+        Ya, Hapus
+      </button>
+
+    </div>
+  </AlertMessage>
+)}
+
 </div>
 
   );
