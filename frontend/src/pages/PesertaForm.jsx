@@ -17,7 +17,6 @@ function PesertaForm({ onSuccess }) {
 
   
   const location = useLocation();
-  const query = new URLSearchParams(location.search);
 
 
 const [tournamentStatus, setTournamentStatus] = useState("checking");
@@ -46,6 +45,30 @@ const [tournamentStatus, setTournamentStatus] = useState("checking");
     fetchKelompok();
     fetchTournament();
   }, []);
+
+  useEffect(() => {
+  if (!tournamentList.length) return;
+
+  const params = new URLSearchParams(location.search);
+  const tournamentName = params.get("tournament");
+
+  if (!tournamentName) return;
+
+  const found = tournamentList.find(
+    (t) =>
+      t.name.trim().toLowerCase() ===
+      decodeURIComponent(tournamentName).trim().toLowerCase()
+  );
+
+  if (found) {
+    setSelectedTournament(found);
+    setFormData((prev) => ({
+      ...prev,
+      tournamentId: found.id.toString(),
+    }));
+  }
+  }, [tournamentList, location.search]);
+
 
   const fetchKelompok = async () => {
     try {

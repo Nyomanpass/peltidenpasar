@@ -3,6 +3,9 @@ import api from "../../api";
 import { Edit, Trash2, Upload, X } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import AlertMessage from "../../components/AlertMessage";
+import QRCode from "qrcode";
+import { QrCode } from "lucide-react";
+
 
 
 function Tournament() {
@@ -125,6 +128,33 @@ function Tournament() {
        setErrorAlert("Gagal menyimpan data turnamen. Periksa kembali inputan.");
     }
   };
+
+
+
+const handleDownloadQR = async (tournament) => {
+  const baseDomain = window.location.origin;
+
+  const url = `${baseDomain}/daftar-peserta?tournament=${encodeURIComponent(
+    tournament.name
+  )}`;
+
+  try {
+    const qr = await QRCode.toDataURL(url, {
+      width: 500,          // 🔥 BESARKAN DI SINI
+      margin: 2,
+      errorCorrectionLevel: "H", // kualitas tinggi
+    });
+
+    const link = document.createElement("a");
+    link.href = qr;
+    link.download = `${tournament.name}-qr.png`;
+    link.click();
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
 
   // 🔹 Hapus
   const handleDeleteConfirm = async () => {
@@ -502,6 +532,13 @@ function Tournament() {
                             >
                                 <Trash2 size={16} />
                             </button>
+                            <button
+                              onClick={() => handleDownloadQR(t)}
+                              className="p-2 text-purple-600 rounded-xl hover:bg-purple-100 transition-all duration-200 group"
+                            >
+                              <QrCode size={18} className="group-hover:scale-110 transition-transform" />
+                            </button>
+
                         </td>
                     </tr>
                 ))}
