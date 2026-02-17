@@ -134,20 +134,49 @@ const handlePoint = async (player) => {
     isGameEnd = true;
   }
 } else {
-  if (useDeuce) {
-    // pakai deuce (tenis)
-    if (player === 1) {
-      if (nP1 === "40" && nP2 < "40") isGameEnd = true;
-      else if (nP1 === "Ad") isGameEnd = true;
-      else if (nP1 === "40" && nP2 === "Ad") nP2 = "40";
-      else nP1 = points[points.indexOf(nP1) + 1];
-    } else {
-      if (nP2 === "40" && nP1 < "40") isGameEnd = true;
-      else if (nP2 === "Ad") isGameEnd = true;
-      else if (nP2 === "40" && nP1 === "Ad") nP1 = "40";
-      else nP2 = points[points.indexOf(nP2) + 1];
+if (useDeuce) {
+
+  const p1Index = points.indexOf(nP1);
+  const p2Index = points.indexOf(nP2);
+
+  if (player === 1) {
+
+    if (nP1 === "40" && nP2 !== "40" && nP2 !== "Ad") {
+      isGameEnd = true;
     }
+    else if (nP1 === "40" && nP2 === "40") {
+      nP1 = "Ad";
+    }
+    else if (nP1 === "Ad") {
+      isGameEnd = true;
+    }
+    else if (nP2 === "Ad") {
+      nP2 = "40";
+    }
+    else {
+      nP1 = points[p1Index + 1];
+    }
+
   } else {
+
+    if (nP2 === "40" && nP1 !== "40" && nP1 !== "Ad") {
+      isGameEnd = true;
+    }
+    else if (nP1 === "40" && nP2 === "40") {
+      nP2 = "Ad";
+    }
+    else if (nP2 === "Ad") {
+      isGameEnd = true;
+    }
+    else if (nP1 === "Ad") {
+      nP1 = "40";
+    }
+    else {
+      nP2 = points[p2Index + 1];
+    }
+
+  }
+}else {
     // tanpa deuce (40 langsung menang)
     if (player === 1) {
       if (nP1 === "40") isGameEnd = true;
@@ -318,19 +347,6 @@ const handlePoint = async (player) => {
 
 
   {/* Header Indikator Status - Dibuat lebih melayang */}
-  <div className="text-center mt-4 h-6">
-    {scoreRule && p1Game === scoreRule.gamePerSet - 1 && p2Game === scoreRule.gamePerSet - 1 && (
-      <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
-        Deuce Games
-      </span>
-    )}
-
-    {scoreRule && p1Game === scoreRule.gamePerSet && p2Game === scoreRule.gamePerSet && (
-      <span className="bg-orange-500 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] animate-pulse shadow-lg shadow-orange-500/20">
-        Tie Break Round
-      </span>
-    )}
-  </div>
 
   <div className="max-w-xl mx-auto p-4 relative">
 
@@ -439,7 +455,21 @@ const handlePoint = async (player) => {
     SET {currentSet}
   </div>
 
-  <div className="pt-12 pb-8 px-4">
+    <div className="text-center mt-10 h-6">
+    {scoreRule && p1Game === scoreRule.gamePerSet - 1 && p2Game === scoreRule.gamePerSet - 1 && (
+      <span className="bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+        Deuce Games
+      </span>
+    )}
+
+    {scoreRule && p1Game === scoreRule.gamePerSet && p2Game === scoreRule.gamePerSet && (
+      <span className="bg-orange-500 text-white px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] animate-pulse shadow-lg shadow-orange-500/20">
+        Tie Break Round
+      </span>
+    )}
+  </div>
+
+  <div className="pt-5 pb-8 px-4">
     <div className="grid grid-cols-2 gap-6 relative">
       
       {/* Divider Tengah */}
