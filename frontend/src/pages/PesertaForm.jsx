@@ -120,7 +120,7 @@ const [tournamentStatus, setTournamentStatus] = useState("checking");
     const isRegistrationClosed = new Date() > deadline;
 
     if (isRegistrationClosed) {
-        setError("Maaf, pendaftaran untuk turnamen ini sudah ditutup (Batas H-3).");
+        setError("Maaf, pendaftaran untuk turnamen ini sudah ditutup (Batas H-1).");
         setSelectedTournament(null);
         setFormData({ ...formData, tournamentId: "" }); // Reset pilihan
         return;
@@ -212,7 +212,7 @@ const [tournamentStatus, setTournamentStatus] = useState("checking");
 
   const getDeadline = (startDate) => {
       const date = new Date(startDate);
-      date.setDate(date.getDate() - 3);
+      date.setDate(date.getDate() - 1);
         // set ke akhir hari (23:59:59)
       date.setHours(23, 59, 59, 999);
       return date;
@@ -261,7 +261,7 @@ if (tournamentStatus === "closed") {
               
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                 <p className="text-xs text-slate-500 uppercase font-black tracking-widest mb-1">Ketentuan</p>
-                <p className="text-sm font-medium text-slate-700">Pendaftaran ditutup otomatis 3 hari (H-3) sebelum jadwal pertandingan dimulai.</p>
+                <p className="text-sm font-medium text-slate-700">Pendaftaran ditutup otomatis 1 hari (H-1) sebelum jadwal pertandingan dimulai.</p>
               </div>
             </div>
 

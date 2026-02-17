@@ -17,7 +17,7 @@ const TournamentComming = () => {
 
   const isTournamentOpen = (t) => {
     const deadline = new Date(t.start_date);
-    deadline.setDate(deadline.getDate() - 3);
+    deadline.setDate(deadline.getDate() - 1);
     deadline.setHours(23, 59, 59, 999);
     return t.status === "aktif" && new Date() <= deadline;
   };
@@ -54,7 +54,7 @@ const TournamentComming = () => {
         <div className={`max-w-5xl mx-auto gap-6 sm:gap-8`}>
           {tournaments.map((t) => {
             const deadline = new Date(t.start_date);
-            deadline.setDate(deadline.getDate() - 3);
+            deadline.setDate(deadline.getDate() - 1);
             deadline.setHours(23, 59, 59, 999);
             const isClosed = new Date() > deadline;
 
