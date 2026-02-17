@@ -64,7 +64,7 @@ export default function Navbar() {
         { name: "Visi & Misi", path: "/visi-misi" },
         { name: "Struktur Organisasi", path: "/struktur-organisasi" },
         { name: "Kepengurusan", path: "/kepengurusan" },
-        { name: "Anggota", path: "/anggota" },
+        { name: "Club", path: "/anggota" },
         { name: "Berita", path: "/berita" },
       ],
     },

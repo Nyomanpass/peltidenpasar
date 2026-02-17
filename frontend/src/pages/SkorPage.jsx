@@ -274,15 +274,29 @@ const handleExportPDFLog = () => {
   const handleLihatLog = async (match) => {
     try {
       const response = await api.get(`/match-logs/${match.id}`);
+
       if (response.data?.length > 0) {
-        setSelectedLog(response.data);
+
+        // 🔥 SORTING PALING AMAN
+        const sortedLogs = response.data.sort((a, b) => {
+          if (a.setKe !== b.setKe) {
+            return a.setKe - b.setKe;   // urut berdasarkan set dulu
+          }
+          return a.id - b.id;           // lalu urut berdasarkan id
+        });
+
+        setSelectedLog(sortedLogs);
         setActiveMatchInfo(match);
         setIsModalOpen(true);
+
       } else {
         alert("Log poin belum tersedia.");
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
+
 
   return (
     <div className="min-h-screen">
@@ -540,7 +554,7 @@ const handleExportPDFLog = () => {
       {/* BODY MODAL */}
       <div className="flex-1 overflow-y-auto p-5 md:p-8 space-y-8 md:space-y-10">
         {Object.values(
-          selectedLog.reduce((acc, log) => {
+          [...selectedLog].reduce((acc, log) => {
             if (!acc[log.setKe]) acc[log.setKe] = { set: log.setKe, data: [] };
             acc[log.setKe].data.push(log);
             return acc;
