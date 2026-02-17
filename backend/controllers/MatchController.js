@@ -816,7 +816,10 @@ export const getMatchLogs = async (req, res) => {
     const { matchId } = req.params;
     const logs = await MatchScoreLog.findAll({
       where: { matchId },
-      order: [['createdAt', 'ASC']] // Urutkan dari poin awal ke akhir
+      order: [
+        ['setKe', 'ASC'],
+        ['id', 'ASC']
+      ]
     });
     res.json(logs);
   } catch (error) {
