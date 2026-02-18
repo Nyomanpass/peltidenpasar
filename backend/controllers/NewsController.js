@@ -2,6 +2,16 @@ import { News } from "../models/NewsModel.js";
 import path from "path";
 import fs from "fs";
 
+
+const generateSlug = (title) => {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-");
+};
+
+
 // Helper gambar untuk frontend 
 const getFullImageUrl = (req, imagePath) => {
   if (!imagePath) return null;
@@ -49,6 +59,30 @@ export const getNewsById = async (req, res) => {
   }
 };
 
+export const getNewsBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const news = await News.findOne({
+      where: { slug }
+    });
+
+    if (!news) {
+      return res.status(404).json({ message: "News tidak ditemukan" });
+    }
+
+    res.json({
+      ...news.toJSON(),
+      image: getFullImageUrl(req, news.image),
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Gagal mengambil data news" });
+  }
+};
+
+
 // ===================================
 // CREATE NEWS
 // ===================================
@@ -61,8 +95,11 @@ export const createNews = async (req, res) => {
       imagePath = `/uploads/news/${req.file.filename}`;
     }
 
+    const slug = generateSlug(title) + "-" + Date.now();
+
     const newNews = await News.create({
       title,
+      slug, // ✅ tambah ini
       desc,
       image: imagePath,
       tanggalUpload,
@@ -72,11 +109,13 @@ export const createNews = async (req, res) => {
       ...newNews.toJSON(),
       image: getFullImageUrl(req, imagePath),
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Gagal membuat news" });
   }
 };
+
 
 // ===================================
 // UPDATE NEWS
@@ -102,6 +141,9 @@ export const updateNews = async (req, res) => {
       news.image = `/uploads/news/${req.file.filename}`;
     }
 
+    if (news.title !== title) {
+      news.slug = generateSlug(title) + "-" + Date.now();
+    }
     news.title = title;
     news.desc = desc;
     news.tanggalUpload = tanggalUpload;

@@ -54,7 +54,7 @@ export default function SettingScoreRule() {
       setSuccess("Score rule berhasil dihapus");
       fetchRules();
     } catch (err) {
-      setError("Gagal menghapus score rule");
+      setError("Gagal menghapus score rule, masih digunakan di pertandingan");
     } finally {
       setConfirmDelete({ show: false, id: null });
     }

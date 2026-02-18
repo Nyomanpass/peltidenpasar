@@ -62,15 +62,14 @@ export default function App() {
           <Route path="/tournament" element={<TournamentUser/>}/>
           <Route path="/contact" element={<ContactPage/>}/>
           <Route path="/berita" element={<News/>}/>
-          <Route path="/berita/:idNews" element={<NewsDetail/>}/>
+          <Route path="/berita/:slug" element={<NewsDetail/>}/>
           <Route path="/visi-misi" element={<Visimisi/>}/>
           <Route path="/struktur-organisasi" element={<Struktur/>}/>
           <Route path="/kepengurusan" element={<Kepengurusan/>}/>
           <Route path="/atlet" element={<Athlete/>}/>
           <Route path="/anggota" element={<Club/>}/>    
           <Route path="/tournament-detail" element={<TournamentDetailPage/>}/>
-        
-   
+      
           <Route
             path="/admin"
             element={

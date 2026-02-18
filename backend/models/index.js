@@ -42,7 +42,7 @@ Jadwal.belongsTo(Match, { foreignKey: "matchId", as: "match" });
 // -------------------
 // 🔹 Export semua model
 // -------------------
-ScoreRule.hasMany(Match, { foreignKey: "scoreRuleId", as: "matches" });
+ScoreRule.hasMany(Match, { foreignKey: "scoreRuleId", as: "matches",  onDelete: "RESTRICT" });
 Match.belongsTo(ScoreRule, { foreignKey: "scoreRuleId", as: "scoreRule" });
 
 

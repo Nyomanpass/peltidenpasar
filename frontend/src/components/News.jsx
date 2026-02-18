@@ -115,7 +115,7 @@ export default function News() {
 
 
                 <button
-                  onClick={() => window.location.href = `/berita/${b.idNews}`}
+                  onClick={() => window.location.href = `/berita/${b.slug}`}
                   className="mt-5 inline-flex items-center justify-start text-sm md:text-base font-semibold text-yellow-600 hover:text-yellow-700 transition-colors group"
                 >
                   Baca Selengkapnya

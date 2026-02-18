@@ -5,7 +5,7 @@ import Footer from "../../components/Footer";
 import Navbar from "../../components/Navbar";
 
 export default function NewsDetail() {
-  const { idNews } = useParams();
+  const { slug } = useParams();
   const navigate = useNavigate();
 
   const [news, setNews] = useState(null);
@@ -14,19 +14,19 @@ export default function NewsDetail() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!idNews) {
-      setError("ID news tidak ditemukan di URL");
+    if (!slug) {
+      setError("Slug news tidak ditemukan di URL");
       setLoading(false);
       return;
     }
 
     fetchNewsDetail();
     fetchNewsLain();
-  }, [idNews]);
+  }, [slug]);
 
   const fetchNewsDetail = async () => {
     try {
-      const res = await api.get(`/news/find/${idNews}`);
+      const res = await api.get(`/news/slug/${slug}`);
       setNews(res.data);
     } catch (err) {
       setError(
@@ -43,7 +43,7 @@ export default function NewsDetail() {
     try {
       const res = await api.get(`/news/get`);
       const others = res.data.filter(
-        (n) => n.idNews !== parseInt(idNews)
+        (n) => n.slug !== slug
       );
       setNewsLain(others.slice(0, 5));
     } catch (err) {
@@ -148,7 +148,7 @@ export default function NewsDetail() {
               {newsLain.map((item) => (
                 <Link
                   key={item.idNews}
-                  to={`/berita/${item.idNews}`}
+                  to={`/berita/${item.slug}`}
                   className="flex gap-3 bg-white p-3 sm:p-4 rounded-xl shadow-sm hover:shadow-md transition"
                 >
                   <div className="w-20 sm:w-24 h-16 sm:h-20 rounded-lg overflow-hidden flex-shrink-0">

@@ -247,6 +247,19 @@ const startVisualDraw = (newBagan) => {
 
   if (!matches.length) return;
 
+  const isDouble = newBagan.kategori === "double";
+
+  const getName = (match, index) => {
+    if (isDouble) {
+      const team = index === 1 ? match.doubleTeam1 : match.doubleTeam2;
+      if (!team) return "BYE";
+      return `${team.Player1?.namaLengkap} / ${team.Player2?.namaLengkap}`;
+    } else {
+      const peserta = index === 1 ? match.peserta1 : match.peserta2;
+      return peserta?.namaLengkap || "BYE";
+    }
+  };
+
   setDrawStage("rolling");
 
   let speed = 80;
@@ -258,8 +271,8 @@ const startVisualDraw = (newBagan) => {
       const randomMatch =
         matches[Math.floor(Math.random() * matches.length)];
 
-      const p1 = randomMatch.peserta1?.namaLengkap || "BYE";
-      const p2 = randomMatch.peserta2?.namaLengkap || "BYE";
+      const p1 = getName(randomMatch, 1);
+      const p2 = getName(randomMatch, 2);
 
       setRollingName(`${p1} VS ${p2}`);
     }, speed);
@@ -281,8 +294,6 @@ const startVisualDraw = (newBagan) => {
       clearInterval(slowdownTimer);
 
       setDrawStage("slots");
-
-      // 🔥 PENTING: kirim matches sesuai urutan array
       revealSlots([...matches], newBagan);
     }
   }, 1000);
@@ -291,19 +302,32 @@ const startVisualDraw = (newBagan) => {
 
 
 const revealSlots = (matches, newBagan) => {
+
+  const isDouble = newBagan.kategori === "double";
+
+  const getName = (match, index) => {
+    if (isDouble) {
+      const team = index === 1 ? match.doubleTeam1 : match.doubleTeam2;
+      if (!team) return "BYE";
+      return `${team.Player1?.namaLengkap} / ${team.Player2?.namaLengkap}`;
+    } else {
+      const peserta = index === 1 ? match.peserta1 : match.peserta2;
+      return peserta?.namaLengkap || "BYE";
+    }
+  };
+
   let index = 0;
 
-  // 🔥 TAMPILKAN SLOT 1 LANGSUNG
   if (matches.length > 0) {
     const firstMatch = matches[0];
 
     setCurrentSlotInfo({
       slot: 1,
-      p1: firstMatch.peserta1?.namaLengkap || "BYE",
-      p2: firstMatch.peserta2?.namaLengkap || "BYE"
+      p1: getName(firstMatch, 1),
+      p2: getName(firstMatch, 2)
     });
 
-    index = 1; // lanjut dari slot 2
+    index = 1;
   }
 
   const slotInterval = setInterval(() => {
@@ -324,8 +348,8 @@ const revealSlots = (matches, newBagan) => {
 
     setCurrentSlotInfo({
       slot: index + 1,
-      p1: match.peserta1?.namaLengkap || "BYE",
-      p2: match.peserta2?.namaLengkap || "BYE"
+      p1: getName(match, 1),
+      p2: getName(match, 2)
     });
 
     index++;

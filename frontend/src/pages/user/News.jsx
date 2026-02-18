@@ -112,7 +112,7 @@ export default function News() {
           </p>
 
             <Link
-              to={`/berita/${item.idNews}`}
+              to={`/berita/${item.slug}`}
               className="mt-4 sm:mt-5 inline-flex items-center text-xs sm:text-sm md:text-base font-semibold text-yellow-600 hover:text-yellow-700 transition group"
             >
               Baca Selengkapnya
