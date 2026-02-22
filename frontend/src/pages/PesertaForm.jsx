@@ -521,7 +521,18 @@ if (tournamentStatus === "closed") {
                     <label className="text-xs font-bold text-slate-500 uppercase ml-1">Kelompok Umur</label>
                     <select name="kelompokUmurId" value={formData.kelompokUmurId} onChange={handleChange} className="w-full border-2 border-slate-100 p-3.5 rounded-xl bg-white outline-none focus:border-primary transition text-sm shadow-sm font-medium" required>
                       <option value="">-- Pilih --</option>
-                      {kelompokList.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
+                      {[...kelompokList]
+                        .sort((a, b) => {
+                          if (a.umur === b.umur) {
+                            return a.id - b.id; // kalau umur sama → id terkecil dulu
+                          }
+                          return a.umur - b.umur; // umur terkecil dulu
+                        })
+                        .map((k) => (
+                          <option key={k.id} value={k.id}>
+                            {k.nama}
+                          </option>
+                      ))}
                     </select>
                   </div>
                 </div>
