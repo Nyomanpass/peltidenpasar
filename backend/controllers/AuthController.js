@@ -99,3 +99,76 @@ export const me = async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 };
+
+export const updateProfile = async (req, res) => {
+  try {
+    const { name, email } = req.body;
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User tidak ditemukan" });
+
+    // Cek email sudah dipakai orang lain
+    if (email && email !== user.email) {
+      const exists = await User.findOne({ where: { email } });
+      if (exists) {
+        return res.status(409).json({ message: "Email sudah digunakan" });
+      }
+    }
+
+    user.name = name ?? user.name;
+    user.email = email ?? user.email;
+
+    await user.save();
+
+    return res.json({
+      message: "Profile berhasil diperbarui",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role
+      }
+    });
+
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+
+    const user = await User.findByPk(req.user.id);
+    if (!user) return res.status(404).json({ message: "User tidak ditemukan" });
+
+    // Cek password lama
+    const match = await bcrypt.compare(oldPassword, user.password);
+    if (!match) {
+      return res.status(400).json({ message: "Password lama salah" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Konfirmasi password tidak sama" });
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      return res.status(400).json({
+        message: "Password minimal 8 karakter, ada huruf besar, kecil, dan angka"
+      });
+    }
+
+    const hash = await bcrypt.hash(newPassword, 10);
+    user.password = hash;
+    await user.save();
+
+    return res.json({ message: "Password berhasil diganti" });
+
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Server error" });
+  }
+};

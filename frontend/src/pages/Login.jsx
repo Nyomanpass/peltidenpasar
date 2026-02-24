@@ -13,64 +13,63 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-  const submit = async (e) => {
-    e.preventDefault();
-    setError("");
-    try {
-      // 1. Lakukan proses login
-      const user = await login(email, password);
+ const submit = async (e) => {
+  e.preventDefault();
+  setError("");
 
-      // --- START: LOGIKA SET DEFAULT TOURNAMENT ---
-      if (user.role === "admin") {
-        try {
-          const res = await api.get("/tournaments");
-          const tournaments = res.data;
+  try {
+    const user = await login(email, password);
 
-          if (tournaments.length > 0) {
-            const activeTournaments = tournaments.filter(
-              (t) => t.status === "aktif"
-            );
+    // 🔥 Ambil semua tournament
+    const res = await api.get("/tournaments");
+    const tournaments = res.data;
 
-            if (activeTournaments.length > 0) {
-              const latestTournament = activeTournaments.reduce((prev, current) =>
-                prev.id > current.id ? prev : current
-              );
+    let selectedTournament = null;
 
-              localStorage.setItem(
-                "selectedTournament",
-                latestTournament.id
-              );
-              localStorage.setItem(
-                "selectedTournamentName",
-                latestTournament.name
-              );
+    if (tournaments.length > 0) {
+      const activeTournaments = tournaments.filter(
+        (t) => t.status === "aktif"
+      );
 
-              window.dispatchEvent(new Event("tournament-changed"));
-            } else {
-              localStorage.removeItem("selectedTournament");
-              localStorage.removeItem("selectedTournamentName");
-            }
-          }
-        } catch (fetchErr) {
-          console.error(
-            "Gagal mengambil data tournament default:",
-            fetchErr
-          );
-        }
-      }
-      // --- END: LOGIKA SET DEFAULT TOURNAMENT ---
-
-      // 4. Navigasi
-      if (user.role === "admin") nav("/admin/peserta");
-      else nav("/wasit");
-    } catch (err) {
-      if (err.response?.data?.message) {
-        setError(err.response.data.message);
-      } else {
-        setError("Terjadi kesalahan, coba lagi");
+      if (activeTournaments.length > 0) {
+        // Ambil berdasarkan createdAt terbaru (lebih aman dari ID)
+        selectedTournament = activeTournaments.sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+        )[0];
       }
     }
-  };
+
+    // 🔥 Simpan tournament kalau ada
+    if (selectedTournament) {
+      localStorage.setItem(
+        "selectedTournament",
+        selectedTournament.id
+      );
+      localStorage.setItem(
+        "selectedTournamentName",
+        selectedTournament.name
+      );
+    } else {
+      localStorage.removeItem("selectedTournament");
+      localStorage.removeItem("selectedTournamentName");
+    }
+
+    const roleRoutes = {
+      admin: "/admin/peserta",
+      wasit: "/wasit/peserta",
+      panitia: "/panitia/peserta",
+    };
+
+    nav(roleRoutes[user.role] || "/");
+
+  } catch (err) {
+    if (err.response?.data?.message) {
+      setError(err.response.data.message);
+    } else {
+      setError("Terjadi kesalahan, coba lagi");
+    }
+  }
+};
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">

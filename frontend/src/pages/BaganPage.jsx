@@ -244,7 +244,7 @@ const confirmDeleteBagan = async () => {
 
 
    {/* --- FILTER DAN AKSI (ADMIN SECTION) --- */}
-{role === "admin" && (
+{(role === "admin" || role === "panitia") && (
     <div className="bg-white p-6 rounded-2xl shadow-xl mb-8 flex flex-col md:flex-row md:items-center gap-4 border border-gray-100">
         
         <div className="flex items-center gap-2 text-gray-700 font-semibold">
@@ -347,7 +347,7 @@ const confirmDeleteBagan = async () => {
 
         {/* TOMBOL AKSI (KANAN) */}
         <div className="flex items-center gap-1 md:gap-3 ml-3">
-          {role === "admin" && (
+          {(role === "admin" || role === "panitia") && (
             <button
               onClick={(e) => {
                 e.stopPropagation();

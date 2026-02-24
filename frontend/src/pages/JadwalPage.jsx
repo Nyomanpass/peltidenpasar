@@ -406,7 +406,7 @@ const groupedJadwal = [...jadwal]
 
   
   {/* --- BAGIAN FORM: ADMIN --- */}
-{role === "admin" && (
+{(role === "admin" || role === "panitia") && (
   <div className="mb-10">
     {/* 1. TOMBOL UNTUK MEMBUKA KEMBALI FORM (Hanya muncul jika showForm false) */}
     {!showForm && (
@@ -653,7 +653,7 @@ const groupedJadwal = [...jadwal]
     </div>
 
     {/* --- BAGIAN TOMBOL EXPORT PDF --- */}
-    {role === "admin" && (
+    {(role === "admin" || role === "panitia") && (
       <div className="w-full md:w-auto flex items-center md:border-l border-gray-100 md:pl-6 pt-4 md:pt-0 border-t md:border-t-0">
         {!readyToDownload ? (
           <button
@@ -758,7 +758,7 @@ const groupedJadwal = [...jadwal]
                         <div className="h-full bg-white border border-gray-100 rounded-[1.2rem] md:rounded-[1.8rem] p-3 md:p-5 shadow-md hover:shadow-xl hover:border-yellow-400 md:hover:-translate-y-1 transition-all duration-300 relative group/card overflow-hidden">
                           
                           {/* Menu Admin (⋮) */}
-                          {(role === "admin" || role === "wasit") && (
+                          {["admin", "panitia", "wasit"].includes(role) && (
                             <div className="absolute top-2 right-2 md:top-4 md:right-4 z-30">
                               <button
                                 onClick={() => setOpenMenuId(openMenuId === match.id ? null : match.id)}
@@ -770,10 +770,11 @@ const groupedJadwal = [...jadwal]
                               {/* Dropdown Menu disesuaikan ukurannya */}
                               {openMenuId === match.id && (
                                 <div className="absolute right-0 mt-2 bg-white rounded-xl md:rounded-2xl shadow-2xl z-50 min-w-[120px] md:min-w-[140px] overflow-hidden border border-slate-100">
-                                  {role === "admin" && (
+                                  {(role === "admin" || role === "panitia") && (
+                                  
                                     <button onClick={() => { handleEditClick(match); setOpenMenuId(null); }} className="block w-full text-left px-4 py-2.5 hover:bg-yellow-50 text-[10px] md:text-[11px] font-extrabold text-gray-700 border-b border-gray-50">Edit</button>
                                   )}
-                                  {match.status !== "selesai" && (role === "admin" || role === "wasit") && (
+                                  {match.status !== "selesai" && ["admin", "panitia", "wasit"].includes(role) && (
                                     <button onClick={() => {
                                         setPendingJadwal(match);
                                         setRuleMode("manual");
@@ -788,7 +789,7 @@ const groupedJadwal = [...jadwal]
                                       }}
                                     className="block w-full text-left px-4 py-2.5 hover:bg-blue-50 text-[10px] md:text-[11px] font-extrabold text-blue-500 border-b border-gray-50">Input Pemenang</button>
                                   )}
-                                  {role === "admin" && (
+                                  {(role === "admin" || role === "panitia") && (
                                     <button onClick={() => { handleDeleteJadwal(match.id); setOpenMenuId(null); }} className="block w-full text-left px-4 py-2.5 hover:bg-red-50 text-[10px] md:text-[11px] font-extrabold text-red-600">Hapus</button>
                                   )}
                                 </div>
@@ -845,7 +846,7 @@ const groupedJadwal = [...jadwal]
                                </div>
 
                                 {/* Tombol Aksi Wasit/Admin */}
-                                {(role === "admin" || role === "wasit") && (
+                                {["admin", "panitia", "wasit"].includes(role) && (
                                   <div className="w-full">
                                     {(match.status === "terjadwal" || match.status === "belum" || match.status === "aktif") && (
                                       <button

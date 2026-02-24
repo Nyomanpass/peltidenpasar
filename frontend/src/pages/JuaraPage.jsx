@@ -196,7 +196,7 @@ const JuaraPage = () => {
 
   {/* TOMBOL PDF */}
   
-{role === "admin" && filteredWinners.length > 0 && (
+{(role === "admin" || role === "panitia")  && filteredWinners.length > 0 && (
   <div className="flex items-center">
     {!readyPDF ? (
       <button 

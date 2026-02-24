@@ -30,8 +30,8 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
   const [confirmDelete, setConfirmDelete] = useState({ show: false, teamId: null });
 
   const role = localStorage.getItem("role");
-  const isAdmin = role === "admin";
-  const isAdminOrWasit = role === "admin" || role === "wasit";
+  const isAdmin = role === "admin" || role === "panitia";
+  const isAdminOrWasit = role === "admin" || role === "wasit" || role === "panitia";
   const basePath = `/${role}`;
 
 

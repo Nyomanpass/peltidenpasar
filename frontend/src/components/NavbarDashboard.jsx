@@ -10,7 +10,7 @@ function NavbarDashboard({ toggleSidebar, toggleCollapse, isCollapsed }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State untuk drawer verifikasi
   const [pendingUsers, setPendingUsers] = useState([]); // State untuk data pending
 
-  const userName = localStorage.getItem("username") || "Admin";
+  const userName = localStorage.getItem("role");
   const role = localStorage.getItem("role") || "Admin";
 
   const handleLogout = () => {
@@ -101,7 +101,7 @@ const handleReject = async (id, message) => {
   // 5. Handler Detail (Navigasi)
   const handleViewDetail = (id) => {
       setIsDrawerOpen(false); // Tutup drawer sebelum navigasi
-      navigate(`/admin/detail-peserta/${id}`);
+      navigate(`/${role}/detail-peserta/${id}`);
   }
   // --- END LOGIKA FETCH DAN HANDLER VERIFIKASI ---
 
@@ -157,7 +157,7 @@ const handleReject = async (id, message) => {
         <div className="flex items-center gap-2">
           
           {/* Tombol Notifikasi (Lonceng) - Mengubah menjadi BUTTON Aksi */}
-          {role === "admin" && (
+          {(role === "admin" || role === "panitia") && (
             <button
               onClick={() => setIsDrawerOpen(true)}
               className="p-3 rounded-full text-gray-600 hover:bg-gray-100 transition-colors relative"
@@ -187,7 +187,7 @@ const handleReject = async (id, message) => {
                 Halo, {userName}
               </span>
               <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold">
-                {userName[0]}
+                {userName[0].toUpperCase()}
               </div>
             </button>
 
@@ -198,9 +198,6 @@ const handleReject = async (id, message) => {
                 {/* Info Pengguna di Dropdown */}
                 <div className="px-4 py-3 border-b border-gray-100">
                     <p className="text-sm font-bold text-gray-800">
-                      {userName} ({role})
-                    </p>
-                    <p className="text-xs text-gray-500">
                       Akun {role}
                     </p>
                 </div>
@@ -214,6 +211,18 @@ const handleReject = async (id, message) => {
                       <Globe size={18} className="text-blue-500"/> Kembali ke Website
                     </button>
                   </li>
+                    {role === "admin" && (
+                    <li>
+                      <a
+                        href="/admin/profile"
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                      >
+                        <User size={18} className="text-yellow-500"/>
+                        Profile
+                      </a>
+                    </li>
+                  )}
                   <li>
                     {/* Menggunakan elemen <a> atau Link dari React Router, bukan Link dari Lucide */}
                     <a
@@ -240,7 +249,7 @@ const handleReject = async (id, message) => {
       </nav>
       
       {/* 2. Komponen Drawer Verifikasi */}
-      {role === "admin" && (
+      {(role === "admin" || role === "panitia") && (
         <VerificationDrawer
           isOpen={isDrawerOpen}
           onClose={() => setIsDrawerOpen(false)}

@@ -89,7 +89,20 @@ const adminMenu = [
     { label: "Skor", path: "/wasit/skor", icon: <ClipboardList size={20} /> },
   ];
 
-  const menuItems = role === "admin" ? adminMenu : wasitMenu;
+  const panitiaMenu = [
+  { label: "Peserta", path: "/panitia/peserta", icon: <Users size={20} /> },
+  { label: "Bagan", path: "/panitia/bagan-peserta", icon: <List size={20} /> },
+  { label: "Jadwal Pertandingan", path: "/panitia/jadwal-pertandingan", icon: <Calendar size={20} /> },
+  { label: "Skor", path: "/panitia/skor", icon: <ClipboardList size={20} /> },
+  { label: "Hasil Pertandingan", path: "/panitia/hasil-pertandingan", icon: <Trophy size={20} /> },
+];
+
+  const menuItems =
+  role === "admin"
+    ? adminMenu
+    : role === "panitia"
+    ? panitiaMenu
+    : wasitMenu;
 
   return (
   <aside

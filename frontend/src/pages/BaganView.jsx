@@ -471,7 +471,7 @@ if (isRoundRobin) {
           {bagan.nama}
         </h1>
       
-      {role === "admin" && (
+      {(role === "admin" || role === "panitia") && (
         <div className="flex flex-col items-center gap-4 mb-10">
           <div className="flex justify-center gap-4">
             {/* Tombol Undian: HANYA tampil jika BELUM dikunci DAN BUKAN Round Robin */}
@@ -534,7 +534,7 @@ if (isRoundRobin) {
           <th className="px-4 py-4 text-center">VS</th>
           <th className="px-4 py-4 text-left">Peserta 2</th>
           <th className="px-4 py-4 text-center">Skor</th>
-          {role === "admin" && (
+          {(role === "admin" || role === "panitia") && (
             <th className="px-4 py-4 text-center">Aksi</th>
           )}
         </tr>
@@ -592,7 +592,7 @@ if (isRoundRobin) {
               </span>
             </td>
 
-            {role === "admin" && (
+            {(role === "admin" || role === "panitia") && (
               <td className="px-4 py-5 text-center">
                 {(
                   (!isDouble && !m.winnerId) ||
@@ -1119,7 +1119,7 @@ if (isRoundRobin) {
       </div>
 
       {/* Modal */}
-      {modalType === "peserta" && role === "admin" && (
+      {modalType === "peserta" && (role === "admin" || role === "panitia") && (
         <PesertaModal
           match={selectedMatch}
           kelompokUmurId={bagan.kelompokUmurId}
@@ -1127,14 +1127,14 @@ if (isRoundRobin) {
           onSaved={loadBagan}
         />
       )}
-      {modalType === "winner" && role === "admin" && (
+      {modalType === "winner" && (role === "admin" || role === "panitia") && (
         <WinnerModal
           match={selectedMatch}
           onClose={() => setModalType(null)}
           onSaved={loadBagan}
         />
       )}
-      {modalType === "seeding" && role === "admin" && (
+      {modalType === "seeding" && (role === "admin" || role === "panitia") && (
         <SeedingModal
           pesertaList={allPeserta}
           byeSlotsCount={byeSlotsCount}

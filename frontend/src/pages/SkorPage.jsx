@@ -449,23 +449,40 @@ const handleExportPDFLog = () => {
               </div>
 
               {/* Score Utama */}
-              <div className="md:col-span-3 flex flex-col items-center w-full">
-                <div className="flex items-center gap-4 md:gap-6 bg-slate-900 text-white px-6 py-3 md:px-10 md:py-5 rounded-2xl md:rounded-[2.5rem] shadow-xl md:shadow-2xl shadow-slate-200">
-                  <span className="text-3xl md:text-5xl font-black">{match.score1}</span>
-                  <div className="h-6 md:h-10 w-[1px] md:w-[2px] bg-slate-700"></div>
-                  <span className="text-3xl md:text-5xl font-black">{match.score2}</span>
-                </div>
-                
-                {/* Skor Per Set */}
-                <div className="flex gap-1.5 md:gap-2 mt-4">
+              <div className="md:col-span-3 flex justify-center w-full mt-3">
+                <div className="flex gap-3 md:gap-4 flex-wrap justify-center">
                   {[1, 2, 3].map(sNum => {
                     const s1 = match[`set${sNum}P1`];
                     const s2 = match[`set${sNum}P2`];
+
                     if ((s1 == null && s2 == null) || (s1 === 0 && s2 === 0)) return null;
+
                     return (
-                      <div key={sNum} className="flex flex-col items-center bg-slate-50 border border-slate-100 px-2.5 py-1 md:px-4 md:py-1.5 rounded-lg md:rounded-2xl min-w-[40px] md:min-w-[55px]">
-                        <span className="text-[6px] md:text-[7px] text-slate-400 font-black uppercase tracking-tighter">Set {sNum}</span>
-                        <span className="text-[10px] md:text-xs font-black">{s1}-{s2}</span>
+                      <div
+                        key={sNum}
+                        className="
+                          flex flex-col items-center
+                          bg-slate-900
+                          text-white
+                          px-5 py-3
+                          rounded-2xl
+                          shadow-lg
+                          min-w-[85px]
+                        "
+                      >
+                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                          SET {sNum}
+                        </span>
+
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-xl md:text-2xl font-black">
+                            {s1}
+                          </span>
+                          <span className="text-slate-500 font-bold">-</span>
+                          <span className="text-xl md:text-2xl font-black">
+                            {s2}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}

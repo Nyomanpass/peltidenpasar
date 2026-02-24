@@ -13,12 +13,20 @@ export default function Settings() {
   const [namaUmur, setNamaUmur] = useState("");
   const [umur, setUmur] = useState(""); 
   const [editingUmurId, setEditingUmurId] = useState(null);
+
   const [wasit, setWasit] = useState([]);
   const [namaWasit, setNamaWasit] = useState("");
   const [emailWasit, setEmailWasit] = useState("");
   const [passwordWasit, setPasswordWasit] = useState("");
   const [editingWasitId, setEditingWasitId] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  const [panitia, setPanitia] = useState([]);
+  const [namaPanitia, setNamaPanitia] = useState("");
+  const [emailPanitia, setEmailPanitia] = useState("");
+  const [passwordPanitia, setPasswordPanitia] = useState("");
+  const [editingPanitiaId, setEditingPanitiaId] = useState(null);
+  const [showPasswordPanitia, setShowPasswordPanitia] = useState(false);
 
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -84,7 +92,53 @@ export default function Settings() {
     setEditingWasitId(w.id);
   };
 
+  const fetchPanitia = async () => {
+    const res = await api.get("/panitia");
+    setPanitia(res.data);
+  };
 
+
+  const handleSubmitPanitia = async (e) => {
+    e.preventDefault();
+
+    const payload = {
+      name: namaPanitia,
+      email: emailPanitia,
+    };
+
+    if (passwordPanitia) {
+      payload.password = passwordPanitia;
+    }
+
+    if (editingPanitiaId) {
+      await api.put(`/panitia/${editingPanitiaId}`, payload);
+      setSuccess("Panitia berhasil diperbarui");
+    } else {
+      await api.post("/panitia", {
+        ...payload,
+        password: passwordPanitia,
+      });
+      setSuccess("Panitia berhasil ditambahkan");
+    }
+
+    setNamaPanitia("");
+    setEmailPanitia("");
+    setPasswordPanitia("");
+    setEditingPanitiaId(null);
+
+    fetchPanitia();
+  };
+
+  const updateStatusPanitia = async (id, status) => {
+    await api.put(`/panitia/${id}/status`, { status });
+    fetchPanitia();
+  };
+
+  const deletePanitia = async (id) => {
+    await api.delete(`/panitia/${id}`);
+    setSuccess("Panitia berhasil dihapus");
+    fetchPanitia();
+  };
 
 
   const fetchKelompokUmur = async () => {
@@ -202,6 +256,7 @@ export default function Settings() {
     fetchKelompokUmur();
     fetchLapangan();
     fetchWasit();
+     fetchPanitia(); 
   }, []);
 
 
@@ -218,6 +273,10 @@ export default function Settings() {
 
     if (confirmDelete.type === "wasit") {
       await deleteWasit(confirmDelete.id);
+    }
+
+    if (confirmDelete.type === "panitia") {
+      await deletePanitia(confirmDelete.id);
     }
 
   } catch (error) {
@@ -443,6 +502,185 @@ export default function Settings() {
               <tr><td colSpan="4" className="text-center py-5 text-gray-500 italic bg-white">
               Tidak ada data lapangan tersedia.
               </td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
+      {/* --- SETTINGS PANITIA --- */}
+    <div className="bg-white shadow-2xl rounded-2xl p-8 border border-gray-100 mt-10">
+      <h1 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-purple-500/50 pb-3 flex items-center gap-2">
+        <Users size={24} className="text-purple-600"/> Settings Akun Panitia
+      </h1>
+
+      {/* FORM PANITIA */}
+      <form onSubmit={handleSubmitPanitia} className="mb-8 flex flex-wrap gap-4 items-end">
+
+        <div className="flex flex-col flex-grow">
+          <label className="text-sm font-semibold text-gray-700 mb-1">
+            Nama Panitia
+          </label>
+          <input
+            type="text"
+            value={namaPanitia}
+            onChange={(e) => setNamaPanitia(e.target.value)}
+            placeholder="Nama lengkap panitia"
+            className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-500/70 focus:border-purple-500 outline-none w-full shadow-sm"
+            required
+          />
+        </div>
+
+        <div className="flex flex-col flex-grow">
+          <label className="text-sm font-semibold text-gray-700 mb-1">
+            Email Panitia
+          </label>
+          <input
+            type="email"
+            value={emailPanitia}
+            onChange={(e) => setEmailPanitia(e.target.value)}
+            placeholder="Email lengkap panitia"
+            className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-500/70 focus:border-purple-500 outline-none w-full shadow-sm"
+            required
+          />
+        </div>
+
+        <div className="flex flex-col flex-grow">
+          <label className="text-sm font-semibold text-gray-700 mb-1">
+            Password
+          </label>
+
+          <div className="relative">
+            <input
+              type={showPasswordPanitia ? "text" : "password"}
+              value={passwordPanitia}
+              onChange={(e) => setPasswordPanitia(e.target.value)}
+              placeholder="Minimal 8 karakter"
+              className="border border-gray-300 px-4 py-3 pr-12 rounded-xl focus:ring-2 focus:ring-purple-500/70 focus:border-purple-500 outline-none w-full shadow-sm"
+              required={!editingPanitiaId}
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPasswordPanitia(!showPasswordPanitia)}
+              className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-gray-700"
+            >
+              {showPasswordPanitia ? <EyeOff size={20}/> : <Eye size={20}/>}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          {editingPanitiaId && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditingPanitiaId(null);
+                setNamaPanitia("");
+                setEmailPanitia("");
+                setPasswordPanitia("");
+              }}
+              className="bg-gray-500 hover:bg-gray-600 transition text-white px-5 py-3 rounded-xl shadow-md font-semibold"
+            >
+              Batal
+            </button>
+          )}
+
+          <button
+            type="submit"
+            className="bg-purple-600 hover:bg-purple-700 transition text-white px-5 py-3 rounded-xl shadow-lg font-semibold flex items-center gap-2"
+          >
+            {editingPanitiaId ? <Edit size={18}/> : <PlusCircle size={18}/>}
+            {editingPanitiaId ? "Update" : "Tambah"}
+          </button>
+        </div>
+
+      </form>
+
+      {/* TABLE PANITIA */}
+      <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
+        <table className="min-w-full text-sm">
+          <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider">
+            <tr>
+              <th className="px-5 py-3 text-left">ID</th>
+              <th className="px-5 py-3 text-left">Nama</th>
+              <th className="px-5 py-3 text-left">Email</th>
+              <th className="px-5 py-3 text-left">Status</th>
+              <th className="px-5 py-3 text-center">Aksi</th>
+            </tr>
+          </thead>
+
+          <tbody className="divide-y divide-gray-100 bg-white">
+            {panitia.map((p) => (
+              <tr key={p.id} className="hover:bg-purple-50/50 transition">
+                <td className="px-5 py-3 font-medium text-gray-700">{p.id}</td>
+                <td className="px-5 py-3 font-semibold text-gray-800">{p.name}</td>
+                <td className="px-5 py-3 text-gray-600">{p.email}</td>
+
+                <td className="px-5 py-3">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold
+                    ${p.status === "verified" && "bg-green-100 text-green-700"}
+                    ${p.status === "pending" && "bg-yellow-100 text-yellow-700"}
+                    ${p.status === "rejected" && "bg-red-100 text-red-700"}
+                  `}>
+                    {p.status}
+                  </span>
+                </td>
+
+                <td className="px-5 py-3 flex gap-3 justify-center">
+
+                  {/* VERIFY */}
+                  <button
+                    onClick={() => updateStatusPanitia(p.id, "verified")}
+                    className="flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg shadow-md transition"
+                    title="Verifikasi"
+                  >
+                    <CheckCircle size={16}/>
+                  </button>
+
+                  {/* REJECT */}
+                  <button
+                    onClick={() => updateStatusPanitia(p.id, "rejected")}
+                    className="flex items-center gap-1 bg-orange-500 hover:bg-orange-600 text-white px-3 py-2 rounded-lg shadow-md transition"
+                    title="Tolak"
+                  >
+                    <XCircle size={16}/>
+                  </button>
+
+                  {/* EDIT */}
+                  <button
+                    onClick={() => {
+                      setNamaPanitia(p.name);
+                      setEmailPanitia(p.email);
+                      setPasswordPanitia("");
+                      setEditingPanitiaId(p.id);
+                    }}
+                    className="flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg shadow-md transition"
+                    title="Edit"
+                  >
+                    <Edit size={16}/>
+                  </button>
+
+                  {/* DELETE */}
+                  <button
+                    onClick={() => setConfirmDelete({ show: true, id: p.id, type: "panitia" })}
+                    className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg shadow-md transition"
+                    title="Hapus"
+                  >
+                    <Trash2 size={16}/>
+                  </button>
+
+                </td>
+              </tr>
+            ))}
+
+            {panitia.length === 0 && (
+              <tr>
+                <td colSpan="5" className="text-center py-5 text-gray-500 italic bg-white">
+                  Tidak ada data panitia.
+                </td>
+              </tr>
             )}
           </tbody>
         </table>

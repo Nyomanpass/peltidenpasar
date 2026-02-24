@@ -50,6 +50,8 @@ import clubRoutes from "./routes/ClubRoutes.js";
 import wasitRoutes from "./routes/WasitRoutes.js";
 //aturan skor
 import scoreRuleRoutes from "./routes/ScoreRuleRoutes.js";
+//panitia
+import panitiaRoutes from "./routes/PanitiaRoutes.js";
 
 const app = express();
 
@@ -104,6 +106,9 @@ app.use("/api", wasitRoutes);
 
 //import aturan skor
 app.use("/api", scoreRuleRoutes);
+
+//import panitia
+app.use("/api", panitiaRoutes);
 
 
 

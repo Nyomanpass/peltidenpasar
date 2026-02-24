@@ -21,7 +21,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
 
   // Logika pencarian gabungan
   const finalSearch = searchTermFromProps !== undefined ? searchTermFromProps : localSearch;
-  const basePath = role === "admin" ? "/admin" : "/wasit";
+  const basePath = `/${role}`;
 
 
   // Fungsi pengecekan link aktif
@@ -99,7 +99,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
 
             <div className="flex flex-col sm:flex-row items-center gap-4">
               {/* Navigasi Button Kategori (Single / Double) */}
-              {(role === "admin" || role === "wasit") && (
+              {(role === "admin" || role === "wasit" || role === "panitia") && (
                 <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-sm">
                   
                   <Link 
@@ -221,7 +221,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
         <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Nama</th>
         
         {/* Kolom Kontak hanya untuk Admin */}
-        {role === "admin" && (
+        {(role === "admin" || role === "panitia") && (
           <th className="hidden md:table-cell px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Kontak</th>
         )}
         
@@ -239,14 +239,14 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
             </span>
 
             {/* TANGGAL LAHIR: Hanya Admin yang lihat */}
-            {role === "admin" && (
+            {(role === "admin" || role === "panitia") && (
               <span className="text-[10px] text-gray-400 font-bold uppercase block">
                 {p.tanggalLahir || "Tgl Lahir -"}
               </span>
             )}
 
             {/* STATUS (Verified/Pending): Muncul di Mobile DAN Desktop (jika bukan admin) */}
-            <div className={`${role === "admin" ? "md:hidden" : "block"} mt-1`}>
+            <div className={`${(role === "admin" || role === "panitia") ? "md:hidden" : "block"} mt-1`}>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[8px] font-black uppercase
                 ${p.status === "pending" ? "bg-yellow-100 text-yellow-700" : 
                   p.status === "verified" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}`}>
@@ -256,7 +256,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
           </td>
 
           {/* KOLOM KONTAK: Hanya Admin */}
-          {role === "admin" && (
+          {(role === "admin" || role === "panitia") && (
             <td className="hidden md:table-cell px-6 py-4">
               <span className="text-xs font-bold text-gray-600 block">{p.nomorWhatsapp || "-"}</span>
               {/* Status untuk Admin di Desktop muncul di sini */}
@@ -270,9 +270,9 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
 
           <td className="hidden md:table-cell px-6 py-4">
             <div className="flex justify-center gap-2">
-              {role === "admin" ? (
+              {(role === "admin" || role === "panitia") ? (
                 <>
-                  <Link to={`/admin/detail-peserta/${p.id}`} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
+                  <Link to={`/${role}/detail-peserta/${p.id}`} className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-all">
                     <Eye size={16} />
                   </Link>
                   <button onClick={() => handleDelete(p.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-all">

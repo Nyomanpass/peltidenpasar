@@ -11,7 +11,6 @@ import "@fontsource/poppins/700.css"; // Bold
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
-import Register from "./pages/Register";
 import DashboardLayout from "./pages/DashboardLayout";
 
 
@@ -31,6 +30,7 @@ import SkorPage from "./pages/SkorPage";
 import Tournament from "./pages/admin/Tournament";
 import PesertaGanda from "./components/admin/PesertaGanda"; 
 import UiSettings from "./pages/UiSettings";
+import Profile from "./pages/admin/Profile";
 
 
 
@@ -56,7 +56,7 @@ export default function App() {
       <ScrollToTop/>
         <Routes>
           <Route index element={<Home />} />
-          <Route path="/register" element={<Register/>}/>
+        
           <Route path="/login" element={<Login />} />
           <Route path="/daftar-peserta" element={<PesertaForm/>}/>
           <Route path="/tournament" element={<TournamentUser/>}/>
@@ -93,6 +93,7 @@ export default function App() {
             <Route path="skor" element={<SkorPage/>}/>
             <Route path="peserta-ganda" element={<PesertaGanda />} />
             <Route path="uisettings" element={<UiSettings/>}/>
+            <Route path="profile" element={<Profile />} />
             
           </Route>
 
@@ -112,6 +113,27 @@ export default function App() {
             <Route path="skor" element={<SkorPage/>}/>
             <Route path="bagan-peserta" element={<BaganPage/>}/>
             <Route path="bagan-view/:id" element={<BaganView/>}/>
+          </Route>
+
+
+            <Route
+            path="/panitia"
+            element={
+              <ProtectedRoute>
+                <RoleRoute allow={["panitia"]}>
+                  <DashboardLayout />
+                </RoleRoute>
+              </ProtectedRoute>
+            }
+          >
+            <Route path="peserta" element={<Peserta/>}/>
+            <Route path="peserta-ganda" element={<PesertaGanda />} />
+            <Route path="jadwal-pertandingan" element={<JadwalPage/>}/>
+            <Route path="skor" element={<SkorPage/>}/>
+            <Route path="bagan-peserta" element={<BaganPage/>}/>
+            <Route path="bagan-view/:id" element={<BaganView/>}/>
+            <Route path="hasil-pertandingan" element={<JuaraPage/>}/>
+            <Route path="detail-peserta/:id" element={<DetailPeserta/>}/>
           </Route>
 
         </Routes>
