@@ -36,6 +36,13 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
   const [confirmReset, setConfirmReset] = useState(false);
 
 
+  const formatName = (name = "") => {
+    return name
+      .toLowerCase()
+      .split(" ")
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
 
 
   useEffect(() => {
@@ -123,19 +130,35 @@ const handlePoint = async (player) => {
   logKeterangan = `Tiebreak: ${nP1}-${nP2}`;
 
   // ⬇️ INI YANG BARU (ambil dari scoreRule)
-  const tbTarget = (nSetKe === jumlahSet && finalTieBreakPoint)
-    ? finalTieBreakPoint
-    : tieBreakPoint;
+    const tbTarget = (nSetKe === jumlahSet && finalTieBreakPoint)
+      ? finalTieBreakPoint
+      : tieBreakPoint;
 
-    if (nSetKe === jumlahSet && finalTieBreakPoint) {
+    const isFinalSet = nSetKe === jumlahSet && finalTieBreakPoint;
 
-      if (tP1 >= tbTarget || tP2 >= tbTarget) {
-        isGameEnd = true;
+    // 🔥 LOGIKA BARU
+    if (isFinalSet) {
+
+      // Kalau final TB = 10 → TIDAK perlu selisih 2
+      if (tbTarget === 10) {
+        if (tP1 >= tbTarget || tP2 >= tbTarget) {
+          isGameEnd = true;
+        }
+      }
+
+      // Kalau final TB = 7 → WAJIB selisih 2
+      else {
+        if (
+          (tP1 >= tbTarget && tP1 - tP2 >= 2) ||
+          (tP2 >= tbTarget && tP2 - tP1 >= 2)
+        ) {
+          isGameEnd = true;
+        }
       }
 
     } else {
 
-      // Tie break normal → harus selisih 2
+      // Tiebreak normal → selalu selisih 2
       if (
         (tP1 >= tbTarget && tP1 - tP2 >= 2) ||
         (tP2 >= tbTarget && tP2 - tP1 >= 2)
@@ -503,10 +526,23 @@ const handlePoint = async (player) => {
         </div>
 
         {/* NAMA PEMAIN */}
-        <div className="h-16 flex items-center justify-center mb-2">
-          <h2 className="text-sm md:text-base font-black uppercase tracking-tight text-center leading-tight text-white break-words max-w-[140px]">
-            {match.peserta1?.namaLengkap || match.doubleTeam1?.namaTim}
-          </h2>
+        <div className="min-h-[80px] flex flex-col items-center justify-center mb-3">
+          {match.doubleTeam1?.namaTim ? (
+            <>
+              {match.doubleTeam1.namaTim.split(" / ").map((name, i, arr) => (
+                <div key={i} className="text-sm md:text-base font-bold text-white text-center leading-snug">
+                  {formatName(name)}
+                  {i === 0 && (
+                    <div className="text-yellow-400 font-black my-1">&</div>
+                  )}
+                </div>
+              ))}
+            </>
+          ) : (
+            <h2 className="text-sm md:text-base font-bold text-white text-center leading-snug">
+              {formatName(match.peserta1?.namaLengkap)}
+            </h2>
+          )}
         </div>
 
         {/* POIN UTAMA */}
@@ -539,10 +575,23 @@ const handlePoint = async (player) => {
         </div>
 
         {/* NAMA PEMAIN */}
-        <div className="h-16 flex items-center justify-center mb-2">
-          <h2 className="text-sm md:text-base font-black uppercase tracking-tight text-center leading-tight text-white break-words max-w-[140px]">
-            {match.peserta2?.namaLengkap || match.doubleTeam2?.namaTim}
-          </h2>
+        <div className="min-h-[80px] flex flex-col items-center justify-center mb-3">
+          {match.doubleTeam2?.namaTim ? (
+            <>
+              {match.doubleTeam2.namaTim.split(" / ").map((name, i, arr) => (
+                <div key={i} className="text-sm md:text-base font-bold text-white text-center leading-snug">
+                  {formatName(name)}
+                  {i === 0 && (
+                    <div className="text-yellow-400 font-black my-1">&</div>
+                  )}
+                </div>
+              ))}
+            </>
+          ) : (
+            <h2 className="text-sm md:text-base font-bold text-white text-center leading-snug">
+              {formatName(match.peserta2?.namaLengkap)}
+            </h2>
+          )}
         </div>
 
         {/* POIN UTAMA */}
