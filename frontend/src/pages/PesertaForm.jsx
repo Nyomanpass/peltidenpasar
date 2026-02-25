@@ -211,7 +211,7 @@ const [tournamentStatus, setTournamentStatus] = useState("checking");
       } else if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else {
-        setError("Terjadi kesalahan saat upload.");
+        setError("Hanya file JPG, JPEG, dan PNG yang diperbolehkan dengan ukuran maksimal 1.5MB");
       }
     } finally {
       setIsSubmitting(false);
