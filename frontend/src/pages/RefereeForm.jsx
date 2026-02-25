@@ -127,14 +127,26 @@ const handlePoint = async (player) => {
     ? finalTieBreakPoint
     : tieBreakPoint;
 
-  if (
-    (tP1 >= tbTarget && tP1 - tP2 >= 2) ||
-    (tP2 >= tbTarget && tP2 - tP1 >= 2)
-  ) {
-    isGameEnd = true;
-  }
-} else {
-if (useDeuce) {
+    if (nSetKe === jumlahSet && finalTieBreakPoint) {
+
+      if (tP1 >= tbTarget || tP2 >= tbTarget) {
+        isGameEnd = true;
+      }
+
+    } else {
+
+      // Tie break normal → harus selisih 2
+      if (
+        (tP1 >= tbTarget && tP1 - tP2 >= 2) ||
+        (tP2 >= tbTarget && tP2 - tP1 >= 2)
+      ) {
+        isGameEnd = true;
+      }
+
+    }
+
+  } else {
+  if (useDeuce) {
 
   const p1Index = points.indexOf(nP1);
   const p2Index = points.indexOf(nP2);
