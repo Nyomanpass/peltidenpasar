@@ -1,4 +1,5 @@
 import "dotenv/config";
+import multer from "multer";
 import express from "express";
 import cors from "cors";
 import { sequelize } from "./config/Database.js";
@@ -111,7 +112,30 @@ app.use("/api", scoreRuleRoutes);
 app.use("/api", panitiaRoutes);
 
 
+app.use((err, req, res, next) => {
+  console.error("UPLOAD ERROR:", err);
 
+  // Jika error karena ukuran file
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(400).json({
+        message: "Ukuran file maksimal 1.5MB"
+      });
+    }
+    return res.status(400).json({
+      message: err.message
+    });
+  }
+
+  // Jika error dari fileFilter
+  if (err) {
+    return res.status(400).json({
+      message: err.message
+    });
+  }
+
+  next();
+});
 
 
 app.get("/", (req, res) => res.send("API OK"));

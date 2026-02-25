@@ -34,6 +34,10 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
   const isAdminOrWasit = role === "admin" || role === "wasit" || role === "panitia";
   const basePath = `/${role}`;
 
+  const totalTimGanda = doubleTeams.filter(team =>
+    String(team.tournamentId) === String(currentTournamentId)
+  ).length;
+
 
 
   // Logika pencarian gabungan (Props vs Lokal)
@@ -147,6 +151,14 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
               <p className="text-sm text-yellow-600 font-bold uppercase tracking-widest mt-2">
                 Tournament: {currentTournamentName || "Belum Memilih"}
               </p>
+                <div className="mt-3 flex items-center gap-3">
+                  <span className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                    Total Peserta
+                  </span>
+                  <div className="px-4 py-1.5 bg-yellow-500 text-white rounded-xl font-black text-sm shadow-md">
+                    {totalTimGanda}
+                  </div>
+               </div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-4">

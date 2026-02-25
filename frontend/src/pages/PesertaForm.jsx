@@ -204,7 +204,15 @@ const [tournamentStatus, setTournamentStatus] = useState("checking");
       
       if (onSuccess) onSuccess();
     } catch (err) {
-      setError("Gagal mendaftar, silakan cek kembali data Anda.");
+      console.error(err);
+
+      if (err.response?.data?.message) {
+        setError(err.response.data.message);
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error);
+      } else {
+        setError("Terjadi kesalahan saat upload.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -567,6 +575,7 @@ if (tournamentStatus === "closed") {
                     name="fotoKartu"
                     accept="image/*"
                     onChange={handleChange}
+                     required
                     className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-4 file:rounded-lg file:border-0 file:bg-slate-700 file:text-white file:font-bold hover:file:bg-black transition-all cursor-pointer"
                   />
                   {previewFoto && (

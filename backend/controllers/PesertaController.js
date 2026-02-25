@@ -19,7 +19,26 @@ const storage = multer.diskStorage({
   },
 });
 
-export const upload = multer({ storage });
+
+export const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png"
+    ];
+
+    if (!allowedTypes.includes(file.mimetype)) {
+      return cb(new Error("Hanya file JPG, JPEG, dan PNG yang diperbolehkan"), false);
+    }
+
+    cb(null, true);
+  },
+  limits: {
+    fileSize: 1.5 * 1024 * 1024 // 1.5MB
+  }
+});
 
 // ====== Controller ======
 
