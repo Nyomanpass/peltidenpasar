@@ -212,27 +212,32 @@ const handleReject = async (id, message) => {
                     </button>
                   </li>
                     {role === "admin" && (
-                    <li>
-                      <a
-                        href="/admin/profile"
-                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <User size={18} className="text-yellow-500"/>
-                        Profile
-                      </a>
-                    </li>
-                  )}
-                  <li>
-                    {/* Menggunakan elemen <a> atau Link dari React Router, bukan Link dari Lucide */}
-                    <a
-                      href="/admin/settings" 
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                      onClick={() => setIsProfileDropdownOpen(false)} 
-                    >
-                      <Settings size={18} className="text-gray-500"/> Pengaturan
-                    </a>
-                  </li>
+                      <>
+                        <li>
+                          <a
+                            href="/admin/profile"
+                            className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            onClick={() => setIsProfileDropdownOpen(false)}
+                          >
+                            <User size={18} className="text-yellow-500"/>
+                            Profile
+                          </a>
+                        </li>
+                    
+                      
+                      <li>
+                        {/* Menggunakan elemen <a> atau Link dari React Router, bukan Link dari Lucide */}
+                        <a
+                          href="/admin/settings" 
+                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                          onClick={() => setIsProfileDropdownOpen(false)} 
+                        >
+                          <Settings size={18} className="text-gray-500"/> Pengaturan
+                        </a>
+                      </li>
+                      </>
+                    )}
+
                   <li>
                     <button
                       onClick={handleLogout}
