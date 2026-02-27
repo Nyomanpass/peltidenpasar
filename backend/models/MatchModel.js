@@ -36,6 +36,24 @@ export const Match = sequelize.define("Match", {
     type: DataTypes.INTEGER, 
     allowNull: true 
   },
+  refereeId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
+  durasi: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 0
+  },
+    isTimerRunning: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+
+  timerStartedAt: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   status: { type: DataTypes.ENUM("belum","berlangsung","selesai"), defaultValue: "belum" },
   tournamentId: { type: DataTypes.INTEGER, allowNull: false },
   baganId: { type: DataTypes.INTEGER, allowNull: false },

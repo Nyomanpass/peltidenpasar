@@ -6,6 +6,7 @@ import { DoubleTeam } from "../models/DoubleTeamModel.js";
 import { MatchScoreLog } from "../models/MatchScoreLog.js";
 import { KelompokUmur } from "../models/KelompokUmurModel.js";
 import { ScoreRule } from "../models/ScoreRuleModel.js";
+import { User } from "../models/UserModel.js";
 
 import { Op } from "sequelize";
 
@@ -73,6 +74,8 @@ export const updateWinner = async (req, res) => {
     const match = await Match.findByPk(matchId, {
       include: [{ model: Bagan, as: "bagan" }]
     });
+
+
     if (!match) return res.status(404).json({ msg: "Match tidak ditemukan" });
 
     const isDouble = match.bagan?.kategori === "double";
@@ -82,6 +85,14 @@ export const updateWinner = async (req, res) => {
       match.winnerDoubleId = winnerDoubleId || winnerId; // Menangani jika frontend kirim salah satu
     } else {
       match.winnerId = winnerId;
+    }
+
+     // 🔥 Ambil user login
+    const userId = req.user?.id;
+
+    // 🔥 Isi referee jika belum ada
+    if (!match.refereeId) {
+      match.refereeId = userId;
     }
     
     match.score1 = score1;
@@ -323,6 +334,11 @@ export const getMatches = async (req, res) => {
             { model: Peserta, as: "Player2", attributes: ["namaLengkap", "isSeeded"] }
           ] 
         },
+        {
+          model: User,
+          as: "referee",
+          attributes: ["id", "name"] // sesuaikan dengan kolom di tabel user kamu
+        },
       ],
       // Jika status 'selesai', urutkan berdasarkan waktu update terbaru
       order: status === 'selesai' 
@@ -333,6 +349,26 @@ export const getMatches = async (req, res) => {
     res.json(matches);
   } catch (error) { 
     res.status(500).json({ error: error.message }); 
+  }
+};
+
+export const updateMatchDuration = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { durasi, isTimerRunning, timerStartedAt } = req.body;
+
+    const match = await Match.findByPk(id);
+    if (!match) return res.status(404).json({ msg: "Match tidak ditemukan" });
+
+    if (durasi !== undefined) match.durasi = durasi;
+    if (isTimerRunning !== undefined) match.isTimerRunning = isTimerRunning;
+    if (timerStartedAt !== undefined) match.timerStartedAt = timerStartedAt;
+
+    await match.save();
+
+    res.json(match);
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
   }
 };
 

@@ -11,6 +11,7 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
   const [p2Game, setP2Game] = useState(0);
 
   const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isServeEnabled, setIsServeEnabled] = useState(false);
   
   const [currentSet, setCurrentSet] = useState(1);
   const [setMenangP1, setSetMenangP1] = useState(0);
@@ -36,6 +37,84 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
   const [error, setError] = useState("");
   const [confirmUndo, setConfirmUndo] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+
+  const [matchDuration, setMatchDuration] = useState(0); // dalam detik
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [timerStartedAt, setTimerStartedAt] = useState(null);
+  const [confirmPause, setConfirmPause] = useState(false);
+  const [, forceRender] = useState(0);
+
+
+useEffect(() => {
+  let interval;
+
+  if (isTimerRunning) {
+    interval = setInterval(() => {
+      forceRender(prev => prev + 1); // 🔥 paksa render tiap detik
+    }, 1000);
+  }
+
+  return () => clearInterval(interval);
+}, [isTimerRunning]);
+
+  const formatTime = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+
+    return [
+      hrs.toString().padStart(2, "0"),
+      mins.toString().padStart(2, "0"),
+      secs.toString().padStart(2, "0")
+    ].join(":");
+  };
+
+
+const handleStartResume = async () => {
+  if (isTimerRunning) return; 
+
+  const now = new Date();
+
+  setIsTimerRunning(true);
+  setTimerStartedAt(now);
+
+  await api.patch(`/matches/${match.id}/duration`, {
+    durasi: matchDuration,
+    isTimerRunning: true,
+    timerStartedAt: now
+  });
+};
+
+
+  const handlePause = async () => {
+    const now = new Date();
+    const started = new Date(timerStartedAt);
+
+    const diff = Math.floor((now - started) / 1000);
+    const finalDuration = matchDuration + diff;
+
+    setIsTimerRunning(false);
+    setMatchDuration(finalDuration);
+    setTimerStartedAt(null);
+
+    await api.patch(`/matches/${match.id}/duration`, {
+      durasi: finalDuration,
+      isTimerRunning: false,
+      timerStartedAt: null
+    });
+  };
+
+  const handleResetTimer = async () => {
+    setIsTimerRunning(false);
+    setMatchDuration(0);
+    setTimerStartedAt(null);
+
+    await api.patch(`/matches/${match.id}/duration`, {
+      durasi: 0,
+      isTimerRunning: false,
+      timerStartedAt: null
+    });
+  };
 
 
   const formatName = (name = "") => {
@@ -69,11 +148,23 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
     fetchLastScore();
   }, [match.id]);
 
-  useEffect(() => {
-    api.get(`/matches/${match.id}`).then(res => {
-      setScoreRule(res.data.scoreRule);
-    });
-  }, [match.id]);
+useEffect(() => {
+  api.get(`/matches/${match.id}`).then(res => {
+    setScoreRule(res.data.scoreRule);
+    const data = res.data;
+
+    setMatchDuration(data.durasi || 0);
+
+    if (data.isTimerRunning && data.timerStartedAt) {
+      setIsTimerRunning(true);
+      setTimerStartedAt(new Date(data.timerStartedAt));
+    } else {
+      setIsTimerRunning(false);
+      setTimerStartedAt(null);
+    }
+  });
+}, [match.id]);
+
 
 const handleResetMatch = async () => {
   try {
@@ -98,244 +189,202 @@ const handleResetMatch = async () => {
 
 };
 
+
 const handlePoint = async (player) => {
-  let nP1 = p1Point, nP2 = p2Point, nG1 = p1Game, nG2 = p2Game;
-  let nSetW1 = setMenangP1, nSetW2 = setMenangP2, nSetKe = currentSet;
-  let isGameEnd = false;
-  let isMatchFinished = false;
-  let logKeterangan = `Point: ${nP1}-${nP2}`; // Default keterangan
-  
   if (!scoreRule) return;
 
-  const {
-    jumlahSet,
-    gamePerSet,
-    tieBreakPoint,
-    finalTieBreakPoint,
-    useDeuce
-  } = scoreRule;
+  // 1. variable untuk kalkulasi
+  let nP1 = p1Point, nP2 = p2Point;
+  let nG1 = parseInt(p1Game) || 0, nG2 = parseInt(p2Game) || 0;
+  let nSetW1 = parseInt(setMenangP1) || 0, nSetW2 = parseInt(setMenangP2) || 0;
+  let nSetKe = parseInt(currentSet) || 1;
 
-  const isTieBreakMode = nG1 === gamePerSet && nG2 === gamePerSet;
+  let isGameEnd = false;
+  let isSetFinished = false;
+  let isMatchFinished = false;
+  let logDesc = "";
 
+  const { jumlahSet, gamePerSet, tieBreakPoint, finalTieBreakPoint, useDeuce } = scoreRule;
+  const isProset = jumlahSet === 1;
+  const isBO3 = jumlahSet > 1;
 
-  // --- 1. LOGIKA POIN ---
- if (isTieBreakMode) {
-  let tP1 = parseInt(nP1) || 0; 
-  let tP2 = parseInt(nP2) || 0;
+ 
+  let isTieBreakMode = false;
+  if (isProset) {
+    isTieBreakMode = (nG1 === gamePerSet - 1 && nG2 === gamePerSet - 1);
+  } else if (isBO3) {
 
-  if (player === 1) tP1++; 
-  else tP2++;
-
-  nP1 = tP1.toString(); 
-  nP2 = tP2.toString();
-
-  logKeterangan = `Tiebreak: ${nP1}-${nP2}`;
-
-  // ⬇️ INI YANG BARU (ambil dari scoreRule)
-    const tbTarget = (nSetKe === jumlahSet && finalTieBreakPoint)
-      ? finalTieBreakPoint
-      : tieBreakPoint;
-
-    const isFinalSet = nSetKe === jumlahSet && finalTieBreakPoint;
-
-    // 🔥 LOGIKA BARU
-    if (isFinalSet) {
-
-      // Kalau final TB = 10 → TIDAK perlu selisih 2
-      if (tbTarget === 10) {
-        if (tP1 >= tbTarget || tP2 >= tbTarget) {
-          isGameEnd = true;
-        }
-      }
-
-      // Kalau final TB = 7 → WAJIB selisih 2
-      else {
-        if (
-          (tP1 >= tbTarget && tP1 - tP2 >= 2) ||
-          (tP2 >= tbTarget && tP2 - tP1 >= 2)
-        ) {
-          isGameEnd = true;
-        }
-      }
-
-    } else {
-
-      // Tiebreak normal → selalu selisih 2
-      if (
-        (tP1 >= tbTarget && tP1 - tP2 >= 2) ||
-        (tP2 >= tbTarget && tP2 - tP1 >= 2)
-      ) {
-        isGameEnd = true;
-      }
-
-    }
-
-  } else {
-  if (useDeuce) {
-
-  const p1Index = points.indexOf(nP1);
-  const p2Index = points.indexOf(nP2);
-
-  if (player === 1) {
-
-    if (nP1 === "40" && nP2 !== "40" && nP2 !== "Ad") {
-      isGameEnd = true;
-    }
-    else if (nP1 === "40" && nP2 === "40") {
-      nP1 = "Ad";
-    }
-    else if (nP1 === "Ad") {
-      isGameEnd = true;
-    }
-    else if (nP2 === "Ad") {
-      nP2 = "40";
-    }
-    else {
-      nP1 = points[p1Index + 1];
-    }
-
-  } else {
-
-    if (nP2 === "40" && nP1 !== "40" && nP1 !== "Ad") {
-      isGameEnd = true;
-    }
-    else if (nP1 === "40" && nP2 === "40") {
-      nP2 = "Ad";
-    }
-    else if (nP2 === "Ad") {
-      isGameEnd = true;
-    }
-    else if (nP1 === "Ad") {
-      nP1 = "40";
-    }
-    else {
-      nP2 = points[p2Index + 1];
-    }
-
+    isTieBreakMode = (nG1 === gamePerSet && nG2 === gamePerSet);
   }
-}else {
-    // tanpa deuce (40 langsung menang)
-    if (player === 1) {
-      if (nP1 === "40") isGameEnd = true;
-      else nP1 = points[points.indexOf(nP1) + 1];
+
+  /* ================================
+     A. LOGIKA POINT
+  ================================== */
+  if (isTieBreakMode) {
+    let tP1 = parseInt(nP1) || 0;
+    let tP2 = parseInt(nP2) || 0;
+    player === 1 ? tP1++ : tP2++;
+
+    nP1 = tP1.toString();
+    nP2 = tP2.toString();
+
+    // Khusus BO3 Set 3 pakai Final Tiebreak (misal 10 poin)
+    let tbTarget = (isBO3 && nSetKe === 3) ? finalTieBreakPoint : tieBreakPoint;
+
+    if ((tP1 >= tbTarget && tP1 - tP2 >= 2) || (tP2 >= tbTarget && tP2 - tP1 >= 2)) {
+      isGameEnd = true; 
+    }
+    logDesc = `Tiebreak: ${nP1}-${nP2}`;
+  } else {
+    // Logika Skor Tenis (0, 15, 30, 40, Ad)
+    const points = ["0", "15", "30", "40", "Ad"];
+    if (useDeuce) {
+      if (player === 1) {
+        if (nP1 === "40" && nP2 !== "40" && nP2 !== "Ad") isGameEnd = true;
+        else if (nP1 === "40" && nP2 === "40") nP1 = "Ad";
+        else if (nP1 === "Ad") isGameEnd = true;
+        else if (nP2 === "Ad") nP2 = "40";
+        else nP1 = points[points.indexOf(nP1) + 1];
+      } else {
+        if (nP2 === "40" && nP1 !== "40" && nP1 !== "Ad") isGameEnd = true;
+        else if (nP1 === "40" && nP2 === "40") nP2 = "Ad";
+        else if (nP2 === "Ad") isGameEnd = true;
+        else if (nP1 === "Ad") nP1 = "40";
+        else nP2 = points[points.indexOf(nP2) + 1];
+      }
     } else {
-      if (nP2 === "40") isGameEnd = true;
-      else nP2 = points[points.indexOf(nP2) + 1];
+      if (player === 1) {
+        if (nP1 === "40") isGameEnd = true;
+        else nP1 = points[points.indexOf(nP1) + 1];
+      } else {
+        if (nP2 === "40") isGameEnd = true;
+        else nP2 = points[points.indexOf(nP2) + 1];
+      }
+    }
+    logDesc = `Point: ${nP1}-${nP2}`;
+  }
+
+  /* ================================
+     B. LOGIKA GAME & SET (KHUSUS BO3 & PROSET)
+  ================================== */
+  if (isGameEnd) {
+    player === 1 ? nG1++ : nG2++;
+    nP1 = "0"; nP2 = "0"; // Reset poin
+    logDesc = `Game: ${nG1}-${nG2}`;
+
+    if (isProset) {
+      // Proset Selesai jika mencapai gamePerSet (8 atau 9)
+      if (nG1 >= gamePerSet || nG2 >= gamePerSet) isSetFinished = true;
+    } else if (isBO3) {
+      // 1. Menang Normal (6-0 sampai 6-4)
+      const winNormal = (nG1 === gamePerSet && Math.abs(nG1 - nG2) >= 2) || (nG2 === gamePerSet && Math.abs(nG1 - nG2) >= 2);
+      
+      // 2. Menang Deuce Game (7-5)
+      const winDeuceGame = (nG1 === gamePerSet + 1 && nG2 === gamePerSet - 1) || (nG2 === gamePerSet + 1 && nG1 === gamePerSet - 1);
+      
+      // 3. Menang Tiebreak (7-6)
+      const winTiebreak = (nG1 > gamePerSet || nG2 > gamePerSet);
+
+      if (winNormal || winDeuceGame || winTiebreak) isSetFinished = true;
     }
   }
 
-  logKeterangan = `Point: ${nP1}-${nP2}`;
+  /* ================================
+     C. LOGIKA MATCH
+  ================================== */
+
+  const finalGameP1InSet = nG1;
+  const finalGameP2InSet = nG2;
+  const setSelesaiTadi = nSetKe;
+
+ if (isSetFinished) {
+
+  const finishedSetNumber = nSetKe;
+  const finalGameP1 = nG1;
+  const finalGameP2 = nG2;
+
+  setSetScores(prev => [
+    ...prev,
+    { set: finishedSetNumber, p1: finalGameP1, p2: finalGameP2 }
+  ]);
+
+  finalGameP1 > finalGameP2 ? nSetW1++ : nSetW2++;
+
+  const targetWin = isProset ? 1 : Math.ceil(jumlahSet / 2);
+
+  if (nSetW1 >= targetWin || nSetW2 >= targetWin) {
+    isMatchFinished = true;
+    logDesc = `Match Ended (${finalGameP1}-${finalGameP2})`;
+    setSuccess(`Match Selesai! Skor Akhir: ${nSetW1}-${nSetW2}`);
+  } else {
+    logDesc = `Set ${finishedSetNumber} Ended (${finalGameP1}-${finalGameP2})`;
+    setSuccess(`Set ${finishedSetNumber} Selesai! Skor: ${finalGameP1InSet}-${finalGameP2InSet}. Memasuki Set ${finishedSetNumber + 1}.`);
+
+    // 🔥 RESET SET BARU SETELAH SIMPAN NILAI
+    nSetKe++;
+    nG1 = 0;
+    nG2 = 0;
+    nP1 = "0";
+    nP2 = "0";
+  }
 }
 
-  // --- 2. LOGIKA GAME & SET ---
-  if (isGameEnd) {
-    if (player === 1) nG1++; else nG2++;
-    nP1 = "0"; nP2 = "0"; // Reset Point untuk log berikutnya
-    logKeterangan = `Game: ${nG1}-${nG2}`;
+  // 4. Update UI State
+  setP1Point(nP1); setP2Point(nP2);
+  setP1Game(nG1); setP2Game(nG2);
+  setCurrentSet(nSetKe);
+  setSetMenangP1(nSetW1); setSetMenangP2(nSetW2);
 
-   let isSetFinished = false;
-
-    // Menang normal (misal 6–0 s/d 6–4, atau sesuai gamePerSet)
-    if (
-      (nG1 === gamePerSet && nG2 <= gamePerSet - 2) ||
-      (nG2 === gamePerSet && nG1 <= gamePerSet - 2)
-    ) {
-      isSetFinished = true;
-    }
-
-    // Menang lewat tiebreak (misal 7–6 jika gamePerSet = 6)
-    else if (
-      nG1 === gamePerSet + 1 ||
-      nG2 === gamePerSet + 1
-    ) {
-      isSetFinished = true;
-    }
-
-
-    if (isSetFinished) {
-      setSetScores(prev => [
-        ...prev,
-        { set: nSetKe, p1: nG1, p2: nG2 }
-      ]);
-
-      if (nG1 > nG2) nSetW1++; else nSetW2++;
-      
-      if (nSetW1 === targetSetWin || nSetW2 === targetSetWin) {
-        isMatchFinished = true;
-        logKeterangan = "Match Ended";
-      } else {
-        logKeterangan = `Set ${nSetKe} Ended`; // Penanda akhir set
-        
-        // KIRIM LOG PENUTUP SET TERLEBIH DAHULU SEBELUM RESET
-        try {
-          await api.post('/update-point', {
-            matchId: match.id,
-            setKe: nSetKe,
-            skorP1: "0", skorP2: "0",
-            gameP1: nG1, gameP2: nG2,
-            setMenangP1: nSetW1, setMenangP2: nSetW2,
-            statusMatch: 'berlangsung',
-            keterangan: logKeterangan
-          });
-        } catch (e) { console.error(e); }
-
-        // Setelah kirim log penutup, baru persiapkan untuk set baru
-        setSuccess(`Set ${nSetKe} selesai! Skor ${nG1}-${nG2}`);
-        nSetKe++;
-        nG1 = 0; nG2 = 0; 
-        logKeterangan = "Start New Set";
-      }
-    }
-  }
-
-
-
-
-  // Tentukan WinnerId jika selesai
-  const isDouble = !!match.doubleTeam1Id; // Cek kategori
-  let winnerId = null;
-    if (isMatchFinished) {
-      // Samakan logika penentuan ID dengan WinnerModal
-      winnerId = nSetW1 > nSetW2 
-        ? (isDouble ? match.doubleTeam1Id : match.peserta1Id) 
-        : (isDouble ? match.doubleTeam2Id : match.peserta2Id);
-    }
-
-  // Update State UI
-  setP1Point(nP1); setP2Point(nP2); setP1Game(nG1); setP2Game(nG2);
-  setCurrentSet(nSetKe); setSetMenangP1(nSetW1); setSetMenangP2(nSetW2);
-
-  // 3. Kirim ke Backend (Log Reguler atau Match Ended)
- try {
-    // 1. Tetap kirim log reguler untuk statistik (api.post)
+  // 5. Backend Update
+  try {
     await api.post('/update-point', {
-      matchId: match.id,
-      setKe: nSetKe,
-      skorP1: nP1, skorP2: nP2,
-      gameP1: nG1, gameP2: nG2,
-      setMenangP1: nSetW1, setMenangP2: nSetW2,
+     matchId: match.id,
+      // Jika set baru saja selesai, kirim log ke nomor set yang lama (misal Set 1)
+      // Dan gunakan skor game terakhir (misal 3-6), bukan 0-0
+      setKe: isSetFinished && !isMatchFinished ? setSelesaiTadi : nSetKe, 
+      skorP1: nP1, 
+      skorP2: nP2,
+      gameP1: isSetFinished && !isMatchFinished ? finalGameP1InSet : nG1, 
+      gameP2: isSetFinished && !isMatchFinished ? finalGameP2InSet : nG2,
+      setMenangP1: nSetW1,
+      setMenangP2: nSetW2,
       statusMatch: isMatchFinished ? 'selesai' : 'berlangsung',
-      keterangan: logKeterangan
+      keterangan: logDesc
     });
 
-    // 2. JIKA SELESAI, KIRIM KE ENDPOINT WINNER (Seperti WinnerModal)
-    // Ini agar bagan terupdate benar dan tidak menimpa BYE
     if (isMatchFinished) {
+        const finalDuration =
+          isTimerRunning && timerStartedAt
+            ? matchDuration +
+              Math.floor((Date.now() - new Date(timerStartedAt)) / 1000)
+            : matchDuration;
+
+        setIsTimerRunning(false);
+        setTimerStartedAt(null);
+        setMatchDuration(finalDuration);
+
+        await api.patch(`/matches/${match.id}/duration`, {
+          durasi: finalDuration,
+          isTimerRunning: false,
+          timerStartedAt: null
+        });
+
+
+      const isDouble = !!match.doubleTeam1Id;
+      const winnerId = nSetW1 > nSetW2 ? (isDouble ? match.doubleTeam1Id : match.peserta1Id) : (isDouble ? match.doubleTeam2Id : match.peserta2Id);
+
       await api.patch(`/${match.id}/winner`, {
         winnerId: isDouble ? null : winnerId,
         winnerDoubleId: isDouble ? winnerId : null,
-        score1: nSetW1, // Total set menang
-        score2: nSetW2,
-        isDouble: isDouble
+        score1: nSetW1, score2: nSetW2, isDouble
       });
 
       setFinalWinnerData({ winnerId, score1: nSetW1, score2: nSetW2 });
       setShowResultConfirm(true);
     }
-  } catch (err) {
-    console.error("Gagal update data:", err);
-  }
+  } catch (err) { console.error("Gagal update server:", err); }
 };
+
 
   const handleUndo = async () => {
    
@@ -360,6 +409,12 @@ const handlePoint = async (player) => {
       }
     
   };
+
+  const displayedDuration =
+  isTimerRunning && timerStartedAt
+    ? matchDuration +
+      Math.floor((Date.now() - new Date(timerStartedAt)) / 1000)
+    : matchDuration;
 
   if (isLoading) return <div className="fixed inset-0 bg-slate-950 flex items-center justify-center text-white">Loading...</div>;
 
@@ -390,8 +445,8 @@ const handlePoint = async (player) => {
 
 
   {/* Header Indikator Status - Dibuat lebih melayang */}
-  <div className="max-w-8xl mx-auto p-4 relative">
-
+<div className="min-h-screen w-[100%] md:w-[75%] flex items-center justify-center">
+     <div className="w-full relative">
       {/* MENU ⋮ - Dibuat lebih modern */}
       <div className="absolute top-0 right-4 z-[60]">
         <div className="flex flex-col items-end">
@@ -481,6 +536,33 @@ const handlePoint = async (player) => {
                     {isDarkMode ? "Light Mode ☀️" : "Dark Mode 🌙"}
                   </span>
                 </button>
+
+                <button
+                  onClick={() => setIsServeEnabled(!isServeEnabled)}
+                  className={`w-full text-left px-5 py-4 text-sm flex items-center gap-3 transition-colors border-t ${
+                    isDarkMode
+                      ? "hover:bg-slate-800 border-slate-800 text-slate-200"
+                      : "hover:bg-gray-100 border-gray-200 text-gray-800"
+                  }`}
+                >
+                  <span className="font-semibold">
+                    {isServeEnabled ? "Disable Serve Buttons" : "Enable Serve Buttons"}
+                  </span>
+                </button>
+
+                
+
+                      <button
+                        onClick={handleResetTimer}
+                        className={`w-full text-left px-5 py-4 text-sm flex items-center gap-3 transition-colors border-t ${
+                          isDarkMode
+                            ? "hover:bg-slate-800 border-slate-800 text-slate-200"
+                            : "hover:bg-gray-100 border-gray-200 text-gray-800"
+                        }`}
+                      >
+                        Reset Timer
+                      </button>
+                  
               </div>
 
               {/* Info Aturan */}
@@ -554,67 +636,51 @@ const handlePoint = async (player) => {
         </div>
       </div>
 
+          <div className="flex justify-center mb-4">
+            <div className={`px-6 py-2 rounded-full font-mono text-lg font-black tracking-widest ${
+              isDarkMode ? "bg-slate-800 text-green-400" : "bg-gray-200 text-green-600"
+            }`}>
+              {formatTime(displayedDuration)}
+            </div>
+          </div>
+
+         
 
       {/* Scoreboard Set Sejarah - Horizontal Scroller Style */}
-    <div className="mb-6 flex items-center gap-4">
-      
-      {/* Label Set Score */}
-      <div
-        className={`flex-shrink-0 px-3 py-1.5 rounded-lg shadow-lg transition-colors ${
-          isDarkMode
-            ? "bg-orange-600 shadow-orange-900/20"
-            : "bg-orange-500 shadow-orange-300/30"
-        }`}
-      >
-        <span
-          className={`text-[10px] font-black uppercase tracking-tighter ${
-            isDarkMode ? "text-white" : "text-white"
+    <div className="flex gap-3 overflow-x-auto no-scrollbar">
+  {/* Jika belum ada satu pun set yang selesai, tampilkan teks kosong/placeholder */}
+  {setScores.length === 0 ? (
+    <span
+      className={`text-xs font-medium italic ${
+        isDarkMode ? "text-slate-600" : "text-gray-500"
+      }`}
+    >
+      No completed sets yet...
+    </span>
+  ) : (
+    <>
+      {/* ✅ HANYA MENAMPILKAN SET YANG SUDAH SELESAI */}
+      {setScores.map((s, index) => (
+        <div
+          key={index}
+          className={`flex items-center px-4 py-2 mb-3 rounded-xl gap-3 min-w-fit border ${
+            isDarkMode
+              ? "bg-slate-800 border-slate-700"
+              : "bg-white border-gray-300 shadow-sm"
           }`}
         >
-          Set Score
-        </span>
-      </div>
-
-      {/* List Score */}
-      <div className="flex gap-3 overflow-x-auto no-scrollbar">
-        {setScores.length === 0 ? (
-          <span
-            className={`text-xs font-medium italic ${
-              isDarkMode ? "text-slate-600" : "text-gray-500"
-            }`}
-          >
-            First set in progress...
+          <span className="text-[10px] font-bold uppercase opacity-60">
+            SET {s.set}
           </span>
-        ) : (
-          setScores.map((s) => (
-            <div
-              key={s.set}
-              className={`flex items-center px-3 py-1.5 rounded-lg gap-2 min-w-fit border transition-colors ${
-                isDarkMode
-                  ? "bg-slate-900 border-slate-800"
-                  : "bg-gray-100 border-gray-300"
-              }`}
-            >
-              <span
-                className={`text-[10px] font-bold uppercase ${
-                  isDarkMode ? "text-slate-500" : "text-gray-500"
-                }`}
-              >
-                S{s.set}
-              </span>
 
-              <span
-                className={`text-sm font-black ${
-                  isDarkMode ? "text-white" : "text-black"
-                }`}
-              >
-                {s.p1} - {s.p2}
-              </span>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+          <span className="text-base font-black tabular-nums">
+            {s.p1} - {s.p2}
+          </span>
+        </div>
+      ))}
+    </>
+  )}
+</div>
 
       {/* MAIN SCOREBOARD - The Heroes Section */}
   <div className={`rounded-[2.5rem] p-1 border mb-8 relative overflow-hidden transition-colors duration-300 ${
@@ -636,39 +702,57 @@ const handlePoint = async (player) => {
     </div>
 
     {/* Status Area */}
-    <div className="text-center mt-10 h-6">
+   <div className="text-center mt-10 h-6">
+  {scoreRule && (() => {
 
-      {/* Deuce */}
-      {scoreRule &&
-        p1Game === scoreRule.gamePerSet - 1 &&
-        p2Game === scoreRule.gamePerSet - 1 && (
+    const isProset = scoreRule.jumlahSet === 1;
+    const isBO3 = scoreRule.jumlahSet > 1;
+
+    const tbTrigger = isBO3
+      ? scoreRule.gamePerSet
+      : scoreRule.gamePerSet - 1;
+
+    const isDeuceGame =
+      p1Game === tbTrigger - 1 &&
+      p2Game === tbTrigger - 1;
+
+    const isTieBreak =
+      p1Game === tbTrigger &&
+      p2Game === tbTrigger;
+
+    return (
+      <>
+       {isDeuceGame && (
           <span
-            className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] border transition-colors ${
-              isDarkMode
-                ? "bg-yellow-500/10 text-yellow-500 border-yellow-500/20"
-                : "bg-yellow-100 text-yellow-700 border-yellow-300"
-            }`}
+            className={`inline-flex items-center gap-2 px-5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.25em] border shadow-md transition-all duration-300
+              ${
+                isDarkMode
+                  ? "bg-yellow-400/10 text-yellow-400 border-yellow-400/30 shadow-yellow-500/10"
+                  : "bg-yellow-100 text-yellow-700 border-yellow-300 shadow-yellow-300/40"
+              }`}
           >
+            <span className="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></span>
             Deuce Games
           </span>
-      )}
+        )}
 
-      {/* Tie Break */}
-      {scoreRule &&
-        p1Game === scoreRule.gamePerSet &&
-        p2Game === scoreRule.gamePerSet && (
+        {isTieBreak && (
           <span
-            className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] animate-pulse shadow-lg transition-colors ${
-              isDarkMode
-                ? "bg-orange-500 text-white shadow-orange-500/20"
-                : "bg-orange-400 text-white shadow-orange-300/40"
-            }`}
+            className={`inline-flex items-center gap-2 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.3em] shadow-xl transition-all duration-300 animate-pulse
+              ${
+                isDarkMode
+                  ? "bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-orange-500/30"
+                  : "bg-gradient-to-r from-orange-400 to-red-400 text-white shadow-orange-400/40"
+              }`}
           >
             Tie Break Round
           </span>
-      )}
-    </div>
+        )}
+      </>
+    );
 
+  })()}
+</div>
     <div className="pt-5 pb-8 px-4">
       <div className="grid grid-cols-2 gap-6 relative">
         
@@ -678,30 +762,32 @@ const handlePoint = async (player) => {
         {/* PLAYER 1 */}
         <div className="flex flex-col items-center">
           {/* Serve Indicator - Menjadi penanda utama wasit */}
+          {isServeEnabled && (
          <div className="h-6 mb-3 flex items-center justify-center">
-  {server === 1 ? (
-    <div
-      className={`flex gap-1.5 px-3 py-1 rounded-full border transition-colors ${
-        isDarkMode
-          ? "bg-yellow-400/20 border-yellow-400/40 shadow-[0_0_15px_rgba(250,204,21,0.2)]"
-          : "bg-yellow-100 border-yellow-300 shadow-sm"
-      }`}
-    >
-      {Array.from({ length: serveCount }).map((_, i) => (
-        <div
-          key={i}
-          className={`w-2.5 h-2.5 rounded-full animate-pulse transition-colors ${
-            isDarkMode
-              ? "bg-yellow-400 shadow-[0_0_10px_#facc15]"
-              : "bg-yellow-500"
-          }`}
-        />
-      ))}
-    </div>
-  ) : (
-    <div className="h-6" />
-  )}
-</div>
+            {server === 1 ? (
+              <div
+                className={`flex gap-1.5 px-3 py-1 rounded-full border transition-colors ${
+                  isDarkMode
+                    ? "bg-yellow-400/20 border-yellow-400/40 shadow-[0_0_15px_rgba(250,204,21,0.2)]"
+                    : "bg-yellow-100 border-yellow-300 shadow-sm"
+                }`}
+              >
+                {Array.from({ length: serveCount }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-2.5 h-2.5 rounded-full animate-pulse transition-colors ${
+                      isDarkMode
+                        ? "bg-yellow-400 shadow-[0_0_10px_#facc15]"
+                        : "bg-yellow-500"
+                    }`}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="h-6" />
+            )}
+          </div>
+          )}
 
           {/* NAMA PEMAIN */}
         <div className="min-h-[80px] flex flex-col items-center justify-center mb-3">
@@ -761,6 +847,7 @@ const handlePoint = async (player) => {
         {/* PLAYER 2 */}
          <div className="flex flex-col items-center">
           {/* Serve Indicator */}
+          {isServeEnabled && (
         <div className="h-6 mb-3 flex items-center justify-center">
           {server === 2 ? (
             <div
@@ -785,6 +872,7 @@ const handlePoint = async (player) => {
             <div className="h-6" />
           )}
         </div>
+          )}
 
           {/* NAMA PEMAIN */}
         <div className="min-h-[80px] flex flex-col items-center justify-center mb-3">
@@ -845,12 +933,7 @@ const handlePoint = async (player) => {
     </div>
 
     {/* Tie Break Label */}
-    {scoreRule && p1Game === scoreRule.gamePerSet && p2Game === scoreRule.gamePerSet && (
-      <div className="bg-orange-600 py-1.5 relative overflow-hidden">
-          <div className="absolute inset-0 bg-white/10 animate-pulse"></div>
-          <p className="relative text-[10px] font-black text-center text-white tracking-[0.4em] uppercase">Tie Break Active</p>
-      </div>
-    )}
+   
   </div>
 
       {/* BUTTONS SECTION - Tactile Experience */}
@@ -889,29 +972,60 @@ const handlePoint = async (player) => {
     </button>
   </div>
 
-      {/* SERVE CONTROLS */}
-      <div className="grid grid-cols-2 gap-4 mt-6">
-        <button
-          onClick={() => {
-            if (serveCount === 2) { setServeCount(1); } 
-            else { setServeCount(2); setServer(server === 1 ? 2 : 1); }
-          }}
-          className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-yellow-500 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95"
-        >
-          Fault (Serve)
-        </button>
+    <div className="grid grid-cols-1 gap-4 mt-6">
+        <div className="">
 
-        <button
-          onClick={() => { setServer(server === 1 ? 2 : 1); setServeCount(2); }}
-          className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-blue-400 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95"
-        >
-          Change Service
-        </button>
+          {!isTimerRunning ? (
+            <button
+              onClick={handleStartResume}
+              className="w-full h-12 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold uppercase tracking-wide transition-all active:scale-95 shadow-md"
+            >
+              {matchDuration === 0 ? "Start Match" : "Resume Match"}
+            </button>
+          ) : (
+            <button
+              onClick={() => setConfirmPause(true)}
+              className="w-full h-12 bg-yellow-500 hover:bg-yellow-400 text-black rounded-xl font-bold uppercase tracking-wide transition-all active:scale-95 shadow-md"
+            >
+              Pause Match
+            </button>
+          )}
+
+        </div>
       </div>
 
-      {/* UNDO BUTTON - Minimalist */}
-    
+      {/* SERVE CONTROLS */}
+      {isServeEnabled && (
+        <div className="grid grid-cols-2 gap-4 mt-6">
+
+          <button
+            onClick={() => {
+              if (serveCount === 2) {
+                setServeCount(1);
+              } else {
+                setServeCount(2);
+                setServer(server === 1 ? 2 : 1);
+              }
+            }}
+            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-yellow-500 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95"
+          >
+            Fault (Serve)
+          </button>
+
+          <button
+            onClick={() => {
+              setServer(server === 1 ? 2 : 1);
+              setServeCount(2);
+            }}
+            className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-blue-400 py-4 rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg transition-all active:scale-95"
+          >
+            Change Service
+          </button>
+
+        </div>
+      )}
     </div>
+</div>
 
   {/* MODAL FINISH - Premium Centered Modal */}
   {showResultConfirm && (
@@ -1073,6 +1187,33 @@ const handlePoint = async (player) => {
         className="flex-1 px-4 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-500 transition"
       >
         Ya, Reset
+      </button>
+    </div>
+  </AlertMessage>
+)}
+
+{confirmPause && (
+  <AlertMessage
+    type="warning"
+    message="Yakin ingin pause match?"
+    onClose={() => setConfirmPause(false)}
+  >
+    <div className="flex gap-4 mt-6">
+      <button
+        onClick={() => setConfirmPause(false)}
+        className="flex-1 px-4 py-2 rounded-xl bg-slate-700 text-white font-bold hover:bg-slate-600 transition"
+      >
+        Batal
+      </button>
+
+      <button
+        onClick={() => {
+          handlePause();
+          setConfirmPause(false);
+        }}
+        className="flex-1 px-4 py-2 rounded-xl bg-yellow-500 text-black font-bold hover:bg-yellow-400 transition"
+      >
+        Ya, Pause
       </button>
     </div>
   </AlertMessage>

@@ -8,6 +8,7 @@ import { Match } from "./MatchModel.js";
 import { Bagan } from "./BaganModel.js";
 import { ScoreRule } from "./ScoreRuleModel.js"; 
 import { Athlete } from "./AthleteModel.js";
+import { User } from "./UserModel.js";
 
 
 
@@ -60,6 +61,18 @@ Athlete.belongsTo(KelompokUmur, {
 });
 
 
+User.hasMany(Match, {
+  foreignKey: "refereeId",
+  as: "matchesAsReferee"
+});
+
+Match.belongsTo(User, {
+  foreignKey: "refereeId",
+  as: "referee",
+  onDelete: "SET NULL",   // Aman, match tidak ikut terhapus
+  onUpdate: "CASCADE"
+});
+
 
 // -------------------
 // 🔹 Export semua model
@@ -74,4 +87,5 @@ export {
   Bagan,
   ScoreRule,
   Athlete,
+  User
 };

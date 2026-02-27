@@ -17,12 +17,13 @@ export default function BaganPage({onSelectBagan}) {
   const [filterKategori, setFilterKategori] = useState("all");
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-
-
+  const [confirmInput, setConfirmInput] = useState("");
   const [confirmDelete, setConfirmDelete] = useState({
     show: false,
     baganId: null,
+    baganName: "",
   });
+    const isExactMatch = confirmInput === confirmDelete.baganName;
 
 
   
@@ -102,9 +103,13 @@ const fetchBagan = async () => {
 
   // --- DELETE BAGAN ---
 
-  const handleDeleteBagan = (baganId) => {
-    setConfirmDelete({ show: true, baganId });
-  };
+const handleDeleteBagan = (bagan) => {
+  setConfirmDelete({ 
+    show: true, 
+    baganId: bagan.id,
+    baganName: bagan.nama
+  });
+};
 
 
   
@@ -134,6 +139,8 @@ const confirmDeleteBagan = async () => {
         navigate(`/${role}/bagan-view/${baganId}`);
     }
 }
+
+
 
   return (
     <div className="min-h-screen"> 
@@ -351,7 +358,7 @@ const confirmDeleteBagan = async () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                handleDeleteBagan(bagan.id);
+                handleDeleteBagan(bagan);
               }}
               className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
             >
@@ -384,20 +391,55 @@ const confirmDeleteBagan = async () => {
 {confirmDelete.show && (
   <AlertMessage
     type="warning"
-    message="Yakin mau menghapus bagan ini? Bagan yang dihapus tidak dapat dikembalikan."
-    onClose={() => setConfirmDelete({ show: false, baganId: null })}
+    message={
+      <div className="space-y-4">
+        <p className="text-sm text-gray-700">
+          Untuk menghapus bagan ini, ketik nama berikut dengan tepat:
+        </p>
+
+        <div className="bg-gray-100 px-4 py-3 rounded-xl text-center font-black text-sm tracking-wide">
+          {confirmDelete.baganName}
+        </div>
+
+        <input
+          type="text"
+          value={confirmInput}
+          onChange={(e) => setConfirmInput(e.target.value)}
+          placeholder="Ketik nama bagan persis di sini..."
+          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-red-400 outline-none"
+        />
+
+        {confirmInput !== "" && !isExactMatch && (
+          <p className="text-xs text-red-500 font-semibold">
+            Nama tidak cocok. Perhatikan huruf besar, kecil, dan spasi.
+          </p>
+        )}
+      </div>
+    }
+    onClose={() => {
+      setConfirmDelete({ show: false, baganId: null, baganName: "" });
+      setConfirmInput("");
+    }}
   >
-    {/* Tombol diperbesar dengan padding h-4 (tinggi) dan font-extrabold */}
     <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
       <button
-        onClick={() => setConfirmDelete({ show: false, baganId: null })}
-        className="flex-1 order-2 sm:order-1 px-6 py-4 rounded-2xl bg-gray-100 text-gray-700 font-extrabold text-xs uppercase tracking-widest hover:bg-gray-200 active:scale-95 transition-all"
+        onClick={() => {
+          setConfirmDelete({ show: false, baganId: null, baganName: "" });
+          setConfirmInput("");
+        }}
+        className="flex-1 px-6 py-4 rounded-2xl bg-gray-100 text-gray-700 font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
       >
         Batal
       </button>
+
       <button
         onClick={confirmDeleteBagan}
-        className="flex-1 order-1 sm:order-2 px-6 py-4 rounded-2xl bg-red-600 text-white font-extrabold text-xs uppercase tracking-widest shadow-xl shadow-red-200 hover:bg-red-700 active:scale-95 transition-all"
+        disabled={!isExactMatch}
+        className={`flex-1 px-6 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all ${
+          isExactMatch
+            ? "bg-red-600 text-white hover:bg-red-700 shadow-xl shadow-red-200"
+            : "bg-gray-300 text-gray-500 cursor-not-allowed"
+        }`}
       >
         Ya, Hapus
       </button>

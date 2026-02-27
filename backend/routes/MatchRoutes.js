@@ -2,12 +2,13 @@ import express from "express";
 import { updateWinner, setMatchPeserta, generateUndian, getMatches, 
     getJuara, updateMatchPoint, getMatchDetailHistory, getMatchLog,
     undoLastPoint, getMatchLogs, setScoreRuleToMatch, getMatchById, 
-    resetMatchScore, manualWOPoint } from "../controllers/MatchController.js";
+    resetMatchScore, manualWOPoint, updateMatchDuration } from "../controllers/MatchController.js";
+import { requireAuth } from "../middleware/Auth.js";
 
 const router = express.Router();
 
 // PATCH /api/matches/:matchId/winner → update pemenang
-router.patch("/:matchId/winner", updateWinner);
+router.patch("/:matchId/winner", requireAuth, updateWinner);
 
 // PATCH /api/matches/:matchId/peserta → set peserta manual
 router.patch("/:matchId/peserta", setMatchPeserta);
@@ -23,6 +24,7 @@ router.patch("/matches/:id/set-rule", setScoreRuleToMatch);
 router.get("/matches/:id", getMatchById);
 router.delete("/reset-match/:id", resetMatchScore);
 router.post("/matches/manual-wo-point", manualWOPoint);
+router.patch("/matches/:id/duration", updateMatchDuration);
 
 
 
