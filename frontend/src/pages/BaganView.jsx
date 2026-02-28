@@ -26,7 +26,7 @@ export default function BaganView({baganId}) {
   const finalId = baganId || id;
   const isRoundRobin = bagan?.tipe === "roundrobin";
   const [isLocked, setIsLocked] = useState(false);
-
+  const [tiebreakSummary, setTiebreakSummary] = useState({});
   const [alertType, setAlertType] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
   const [showLockConfirm, setShowLockConfirm] = useState(false);
@@ -46,6 +46,7 @@ export default function BaganView({baganId}) {
       const res = await api.get(`/bagan/${finalId}`);
       const data = res.data; // Mengakses data dari properti .data
       setBagan(data);
+      await fetchTiebreakForBagan(data.Matches);
     } catch (error) {
       console.error(error);
       alert(error.message);
@@ -53,27 +54,146 @@ export default function BaganView({baganId}) {
       setIsLoading(false);
     }
   };
+  
 
-  const formatSetScore = (m) => {
-    const sets = [];
+const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2, gameLimit = 6) => {
+  const setLogs = allLogs
+    .filter(log => log.setKe === setNum)
+    .sort((a, b) => a.id - b.id);
 
-    for (let i = 1; i <= 3; i++) {
-      const s1 = m[`set${i}P1`];
-      const s2 = m[`set${i}P2`];
-      const tb1 = m[`set${i}TB1`];
-      const tb2 = m[`set${i}TB2`];
+  if (setLogs.length === 0) return null;
 
-      if (s1 != null && s2 != null && !(s1 === 0 && s2 === 0)) {
-        if (tb1 != null && tb2 != null) {
-          sets.push(`${s1}-${s2}(${tb1}-${tb2})`);
-        } else {
-          sets.push(`${s1}-${s2}`);
+  // ===============================
+  // 🔥 SUPER TIEBREAK (SET 3)
+  // ===============================
+  const isSuperTiebreak =
+    setNum === 3 &&
+    setLogs.every(
+      log => Number(log.gameP1) === 0 && Number(log.gameP2) === 0
+    );
+
+  if (isSuperTiebreak) {
+    const lastLog = setLogs[setLogs.length - 1];
+    return {
+      p1: Number(lastLog.skorP1),
+      p2: Number(lastLog.skorP2),
+    };
+  }
+
+  // ===============================
+  // 🔥 VALIDASI TIEBREAK NORMAL
+  // ===============================
+  const isRealTiebreak =
+    Math.abs(finalS1 - finalS2) === 1 &&
+    (finalS1 >= gameLimit || finalS2 >= gameLimit);
+
+  if (!isRealTiebreak) return null;
+
+  // ===============================
+  // 🔥 AMBIL SKOR TB DARI LOG
+  // ===============================
+  let tbEndIndex = -1;
+
+  for (let i = 0; i < setLogs.length - 1; i++) {
+    const current = setLogs[i];
+    const next = setLogs[i + 1];
+
+    if (
+      current.gameP1 !== next.gameP1 ||
+      current.gameP2 !== next.gameP2
+    ) {
+      tbEndIndex = i;
+    }
+  }
+
+  if (tbEndIndex === -1) return null;
+
+  const lastTbLog = setLogs[tbEndIndex];
+
+  let p1 = Number(lastTbLog.skorP1);
+  let p2 = Number(lastTbLog.skorP2);
+
+  // Tambah 1 ke pemenang set
+  if (finalS1 > finalS2) {
+    p1 += 1;
+  } else {
+    p2 += 1;
+  }
+
+  return { p1, p2 };
+  
+};
+
+const fetchTiebreakForBagan = async (matches) => {
+  const newTb = {};
+
+  for (const match of matches) {
+    try {
+      const logRes = await api.get(`/match-logs/${match.id}`);
+      if (!logRes.data?.length) continue;
+
+      const sortedLogs = [...logRes.data].sort((a, b) => a.id - b.id);
+      const tbData = {};
+
+      [1, 2, 3].forEach((sNum) => {
+        const s1 = parseInt(match[`set${sNum}P1`]);
+        const s2 = parseInt(match[`set${sNum}P2`]);
+
+        const gameLimit = match.scoreRule?.gamePerSet || 6;
+
+        const result = getTiebreakFromLogs(
+          sortedLogs,
+          sNum,
+          s1,
+          s2,
+          gameLimit
+        );
+        if (result) {
+          tbData[`set${sNum}`] = result;
         }
+      });
+
+      if (Object.keys(tbData).length > 0) {
+        newTb[match.id] = tbData;
       }
+
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  setTiebreakSummary(newTb);
+};
+
+const formatSetScore = (m) => {
+  const sets = [];
+
+  for (let i = 1; i <= 3; i++) {
+    const s1 = parseInt(m[`set${i}P1`]);
+    const s2 = parseInt(m[`set${i}P2`]);
+    const tbPoint = tiebreakSummary[m.id]?.[`set${i}`];
+
+    if (isNaN(s1) || isNaN(s2)) continue;
+
+    // ❌ Skip set kosong
+    if (s1 === 0 && s2 === 0 && !tbPoint) continue;
+
+    // 🔥 SET 3 = SUPER TIEBREAK (hanya tampil point)
+    if (i === 3 && tbPoint) {
+      sets.push(`${tbPoint.p1}-${tbPoint.p2}`);
+      continue;
     }
 
-    return sets.join(" "); 
-  };
+    // 🔥 NORMAL TIEBREAK (kalau ada tbPoint berarti memang tiebreak)
+    if (tbPoint) {
+      sets.push(`${s1}-${s2}(${tbPoint.p1}-${tbPoint.p2})`);
+    } else {
+      sets.push(`${s1}-${s2}`);
+    }
+  }
+
+  return sets.join(" ");
+};
 
   const loadAllPeserta = async (kelompokUmurId) => {
     try {

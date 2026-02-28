@@ -21,15 +21,18 @@ export const Match = sequelize.define("Match", {
   doubleTeam1Id: { type: DataTypes.INTEGER, allowNull: true },
   doubleTeam2Id: { type: DataTypes.INTEGER, allowNull: true },
   winnerDoubleId: { type: DataTypes.INTEGER, allowNull: true },
-
+  currentSet: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1
+  },
   score1: { type: DataTypes.INTEGER, allowNull: true },
   score2: { type: DataTypes.INTEGER, allowNull: true },
-  set1P1: { type: DataTypes.INTEGER, defaultValue: 0 },
-  set1P2: { type: DataTypes.INTEGER, defaultValue: 0 },
-  set2P1: { type: DataTypes.INTEGER, defaultValue: 0 },
-  set2P2: { type: DataTypes.INTEGER, defaultValue: 0 },
-  set3P1: { type: DataTypes.INTEGER, defaultValue: 0 },
-  set3P2: { type: DataTypes.INTEGER, defaultValue: 0 },
+  set1P1: { type: DataTypes.INTEGER, allowNull: true },
+  set1P2: { type: DataTypes.INTEGER, allowNull: true },
+  set2P1: { type: DataTypes.INTEGER, allowNull: true },
+  set2P2: { type: DataTypes.INTEGER, allowNull: true },
+  set3P1: { type: DataTypes.INTEGER, allowNull: true },
+  set3P2: { type: DataTypes.INTEGER, allowNull: true },
 
   nextMatchId: { type: DataTypes.INTEGER, allowNull: true },
   scoreRuleId: { 

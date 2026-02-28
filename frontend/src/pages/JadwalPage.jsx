@@ -7,13 +7,13 @@ import JadwalPDF from './JadwalPDF';
 import RefereeForm from './RefereeForm';
 import AlertMessage from '../components/AlertMessage';
 
+
 const JadwalPage = () => {
   const [jadwal, setJadwal] = useState([]);
   const [matches, setMatches] = useState([]);
   const [lapangan, setLapangan] = useState([]);
   const role = localStorage.getItem('role');
   const selectedTournamentName = localStorage.getItem("selectedTournamentName");
-
   const [isRefereeMode, setIsRefereeMode] = useState(false);
   const [activeMatchData, setActiveMatchData] = useState(null);
   
@@ -826,22 +826,7 @@ const groupedJadwal = [...jadwal]
                                   >
                                     {match.status}
                                   </span>
-                                    {match.status === "selesai" && (
-                                      <div className="flex gap-1 text-[10px] md:text-xs font-black text-gray-900 bg-gray-100 px-2 py-1 rounded-lg">
-                                        {[1, 2, 3].map(sNum => {
-                                          const s1 = match.match[`set${sNum}P1`];
-                                          const s2 = match.match[`set${sNum}P2`];
-
-                                          if ((s1 == null && s2 == null) || (s1 === 0 && s2 === 0)) return null;
-
-                                          return (
-                                            <span key={sNum}>
-                                              {s1}-{s2}
-                                            </span>
-                                          );
-                                        })}
-                                      </div>
-                                    )}
+                                   
 
                                </div>
 

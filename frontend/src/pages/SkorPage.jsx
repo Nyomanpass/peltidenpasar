@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../api";
 import jsPDF from "jspdf";
+import { useLocation } from "react-router-dom";
 
 
 import { 
@@ -12,6 +13,8 @@ function SkorPage() {
   const [matchHistory, setMatchHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [tiebreakSummary, setTiebreakSummary] = useState({});
+  const location = useLocation();
+  const highlightMatchId = location.state?.matchId;
   
   // State Filter (Kategori Dihapus)
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,18 +56,24 @@ const fetchHistory = async () => {
       // Kita asumsikan standar: TB selalu terjadi jika skor akhir selisih 1 dan mencapai batas gamePerSet.
       const gameLimit = match.scoreRule?.gamePerSet || 6;
 
-      const needsTiebreak = [1, 2, 3].some((sNum) => {
-        const s1 = parseInt(match[`set${sNum}P1`]);
-        const s2 = parseInt(match[`set${sNum}P2`]);
+      const totalSetPlayed = match.score1 + match.score2;
 
-        // Deteksi Tiebreak: Skor berakhir selisih 1 (7-6 atau 8-7 atau 9-8)
-        return (
-          !isNaN(s1) &&
-          !isNaN(s2) &&
-          Math.abs(s1 - s2) === 1 && 
-          (s1 >= gameLimit || s2 >= gameLimit)
-        );
-      });
+      const needsTiebreak =
+        // Tiebreak normal (7-6)
+        [1, 2].some((sNum) => {
+          const s1 = parseInt(match[`set${sNum}P1`]);
+          const s2 = parseInt(match[`set${sNum}P2`]);
+
+          return (
+            !isNaN(s1) &&
+            !isNaN(s2) &&
+            Math.abs(s1 - s2) === 1 &&
+            (s1 >= gameLimit || s2 >= gameLimit)
+          );
+        })
+        ||
+        // 🔥 Tambahan: jika match sampai Set 3 → pasti super tiebreak
+        totalSetPlayed === 3;
 
       if (needsTiebreak) {
         try {
@@ -380,6 +389,22 @@ const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
 
   if (setLogs.length === 0) return null;
 
+  const isSuperTiebreak =
+    setNum === 3 &&
+    setLogs.every(
+      log => Number(log.gameP1) === 0 && Number(log.gameP2) === 0
+    );
+
+   if (isSuperTiebreak) {
+    const lastLog = setLogs[setLogs.length - 1];
+
+    return {
+      p1: Number(lastLog.skorP1),
+      p2: Number(lastLog.skorP2),
+    };
+  }
+
+
   // 🔥 Cari index saat game berubah (match ended)
   let tbEndIndex = -1;
 
@@ -550,7 +575,7 @@ const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
             </div>
 
             {/* Score Display - Grid diubah total untuk Mobile */}
-            <div className="flex flex-col gap-6 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-10">
+           <div className="grid grid-cols-1 md:grid-cols-3 items-center py-10 gap-6 md:gap-10">
 
               {/* ================= NAMA KIRI ================= */}
               <div
@@ -560,16 +585,11 @@ const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
                     : "text-slate-400 opacity-90"
                 }`}
               >
-                <h4 className="text-sm md:text-lg font-black leading-tight uppercase tracking-tight truncate">
+                <h4 className="text-sm md:text-lg font-black leading-tight uppercase tracking-tight">
                   {p1Name}
                 </h4>
 
-                {isDouble && (
-                  <p className="text-[8px] md:text-[9px] font-bold text-slate-500 mt-0.5 uppercase italic">
-                    {match.doubleTeam1?.Player1?.namaLengkap} /{" "}
-                    {match.doubleTeam1?.Player2?.namaLengkap}
-                  </p>
-                )}
+                
 
                 {isP1Winner && (
                   <span className="inline-block mt-1 bg-yellow-400 text-white text-[7px] md:text-[8px] font-black px-2 py-0.5 rounded-full uppercase">
@@ -584,13 +604,20 @@ const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
                   const s1 = parseInt(match[`set${sNum}P1`]);
                   const s2 = parseInt(match[`set${sNum}P2`]);
 
-                  if (
-                    isNaN(s1) ||
-                    isNaN(s2) ||
-                    (s1 === 0 && s2 === 0 && sNum > 1)
-                  )
-                    return null;
+                 if (isNaN(s1) || isNaN(s2)) return null;
 
+            
+                  if (sNum === 3) {
+                    const totalSetPlayed = match.score1 + match.score2;
+                    if (totalSetPlayed < 3) {
+                      return null;
+                    }
+                  }
+
+                  if (s1 === 0 && s2 === 0 && sNum === 2) {
+                    return null;
+                  }
+                                
                   const gameLimit = match.scoreRule?.gamePerSet || 6;
                   const isTiebreakGame =
                     Math.abs(s1 - s2) === 1 &&
@@ -610,10 +637,15 @@ const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
 
                       <div className="flex items-center justify-center gap-2 font-black text-white text-xl md:text-2xl">
 
-                        {/* Player 1 */}
+                       {/* Player 1 */}
                         <div className="relative inline-flex">
-                          <span>{s1}</span>
-                          {isTiebreakGame && tbPoint && (
+                          <span>
+                            {sNum === 3 && tbPoint
+                              ? tbPoint.p1
+                              : s1}
+                          </span>
+
+                          {sNum !== 3 && isTiebreakGame && tbPoint && (
                             <span className="absolute -top-1.5 -right-2.5 text-[10px] md:text-[11px] text-orange-400 font-bold">
                               {tbPoint.p1}
                             </span>
@@ -624,8 +656,13 @@ const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
 
                         {/* Player 2 */}
                         <div className="relative inline-flex">
-                          <span>{s2}</span>
-                          {isTiebreakGame && tbPoint && (
+                          <span>
+                            {sNum === 3 && tbPoint
+                              ? tbPoint.p2
+                              : s2}
+                          </span>
+
+                          {sNum !== 3 && isTiebreakGame && tbPoint && (
                             <span className="absolute -top-1.5 -right-2.5 text-[10px] md:text-[11px] text-orange-400 font-bold">
                               {tbPoint.p2}
                             </span>
@@ -652,16 +689,10 @@ const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
                     : "text-slate-400 opacity-90"
                 }`}
               >
-                <h4 className="text-sm md:text-lg font-black leading-tight uppercase tracking-tight truncate">
+                <h4 className="text-sm md:text-lg font-black leading-tight uppercase tracking-tight ">
                   {p2Name}
                 </h4>
 
-                {isDouble && (
-                  <p className="text-[8px] md:text-[9px] font-bold text-slate-500 mt-0.5 uppercase italic">
-                    {match.doubleTeam2?.Player1?.namaLengkap} /{" "}
-                    {match.doubleTeam2?.Player2?.namaLengkap}
-                  </p>
-                )}
 
                 {isP2Winner && (
                   <span className="inline-block mt-1 bg-yellow-400 text-white text-[7px] md:text-[8px] font-black px-2 py-0.5 rounded-full uppercase">
@@ -705,6 +736,14 @@ const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
               <User size={14} />
               <span>
                 Wasit: {match.referee?.name || "Belum ada"}
+              </span>
+            </div>
+
+            {/* Rules Skor */}
+            <div className="flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-xl">
+              <Layers size={14} />
+              <span>
+                Rules: {match.scoreRule?.name || "Default"}
               </span>
             </div>
 

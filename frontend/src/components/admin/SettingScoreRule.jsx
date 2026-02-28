@@ -8,6 +8,7 @@ export default function SettingScoreRule() {
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null });
+  const [editId, setEditId] = useState(null);
 
 
   const [rules, setRules] = useState([]);
@@ -29,20 +30,53 @@ export default function SettingScoreRule() {
     fetchRules();
   }, []);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await api.post("/score-rules", form);
-    setSuccess("Score rule berhasil ditambahkan");
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    if (editId) {
+      // 🔥 UPDATE MODE
+      await api.put(`/score-rules/${editId}`, form);
+      setSuccess("Score rule berhasil diperbarui");
+    } else {
+      // 🔥 CREATE MODE
+      await api.post("/score-rules", form);
+      setSuccess("Score rule berhasil ditambahkan");
+    }
+
     fetchRules();
-    setForm({
-      name: "",
-      jumlahSet: 3,
-      gamePerSet: 6,
-      useDeuce: true,
-      tieBreakPoint: 7,
-      finalTieBreakPoint: 10
-    });
-  };
+    resetForm();
+
+  } catch (err) {
+    setError("Terjadi kesalahan saat menyimpan rule");
+  }
+};
+
+
+const resetForm = () => {
+  setForm({
+    name: "",
+    jumlahSet: 3,
+    gamePerSet: 6,
+    useDeuce: true,
+    tieBreakPoint: 7,
+    finalTieBreakPoint: 10
+  });
+  setEditId(null);
+};
+
+const handleEdit = (rule) => {
+  setForm({
+    name: rule.name,
+    jumlahSet: rule.jumlahSet,
+    gamePerSet: rule.gamePerSet,
+    useDeuce: rule.useDeuce,
+    tieBreakPoint: rule.tieBreakPoint,
+    finalTieBreakPoint: rule.finalTieBreakPoint
+  });
+
+  setEditId(rule.id);
+};
 
   const handleDelete = async (id) => {
     setConfirmDelete({ show: true, id });
@@ -161,12 +195,22 @@ export default function SettingScoreRule() {
       <span className="text-sm font-semibold text-gray-700">Pakai Deuce</span>
     </div>
 
+    {editId && (
+      <button
+        type="button"
+        onClick={resetForm}
+        className="bg-gray-400 hover:bg-gray-500 transition text-white px-6 py-3 rounded-xl shadow-lg font-semibold ml-3"
+      >
+        Batal Edit
+      </button>
+    )}
     <button
       type="submit"
       className="bg-blue-600 hover:bg-blue-700 transition text-white px-6 py-3 rounded-xl shadow-lg font-semibold"
     >
-      Simpan Rule
+      {editId ? "Update Rule" : "Simpan Rule"}
     </button>
+
   </form>
 
   {/* TABLE */}
@@ -199,12 +243,21 @@ export default function SettingScoreRule() {
               </span>
             </td>
             <td className="px-5 py-3 text-center">
-              <button
-                onClick={() => handleDelete(r.id)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition"
-              >
-                Hapus
-              </button>
+              <td className="px-5 py-3 text-center flex gap-2 justify-center">
+                <button
+                  onClick={() => handleEdit(r)}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition"
+                >
+                  Edit
+                </button>
+
+                <button
+                  onClick={() => handleDelete(r.id)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition"
+                >
+                  Hapus
+                </button>
+              </td>
             </td>
           </tr>
         ))}

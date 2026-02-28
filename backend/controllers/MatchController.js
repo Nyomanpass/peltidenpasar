@@ -339,6 +339,11 @@ export const getMatches = async (req, res) => {
           as: "referee",
           attributes: ["id", "name"] // sesuaikan dengan kolom di tabel user kamu
         },
+        {
+          model: ScoreRule,
+          as: "scoreRule",
+          attributes: ["id", "name"]
+        }
       ],
       // Jika status 'selesai', urutkan berdasarkan waktu update terbaru
       order: status === 'selesai' 

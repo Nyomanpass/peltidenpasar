@@ -213,8 +213,13 @@ const handlePoint = async (player) => {
   if (isProset) {
     isTieBreakMode = (nG1 === gamePerSet - 1 && nG2 === gamePerSet - 1);
   } else if (isBO3) {
-
-    isTieBreakMode = (nG1 === gamePerSet && nG2 === gamePerSet);
+     if (nSetKe === 3) {
+      isTieBreakMode = true;
+    } 
+    // Set 1 & 2 → tiebreak kalau 6-6
+    else {
+      isTieBreakMode = (nG1 === gamePerSet && nG2 === gamePerSet);
+    }
   }
 
   /* ================================
@@ -267,27 +272,48 @@ const handlePoint = async (player) => {
   /* ================================
      B. LOGIKA GAME & SET (KHUSUS BO3 & PROSET)
   ================================== */
-  if (isGameEnd) {
+if (isGameEnd) {
+  // 🔥 KHUSUS SET 3 (SUPER TIEBREAK)
+  if (isBO3 && nSetKe === 3) {
+
+    isSetFinished = true;
+
+    const tP1 = parseInt(nP1);
+    const tP2 = parseInt(nP2);
+
+    // Tentukan pemenang dari poin tiebreak
+    if (tP1 > tP2) {
+      nG1 = 1;   // hanya untuk penentu winner
+      nG2 = 0;
+    } else {
+      nG1 = 0;
+      nG2 = 1;
+    }
+
+  } else {
     player === 1 ? nG1++ : nG2++;
-    nP1 = "0"; nP2 = "0"; // Reset poin
+    nP1 = "0";
+    nP2 = "0";
     logDesc = `Game: ${nG1}-${nG2}`;
 
     if (isProset) {
-      // Proset Selesai jika mencapai gamePerSet (8 atau 9)
       if (nG1 >= gamePerSet || nG2 >= gamePerSet) isSetFinished = true;
     } else if (isBO3) {
-      // 1. Menang Normal (6-0 sampai 6-4)
-      const winNormal = (nG1 === gamePerSet && Math.abs(nG1 - nG2) >= 2) || (nG2 === gamePerSet && Math.abs(nG1 - nG2) >= 2);
-      
-      // 2. Menang Deuce Game (7-5)
-      const winDeuceGame = (nG1 === gamePerSet + 1 && nG2 === gamePerSet - 1) || (nG2 === gamePerSet + 1 && nG1 === gamePerSet - 1);
-      
-      // 3. Menang Tiebreak (7-6)
+      const winNormal =
+        (nG1 === gamePerSet && Math.abs(nG1 - nG2) >= 2) ||
+        (nG2 === gamePerSet && Math.abs(nG1 - nG2) >= 2);
+
+      const winDeuceGame =
+        (nG1 === gamePerSet + 1 && nG2 === gamePerSet - 1) ||
+        (nG2 === gamePerSet + 1 && nG1 === gamePerSet - 1);
+
       const winTiebreak = (nG1 > gamePerSet || nG2 > gamePerSet);
 
-      if (winNormal || winDeuceGame || winTiebreak) isSetFinished = true;
+      if (winNormal || winDeuceGame || winTiebreak)
+        isSetFinished = true;
     }
   }
+}
 
   /* ================================
      C. LOGIKA MATCH
