@@ -146,10 +146,10 @@ const start = async () => {
     console.log("✅ Database connected");
     console.log(Object.keys(sequelize.models));
 
-    await sequelize.sync();
+    // await sequelize.sync();
     // await sequelize.sync({ force: true });
 
-    // await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: true });
     app.listen(PORT, () => console.log("Server berjalan di port 5004"));
   } catch (error) {
     console.error("❌ Error saat menjalankan server:", error);
