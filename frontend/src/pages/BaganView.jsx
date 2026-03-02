@@ -57,51 +57,34 @@ export default function BaganView({baganId}) {
   
 
 const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2, gameLimit = 6) => {
+  // Ambil semua log untuk set ini saja
   const setLogs = allLogs
     .filter(log => log.setKe === setNum)
     .sort((a, b) => a.id - b.id);
 
   if (setLogs.length === 0) return null;
 
-  // ===============================
-  // 🔥 SUPER TIEBREAK (SET 3)
-  // ===============================
-  const isSuperTiebreak =
-    setNum === 3 &&
-    setLogs.every(
-      log => Number(log.gameP1) === 0 && Number(log.gameP2) === 0
-    );
-
-  if (isSuperTiebreak) {
+  // --- LOGIKA KHUSUS SET 3 (SUPER TIEBREAK) ---
+  // Kita cek jika ini set 3, ambil log paling terakhir untuk poinnya
+  if (setNum === 3) {
     const lastLog = setLogs[setLogs.length - 1];
     return {
-      p1: Number(lastLog.skorP1),
-      p2: Number(lastLog.skorP2),
+      p1: parseInt(lastLog.skorP1) || 0,
+      p2: parseInt(lastLog.skorP2) || 0,
     };
   }
 
-  // ===============================
-  // 🔥 VALIDASI TIEBREAK NORMAL
-  // ===============================
+  // --- LOGIKA TIEBREAK NORMAL (SET 1 & 2) ---
   const isRealTiebreak =
     Math.abs(finalS1 - finalS2) === 1 &&
     (finalS1 >= gameLimit || finalS2 >= gameLimit);
 
   if (!isRealTiebreak) return null;
 
-  // ===============================
-  // 🔥 AMBIL SKOR TB DARI LOG
-  // ===============================
   let tbEndIndex = -1;
-
   for (let i = 0; i < setLogs.length - 1; i++) {
-    const current = setLogs[i];
-    const next = setLogs[i + 1];
-
-    if (
-      current.gameP1 !== next.gameP1 ||
-      current.gameP2 !== next.gameP2
-    ) {
+    if (setLogs[i].gameP1 !== setLogs[i + 1].gameP1 || 
+        setLogs[i].gameP2 !== setLogs[i + 1].gameP2) {
       tbEndIndex = i;
     }
   }
@@ -109,19 +92,13 @@ const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2, gameLimit = 6) =
   if (tbEndIndex === -1) return null;
 
   const lastTbLog = setLogs[tbEndIndex];
+  let p1 = parseInt(lastTbLog.skorP1) || 0;
+  let p2 = parseInt(lastTbLog.skorP2) || 0;
 
-  let p1 = Number(lastTbLog.skorP1);
-  let p2 = Number(lastTbLog.skorP2);
-
-  // Tambah 1 ke pemenang set
-  if (finalS1 > finalS2) {
-    p1 += 1;
-  } else {
-    p2 += 1;
-  }
+  // Tambah 1 ke pemenang set karena log poin terakhir biasanya terputus saat game berganti
+  if (finalS1 > finalS2) p1 += 1; else p2 += 1;
 
   return { p1, p2 };
-  
 };
 
 const fetchTiebreakForBagan = async (matches) => {

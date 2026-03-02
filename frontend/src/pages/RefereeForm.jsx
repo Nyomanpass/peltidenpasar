@@ -125,28 +125,69 @@ const handleStartResume = async () => {
       .join(" ");
   };
 
+  const fetchSetHistory = async () => {
+    try {
+      const res = await api.get(`/matches/${match.id}`);
+      const data = res.data;
+      const history = [];
+      if (data.set1P1 !== null) history.push({ set: 1, p1: data.set1P1, p2: data.set1P2 });
+      if (data.set2P1 !== null) history.push({ set: 2, p1: data.set2P1, p2: data.set2P2 });
+      if (data.set3P1 !== null) history.push({ set: 3, p1: data.set3P1, p2: data.set3P2 });
+      setSetScores(history);
+    } catch (err) {
+      console.error("Gagal ambil history set", err);
+    }
+  };
 
-  useEffect(() => {
-    const fetchLastScore = async () => {
-      try {
-        const response = await api.get(`/match-log/${match.id}`);
-        if (response.data) {
-          setP1Point(response.data.skorP1.toString());
-          setP2Point(response.data.skorP2.toString());
-          setP1Game(response.data.gameP1);
-          setP2Game(response.data.gameP2);
-          setCurrentSet(response.data.setKe || 1);
-          setSetMenangP1(response.data.setMenangP1 || 0);
-          setSetMenangP2(response.data.setMenangP2 || 0);
+
+useEffect(() => {
+  const fetchLastScore = async () => {
+    try {
+      // 1. Ambil data MATCH dulu untuk tahu SET berapa sekarang
+      const resMatch = await api.get(`/matches/${match.id}`);
+      const matchData = resMatch.data;
+
+      // 2. Ambil LOG terakhir untuk tahu POINT (0, 15, 30, 40)
+      const resLog = await api.get(`/match-log/${match.id}`);
+      
+      if (resLog.data) {
+        const log = resLog.data;
+        
+        // JIKA SET DI LOG BERBEDA DENGAN SET DI MATCH (KARENA BARU PINDAH SET)
+        // MAKA RESET POINT KE 0-0
+        if (log.setKe !== matchData.currentSet) {
+          setP1Point("0");
+          setP2Point("0");
+          setP1Game(0); 
+          setP2Game(0);
+        } else {
+          setP1Point(log.skorP1.toString());
+          setP2Point(log.skorP2.toString());
+          setP1Game(log.gameP1);
+          setP2Game(log.gameP2);
         }
-      } catch (err) {
-        console.error("Gagal sinkronisasi skor:", err);
-      } finally {
-        setIsLoading(false);
+        
+        setCurrentSet(matchData.currentSet); // Ambil dari MatchModel
+        setSetMenangP1(matchData.score1 || 0);
+        setSetMenangP2(matchData.score2 || 0);
       }
-    };
-    fetchLastScore();
-  }, [match.id]);
+      
+      // Susun histori set untuk tampilan atas
+      const history = [];
+      if (matchData.set1P1 !== null) history.push({ set: 1, p1: matchData.set1P1, p2: matchData.set1P2 });
+      if (matchData.set2P1 !== null) history.push({ set: 2, p1: matchData.set2P1, p2: matchData.set2P2 });
+      if (matchData.set3P1 !== null) history.push({ set: 3, p1: matchData.set3P1, p2: matchData.set3P2 });
+      setSetScores(history);
+
+    } catch (err) {
+      console.error("Gagal sinkronisasi:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchLastScore();
+}, [match.id]);
+
 
 useEffect(() => {
   api.get(`/matches/${match.id}`).then(res => {
@@ -377,6 +418,21 @@ if (isGameEnd) {
       statusMatch: isMatchFinished ? 'selesai' : 'berlangsung',
       keterangan: logDesc
     });
+
+    if (isSetFinished && !isMatchFinished) {
+      await api.post('/update-point', {
+        matchId: match.id,
+        setKe: nSetKe, // Ini sudah angka set baru (misal: 2)
+        skorP1: "0",
+        skorP2: "0",
+        gameP1: 0,
+        gameP2: 0,
+        setMenangP1: nSetW1,
+        setMenangP2: nSetW2,
+        statusMatch: 'berlangsung',
+        keterangan: `Starting Set ${nSetKe}`
+      });
+    }
 
     if (isMatchFinished) {
         const finalDuration =

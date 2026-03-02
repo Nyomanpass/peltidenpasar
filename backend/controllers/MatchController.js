@@ -762,6 +762,7 @@ export const updateMatchPoint = async (req, res) => {
         // 3. Siapkan data update untuk tabel Match (Hanya satu kali update saja)
         const updateData = {
             status: statusMatch,
+            currentSet: setKe,
             winnerId: (match.peserta1Id || !match.doubleTeam1Id) ? winnerId : null,
             winnerDoubleId: match.doubleTeam1Id ? winnerId : null,
             score1: setMenangP1, // Total set menang P1
