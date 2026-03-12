@@ -55,7 +55,7 @@ const TournamentComming = () => {
           {tournaments.map((t) => {
             const deadline = new Date(t.start_date);
             deadline.setDate(deadline.getDate() - 1);
-            deadline.setHours(23, 59, 59, 999);
+            deadline.setHours(15, 0, 0, 0);
             const isClosed = new Date() > deadline;
 
             return (
