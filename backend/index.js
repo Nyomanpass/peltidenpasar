@@ -57,9 +57,12 @@ import panitiaRoutes from "./routes/PanitiaRoutes.js";
 const app = express();
 
 app.use(cors({
-  origin: process.env.CLIENT_ORIGIN,
-  credentials: false
+  origin: [
+    "https://peltidenpasar.org",
+    "https://www.peltidenpasar.org"
+  ]
 }));
+
 app.use(express.json());
 
 app.use("/uploads", express.static("uploads"));
