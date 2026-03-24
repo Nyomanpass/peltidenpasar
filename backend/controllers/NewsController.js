@@ -23,7 +23,9 @@ const getFullImageUrl = (req, imagePath) => {
 // ===================================
 export const getAllNews = async (req, res) => {
   try {
-    const news = await News.findAll();
+    const news = await News.findAll({
+      order: [["tanggalUpload", "DESC"]] // 🔥 sorting terbaru
+    });
 
     const result = news.map(n => ({
       ...n.toJSON(),

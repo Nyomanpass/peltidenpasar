@@ -59,7 +59,8 @@ const app = express();
 app.use(cors({
   origin: [
     "https://peltidenpasar.org",
-    "https://www.peltidenpasar.org"
+    "https://www.peltidenpasar.org",
+    // "http://localhost:5173"
   ]
 }));
 
