@@ -109,7 +109,7 @@ export default function Navbar() {
           <div>
             <h1 className="font-bold text-lg md:text-2xl">PELTI DENPASAR</h1>
             <p className="text-[10px] md:text-xs font-semibold">
-              Persatuan Lawn Tenis Indonesia
+              Persatuan Tennis Seluruh Indonesia
             </p>
           </div>
         </div>

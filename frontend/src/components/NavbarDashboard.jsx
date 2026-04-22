@@ -148,7 +148,7 @@ const handleReject = async (id, message) => {
             />
             <div className="hidden md:block">
               <h1 className="font-bold text-lg text-black leading-none">PELTI DENPASAR</h1>
-              <p className="text-xs text-gray-600 font-semibold mt-1">Persatuan Lawn Tenis Indonesia</p>
+              <p className="text-xs text-gray-600 font-semibold mt-1">Persatuan Tennis Seluruh Indonesia</p>
             </div>
           </div>
         </div>
