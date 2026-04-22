@@ -32,16 +32,12 @@ export default function SertifikatPage() {
 const getPlayers = (p) => {
   if (!p) return [];
 
-  // 🔥 DOUBLE (WAJIB ADA ID)
+  // 🔥 DOUBLE → gabung nama
   if (p.Player1 && p.Player2) {
     return [
       {
-        id: p.Player1.id,
-        namaLengkap: p.Player1.namaLengkap
-      },
-      {
-        id: p.Player2.id,
-        namaLengkap: p.Player2.namaLengkap
+        id: p.Player1.id, // tetap pakai salah satu id
+        namaLengkap: `${p.Player1.namaLengkap} / ${p.Player2.namaLengkap}`
       }
     ];
   }

@@ -171,22 +171,20 @@ const getValidasiData = async (id, tournamentId, baganId) => {
 
   let found = null;
   let posisi = null;
+  let pair = null; // 🔥 TAMBAHAN
 
   const check = (p, pos) => {
     if (!p) return false;
 
-    if (p.Player1?.id == id) {
-      found = p.Player1;
+    // 🔥 DOUBLE
+    if (p.Player1?.id == id || p.Player2?.id == id) {
+      found = p.Player1?.id == id ? p.Player1 : p.Player2;
+      pair = p; // 🔥 simpan pasangan
       posisi = pos;
       return true;
     }
 
-    if (p.Player2?.id == id) {
-      found = p.Player2;
-      posisi = pos;
-      return true;
-    }
-
+    // 🔥 SINGLE
     if (p.id == id) {
       found = p;
       posisi = pos;
@@ -207,7 +205,7 @@ const getValidasiData = async (id, tournamentId, baganId) => {
   if (!found) return { valid: false };
 
   // ===============================
-  // 🔥 FORMAT UMUR & GENDER (BALIKIN)
+  // 🔥 FORMAT UMUR & GENDER
   // ===============================
   const text = b?.KelompokUmur?.nama?.toUpperCase() || "";
 
@@ -234,13 +232,22 @@ const getValidasiData = async (id, tournamentId, baganId) => {
   const kategori = b.kategori === "double" ? "DOUBLE" : "SINGLE";
 
   // ===============================
+  // 🔥 NAMA FINAL (INI INTI)
+  // ===============================
+  let namaFinal = found.namaLengkap;
+
+  if (b.kategori === "double" && pair) {
+    namaFinal = `${pair.Player1.namaLengkap} / ${pair.Player2.namaLengkap}`;
+  }
+
+  // ===============================
   // 🔥 FINAL
   // ===============================
   const sebagai = `Juara ke-${posisi} ${kategori} ${gender} ${bagianUmur}`;
 
   return {
     valid: true,
-    nama: found.namaLengkap,
+    nama: namaFinal, // 🔥 sudah gabung
     sebagai,
     kategori,
     tipe: b.tipe?.toUpperCase()
@@ -256,6 +263,16 @@ export const downloadSertifikat = async (req, res) => {
     }
 
     const result = await getValidasiData(id, tournamentId, baganId); // 🔥 FIX
+    let namaClass = result.kategori;
+
+    if (result.kategori === "DOUBLE") {
+      if (result.nama.length > 70) {
+        namaClass += " long";
+      }
+      if (result.nama.length > 80) {
+        namaClass += " verylong";
+      }
+    }
 
     if (!result.valid) {
       return res.status(404).json({ error: "Tidak valid" });
@@ -276,6 +293,7 @@ export const downloadSertifikat = async (req, res) => {
       .replace("{{nama}}", result.nama)
       .replace("{{sebagai}}", result.sebagai)
       .replace("{{qr}}", qr)
+      .replace("{{kategori}}", namaClass) 
       .replace(
         "{{bg}}",
         `${BACKEND_URL.replace(/\/$/, "")}/${template.image.replace(/^\//, "")}`
@@ -320,6 +338,16 @@ export const previewSertifikat = async (req, res) => {
     }
 
     const result = await getValidasiData(id, tournamentId, baganId); // 🔥 FIX
+    let namaClass = result.kategori;
+
+    if (result.kategori === "DOUBLE") {
+      if (result.nama.length > 70) {
+        namaClass += " long";
+      }
+      if (result.nama.length > 80) {
+        namaClass += " verylong";
+      }
+    }
 
     if (!result.valid) {
       return res.status(404).send("Tidak valid");
@@ -340,6 +368,7 @@ export const previewSertifikat = async (req, res) => {
       .replace("{{nama}}", result.nama)
       .replace("{{sebagai}}", result.sebagai)
       .replace("{{qr}}", qr)
+      .replace("{{kategori}}", namaClass)
       .replace(
         "{{bg}}",
         `${BACKEND_URL.replace(/\/$/, "")}/${template.image.replace(/^\//, "")}`
