@@ -262,26 +262,46 @@ export const downloadSertifikat = async (req, res) => {
       return res.status(400).json({ error: "ID, tournament & bagan wajib" });
     }
 
-    const result = await getValidasiData(id, tournamentId, baganId); // 🔥 FIX
-    let namaClass = result.kategori;
+    // =========================
+    // 🔥 AMBIL DATA
+    // =========================
+    const result = await getValidasiData(id, tournamentId, baganId);
 
-    if (result.kategori === "DOUBLE") {
-      if (result.nama.length > 70) {
-        namaClass += " long";
-      }
-      if (result.nama.length > 80) {
-        namaClass += " verylong";
-      }
-    }
-
-    if (!result.valid) {
+    // =========================
+    // 🔥 VALIDASI
+    // =========================
+    if (!result || !result.valid) {
       return res.status(404).json({ error: "Tidak valid" });
     }
 
+    // =========================
+    // 🔥 FORMAT NAMA (KAPITAL)
+    // =========================
+    if (result.nama) {
+      result.nama = result.nama.toUpperCase();
+    }
+
+    // =========================
+    // 🔥 CLASS LOGIC
+    // =========================
+    let namaClass = (result.kategori || "").toUpperCase();
+    const len = result.nama?.length || 0;
+
+    if (namaClass === "DOUBLE") {
+      if (len > 80) {
+        namaClass += " verylong";
+      } else if (len >= 55) {
+        namaClass += " long";
+      }
+    }
+
+
+    // =========================
+    // 🔥 TEMPLATE
+    // =========================
     const template = await getSavedTemplate(tournamentId);
 
-    const verifyUrl = `${FRONTEND_URL}/sertifikat/${id}?tournamentId=${tournamentId}&baganId=${baganId}`; // 🔥 TAMBAH
-
+    const verifyUrl = `${FRONTEND_URL}/sertifikat/${id}?tournamentId=${tournamentId}&baganId=${baganId}`;
     const qr = await QRCode.toDataURL(verifyUrl);
 
     let html = fs.readFileSync(
@@ -293,19 +313,22 @@ export const downloadSertifikat = async (req, res) => {
       .replace("{{nama}}", result.nama)
       .replace("{{sebagai}}", result.sebagai)
       .replace("{{qr}}", qr)
-      .replace("{{kategori}}", namaClass) 
+      .replace("{{kategori}}", namaClass)
       .replace(
         "{{bg}}",
         `${BACKEND_URL.replace(/\/$/, "")}/${template.image.replace(/^\//, "")}`
       );
 
-    // 🔥 PUPPETEER FIX
-const browser = await puppeteer.launch({
-  executablePath: "/root/.cache/puppeteer/chrome/linux-147.0.7727.57/chrome-linux64/chrome",
-  args: ["--no-sandbox", "--disable-setuid-sandbox"]
-});
-    const page = await browser.newPage();
+    // =========================
+    // 🔥 GENERATE PDF
+    // =========================
+    const browser = await puppeteer.launch({
+      executablePath:
+        "/root/.cache/puppeteer/chrome/linux-147.0.7727.57/chrome-linux64/chrome",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    });
 
+    const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
     const pdf = await page.pdf({
@@ -337,26 +360,47 @@ export const previewSertifikat = async (req, res) => {
       return res.status(400).send("ID, tournament & bagan wajib");
     }
 
-    const result = await getValidasiData(id, tournamentId, baganId); // 🔥 FIX
-    let namaClass = result.kategori;
+    // =========================
+    // 🔥 AMBIL DATA
+    // =========================
+    const result = await getValidasiData(id, tournamentId, baganId);
 
-    if (result.kategori === "DOUBLE") {
-      if (result.nama.length > 70) {
-        namaClass += " long";
-      }
-      if (result.nama.length > 80) {
-        namaClass += " verylong";
-      }
-    }
-
-    if (!result.valid) {
+    // =========================
+    // 🔥 VALIDASI
+    // =========================
+    if (!result || !result.valid) {
       return res.status(404).send("Tidak valid");
     }
 
+    // =========================
+    // 🔥 FORMAT NAMA
+    // =========================
+    if (result.nama) {
+      result.nama = result.nama.toUpperCase();
+    }
+
+    // =========================
+    // 🔥 CLASS LOGIC
+    // =========================
+    let namaClass = (result.kategori || "").toUpperCase();
+    const len = result.nama?.length || 0;
+
+    if (namaClass === "DOUBLE") {
+      if (len > 80) {
+        namaClass += " verylong";
+      } else if (len >= 55) {
+        namaClass += " long";
+      }
+    }
+
+
+
+    // =========================
+    // 🔥 TEMPLATE
+    // =========================
     const template = await getSavedTemplate(tournamentId);
 
     const verifyUrl = `${FRONTEND_URL}/sertifikat/${id}?tournamentId=${tournamentId}&baganId=${baganId}`;
-
     const qr = await QRCode.toDataURL(verifyUrl);
 
     let html = fs.readFileSync(
