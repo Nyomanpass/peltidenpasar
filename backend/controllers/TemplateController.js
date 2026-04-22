@@ -281,7 +281,11 @@ export const downloadSertifikat = async (req, res) => {
         `${BACKEND_URL.replace(/\/$/, "")}/${template.image.replace(/^\//, "")}`
       );
 
-    const browser = await puppeteer.launch();
+    // 🔥 PUPPETEER FIX
+const browser = await puppeteer.launch({
+  executablePath: "/root/.cache/puppeteer/chrome/linux-147.0.7727.57/chrome-linux64/chrome",
+  args: ["--no-sandbox", "--disable-setuid-sandbox"]
+});
     const page = await browser.newPage();
 
     await page.setContent(html, { waitUntil: "networkidle0" });
