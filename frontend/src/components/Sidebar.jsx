@@ -1,4 +1,4 @@
-import { Users, Calendar, Trophy, List, Monitor, ClipboardList, CheckSquare, Settings, Award, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, Calendar, Trophy, List, Monitor, ClipboardList, CheckSquare, Settings, Award, ChevronDown, ChevronUp, FileBadge } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../api";
@@ -67,7 +67,7 @@ const adminMenu = [
   { label: "Jadwal Pertandingan", path: "/admin/jadwal-pertandingan", icon: <Calendar size={20} /> },
   { label: "Skor", path: "/admin/skor", icon: <ClipboardList size={20} /> },
   { label: "Hasil Pertandingan", path: "/admin/hasil-pertandingan", icon: <Trophy size={20} /> },
-
+  { label: "Sertifikat", path: "/admin/sertifikat", icon: <FileBadge size={20} /> },
   {
     label: "Tournament",
     icon: <Award size={20} />,

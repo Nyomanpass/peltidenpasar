@@ -9,6 +9,7 @@ import { Bagan } from "./BaganModel.js";
 import { ScoreRule } from "./ScoreRuleModel.js"; 
 import { Athlete } from "./AthleteModel.js";
 import { User } from "./UserModel.js";
+import { TemplateSertifikat } from "./TemplateSertifikat.js";
 
 
 
@@ -46,6 +47,15 @@ Jadwal.belongsTo(Match, { foreignKey: "matchId", as: "match" });
 ScoreRule.hasMany(Match, { foreignKey: "scoreRuleId", as: "matches",  onDelete: "RESTRICT" });
 Match.belongsTo(ScoreRule, { foreignKey: "scoreRuleId", as: "scoreRule" });
 
+Tournament.hasMany(TemplateSertifikat, {
+  foreignKey: "tournamentId",
+  as: "templates"
+});
+
+TemplateSertifikat.belongsTo(Tournament, {
+  foreignKey: "tournamentId",
+  as: "tournament"
+});
 
 // -------------------
 // 🔹 Relasi Athlete
@@ -87,5 +97,6 @@ export {
   Bagan,
   ScoreRule,
   Athlete,
-  User
+  User,
+  TemplateSertifikat
 };

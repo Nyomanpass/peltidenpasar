@@ -14,6 +14,7 @@ import JadwalPage from '../pages/JadwalPage';
 import JuaraPage from '../pages/JuaraPage';
 import SkorPage from '../pages/SkorPage';
 import PesertaGanda from './admin/PesertaGanda';
+import SertifikatPage from '../pages/SertifikatPage';
 
 const TABS = {
     PESERTA: 'peserta',
@@ -21,6 +22,7 @@ const TABS = {
     JADWAL: 'jadwal',
     SKOR: 'skor',
     HASIL: 'hasil',
+    SERTIFIKAT: 'sertifikat'
 };
 
 const TournamentDetailPage = () => {
@@ -156,6 +158,8 @@ const TournamentDetailPage = () => {
 
             case TABS.HASIL:
                 return <JuaraPage tournamentId={selectedTournamentId} />;
+            case TABS.SERTIFIKAT:
+                return <SertifikatPage tournamentId={selectedTournamentId} />;
 
             default:
                 return null;
@@ -193,6 +197,7 @@ const TournamentDetailPage = () => {
                                 { id: TABS.JADWAL, name: "Jadwal", icon: CalendarDays },
                                 { id: TABS.SKOR, name: "Skor", icon: Medal },
                                 { id: TABS.HASIL, name: "Hasil", icon: BarChart },
+                                { id: TABS.SERTIFIKAT, name: "Sertifikat", icon: User },
                             ].map((tab) => (
                                 <button
                                     key={tab.id}

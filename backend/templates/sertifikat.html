@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { margin:0; padding:0; font-family: 'Be Vietnam Pro', sans-serif; }
+    .container { position: relative; width: 1123px; height: 794px; } /* A4 landscape px */
+    .bg { position:absolute; width:100%; height:100%; object-fit: cover; }
+
+    .nama {
+      position:absolute;
+      top: 365px;
+      width:100%;
+      text-align:center;
+      font-size: 36px;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+
+    .ket {
+        position: absolute;
+        top: 471px;
+        width: 100%;
+        text-align: center;
+        font-size: 20px;
+
+        /* 🔥 TAMBAHAN */
+        color: #2a4c09;
+        font-family: 'Be Vietnam Pro', sans-serif;
+    }
+
+    .qr {
+      position:absolute;
+      bottom: 40px;
+      right: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- background akan diganti dinamis -->
+    <img src="{{bg}}" class="bg"/>
+
+    <div class="nama">{{nama}}</div>
+
+    <div class="ket">
+      {{sebagai}}
+    </div>
+
+    <img src="{{qr}}" class="qr" width="90"/>
+  </div>
+</body>
+</html>

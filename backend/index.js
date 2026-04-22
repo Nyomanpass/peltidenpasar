@@ -53,6 +53,8 @@ import wasitRoutes from "./routes/WasitRoutes.js";
 import scoreRuleRoutes from "./routes/ScoreRuleRoutes.js";
 //panitia
 import panitiaRoutes from "./routes/PanitiaRoutes.js";
+import TemplateRoutes from "./routes/TemplateRoutes.js";
+
 
 const app = express();
 
@@ -60,7 +62,7 @@ app.use(cors({
   origin: [
     "https://peltidenpasar.org",
     "https://www.peltidenpasar.org",
-    // "http://localhost:5173"
+    "http://localhost:5173"
   ]
 }));
 
@@ -115,6 +117,8 @@ app.use("/api", scoreRuleRoutes);
 //import panitia
 app.use("/api", panitiaRoutes);
 
+app.use("/api", TemplateRoutes);
+
 
 app.use((err, req, res, next) => {
   console.error("UPLOAD ERROR:", err);
@@ -150,10 +154,10 @@ const start = async () => {
     console.log("✅ Database connected");
     console.log(Object.keys(sequelize.models));
 
-    // await sequelize.sync();
+    await sequelize.sync();
     // await sequelize.sync({ force: true });
 
-    await sequelize.sync({ alter: true });
+    // await sequelize.sync({ alter: true });
     app.listen(PORT, () => console.log("Server berjalan di port 5004"));
   } catch (error) {
     console.error("❌ Error saat menjalankan server:", error);

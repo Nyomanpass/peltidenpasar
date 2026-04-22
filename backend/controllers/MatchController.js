@@ -517,25 +517,24 @@ export const getUnscheduledMatches = async (req, res) => {
 
 
 
+
 export const getJuara = async (req, res) => {
   try {
     const { baganId } = req.params;
-    const bagan = await Bagan.findByPk(baganId);
-    if (!bagan) return res.status(404).json({ error: "Bagan tidak ditemukan." });
+
+    const bagan = await Bagan.findByPk(baganId, {
+      include: [{ model: KelompokUmur, attributes: ["nama"] }]
+    });
+
+    if (!bagan) {
+      return res.status(404).json({ error: "Bagan tidak ditemukan" });
+    }
 
     const isDouble = bagan.kategori === "double";
 
-    // KONTROL INCLUDE: Pastikan Player 1 & 2 ikut terambil jika Double
-    const includePlayers = isDouble ? [
-      { 
-        model: DoubleTeam, as: isDouble ? "doubleTeam1" : "peserta1", // sesuaikan alias model anda
-        include: [
-          { model: Peserta, as: "Player1", attributes: ["namaLengkap"] },
-          { model: Peserta, as: "Player2", attributes: ["namaLengkap"] }
-        ]
-      }
-    ] : [{ model: Peserta, as: "peserta1", attributes: ["namaLengkap"] }];
-
+    // =============================
+    // 🔥 KNOCKOUT
+    // =============================
     if (bagan.tipe === "knockout") {
       const finalMatch = await Match.findOne({
         where: { baganId, status: "selesai" },
@@ -543,175 +542,171 @@ export const getJuara = async (req, res) => {
         include: [
           { model: Peserta, as: "peserta1" },
           { model: Peserta, as: "peserta2" },
-          { 
-            model: DoubleTeam, as: "doubleTeam1", 
-            include: [{ model: Peserta, as: "Player1" }, { model: Peserta, as: "Player2" }] 
+          {
+            model: DoubleTeam,
+            as: "doubleTeam1",
+            include: ["Player1", "Player2"]
           },
-          { 
-            model: DoubleTeam, as: "doubleTeam2", 
-            include: [{ model: Peserta, as: "Player1" }, { model: Peserta, as: "Player2" }] 
-          },
-        ],
+          {
+            model: DoubleTeam,
+            as: "doubleTeam2",
+            include: ["Player1", "Player2"]
+          }
+        ]
       });
 
-      if (!finalMatch) return res.status(404).json({ message: "Final belum selesai." });
+      if (!finalMatch) {
+        return res.status(404).json({ message: "Final belum selesai" });
+      }
 
-      // LOGIKA PEMENANG GANDA VS SINGLE
       const winnerId = isDouble ? finalMatch.winnerDoubleId : finalMatch.winnerId;
       const p1Id = isDouble ? finalMatch.doubleTeam1Id : finalMatch.peserta1Id;
-      
-      const juara1 = winnerId === p1Id 
-        ? (isDouble ? finalMatch.doubleTeam1 : finalMatch.peserta1) 
-        : (isDouble ? finalMatch.doubleTeam2 : finalMatch.peserta2);
 
-      const juara2 = winnerId === p1Id 
-        ? (isDouble ? finalMatch.doubleTeam2 : finalMatch.peserta2) 
-        : (isDouble ? finalMatch.doubleTeam1 : finalMatch.peserta1);
+      const juara1 =
+        winnerId === p1Id
+          ? isDouble ? finalMatch.doubleTeam1 : finalMatch.peserta1
+          : isDouble ? finalMatch.doubleTeam2 : finalMatch.peserta2;
 
-      // Ambil Juara 3 (Semi Finalis yang kalah)
+      const juara2 =
+        winnerId === p1Id
+          ? isDouble ? finalMatch.doubleTeam2 : finalMatch.peserta2
+          : isDouble ? finalMatch.doubleTeam1 : finalMatch.peserta1;
+
+      // 🔥 semi final → juara3
       const semiMatches = await Match.findAll({
         where: { baganId, round: finalMatch.round - 1, status: "selesai" },
         include: [
-          { model: Peserta, as: "peserta1" }, { model: Peserta, as: "peserta2" },
-          { model: DoubleTeam, as: "doubleTeam1", include: ["Player1", "Player2"] },
-          { model: DoubleTeam, as: "doubleTeam2", include: ["Player1", "Player2"] }
+          { model: Peserta, as: "peserta1" },
+          { model: Peserta, as: "peserta2" },
+          {
+            model: DoubleTeam,
+            as: "doubleTeam1",
+            include: ["Player1", "Player2"]
+          },
+          {
+            model: DoubleTeam,
+            as: "doubleTeam2",
+            include: ["Player1", "Player2"]
+          }
         ]
       });
 
       const juara3 = semiMatches.map(m => {
         const wId = isDouble ? m.winnerDoubleId : m.winnerId;
         const side1Id = isDouble ? m.doubleTeam1Id : m.peserta1Id;
-        return wId === side1Id 
-          ? (isDouble ? m.doubleTeam2 : m.peserta2) 
-          : (isDouble ? m.doubleTeam1 : m.peserta1);
+
+        return wId === side1Id
+          ? isDouble ? m.doubleTeam2 : m.peserta2
+          : isDouble ? m.doubleTeam1 : m.peserta1;
       });
 
-      return res.json({ juara1, juara2, juara3 });
+      return res.json({
+        kategori: bagan.kategori,
+        tipe: bagan.tipe,
+        kelompokUmur: bagan.KelompokUmur?.nama,
+
+        juara1,
+        juara2,
+        juara3: juara3 || []
+      });
     }
 
-    // LOGIKA ROUND ROBIN GANDA
-// ===== LOGIKA ROUND ROBIN =====
-// ===== ROUND ROBIN =====
-if (bagan.tipe === "roundrobin") {
-  const isDouble = bagan.kategori === "double";
+    // =============================
+    // 🔥 ROUND ROBIN
+    // =============================
+    if (bagan.tipe === "roundrobin") {
+      const matches = await Match.findAll({
+        where: { baganId, status: "selesai" },
+        include: [
+          { model: Peserta, as: "peserta1", attributes: ["id", "namaLengkap"] },
+          { model: Peserta, as: "peserta2", attributes: ["id", "namaLengkap"] },
+          {
+            model: DoubleTeam,
+            as: "doubleTeam1",
+            include: ["Player1", "Player2"]
+          },
+          {
+            model: DoubleTeam,
+            as: "doubleTeam2",
+            include: ["Player1", "Player2"]
+          }
+        ]
+      });
 
-  const matches = await Match.findAll({
-    where: { baganId, status: "selesai" },
-    include: [
-      { model: Peserta, as: "peserta1", attributes: ["id", "namaLengkap"] },
-      { model: Peserta, as: "peserta2", attributes: ["id", "namaLengkap"] },
-      { 
-        model: DoubleTeam, as: "doubleTeam1",
-        include: ["Player1", "Player2"]
-      },
-      { 
-        model: DoubleTeam, as: "doubleTeam2",
-        include: ["Player1", "Player2"]
-      },
-    ],
-  });
+      if (!matches.length) {
+        return res.status(404).json({ message: "Belum ada match" });
+      }
 
-  if (!matches.length) {
-    return res.status(404).json({ message: "Belum ada match." });
-  }
+      const klasemen = {};
 
-  const klasemen = {};
+      matches.forEach(m => {
+        const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
+        const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
+        const winnerId = isDouble ? m.winnerDoubleId : m.winnerId;
 
- matches.forEach(m => {
-  const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
-  const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
-  const winnerId = isDouble ? m.winnerDoubleId : m.winnerId;
+        if (!p1 || !p2) return;
 
-  if (!p1 || !p2) return;
+        [p1, p2].forEach(p => {
+          if (!klasemen[p.id]) {
+            klasemen[p.id] = {
+              peserta: p,
+              poin: 0,
+              menang: 0,
+              kalah: 0,
+              gameMenang: 0,
+              gameKalah: 0,
+              headToHead: {}
+            };
+          }
+        });
 
-  [p1, p2].forEach(p => {
-    if (!klasemen[p.id]) {
-      klasemen[p.id] = {
-        peserta: p,
-        poin: 0,
-        menang: 0,
-        kalah: 0,
-        gameMenang: 0,
-        gameKalah: 0,
-        headToHead: {}
-      };
+        const p1Game = (m.set1P1 || 0) + (m.set2P1 || 0) + (m.set3P1 || 0);
+        const p2Game = (m.set1P2 || 0) + (m.set2P2 || 0) + (m.set3P2 || 0);
+
+        klasemen[p1.id].gameMenang += p1Game;
+        klasemen[p1.id].gameKalah += p2Game;
+
+        klasemen[p2.id].gameMenang += p2Game;
+        klasemen[p2.id].gameKalah += p1Game;
+
+        if (winnerId === p1.id) {
+          klasemen[p1.id].poin += 3;
+          klasemen[p1.id].menang++;
+          klasemen[p2.id].kalah++;
+        } else {
+          klasemen[p2.id].poin += 3;
+          klasemen[p2.id].menang++;
+          klasemen[p1.id].kalah++;
+        }
+      });
+
+      const ranking = Object.values(klasemen).sort((a, b) => {
+        if (b.poin !== a.poin) return b.poin - a.poin;
+
+        const diffA = a.gameMenang - a.gameKalah;
+        const diffB = b.gameMenang - b.gameKalah;
+        if (diffB !== diffA) return diffB - diffA;
+
+        return a.peserta.id - b.peserta.id;
+      });
+
+      return res.json({
+        kategori: bagan.kategori,
+        tipe: bagan.tipe,
+        kelompokUmur: bagan.KelompokUmur?.nama,
+
+        juara1: ranking[0]?.peserta || null,
+        juara2: ranking[1]?.peserta || null,
+
+        // 🔥 FIX UTAMA
+        juara3: ranking[2]?.peserta ? [ranking[2].peserta] : [],
+
+        klasemen: ranking
+      });
     }
-  });
-
-  // ✅ HITUNG GAME DARI SET
-  const p1Game =
-    (m.set1P1 || 0) +
-    (m.set2P1 || 0) +
-    (m.set3P1 || 0);
-
-  const p2Game =
-    (m.set1P2 || 0) +
-    (m.set2P2 || 0) +
-    (m.set3P2 || 0);
-
-  klasemen[p1.id].gameMenang += p1Game;
-  klasemen[p1.id].gameKalah += p2Game;
-
-  klasemen[p2.id].gameMenang += p2Game;
-  klasemen[p2.id].gameKalah += p1Game;
-
-  // head to head
-  klasemen[p1.id].headToHead[p2.id] = winnerId;
-  klasemen[p2.id].headToHead[p1.id] = winnerId;
-
-  // poin
-  if (winnerId === p1.id) {
-    klasemen[p1.id].poin += 3;
-    klasemen[p1.id].menang++;
-    klasemen[p2.id].kalah++;
-  } else if (winnerId === p2.id) {
-    klasemen[p2.id].poin += 3;
-    klasemen[p2.id].menang++;
-    klasemen[p1.id].kalah++;
-  }
-});
-
-  // sorting dengan tie-break
-  const ranking = Object.values(klasemen).sort((a, b) => {
-    // 1️⃣ POIN
-    if (b.poin !== a.poin) return b.poin - a.poin;
-
-    // 2️⃣ SELISIH GAME
-    const diffA = a.gameMenang - a.gameKalah;
-    const diffB = b.gameMenang - b.gameKalah;
-    if (diffB !== diffA) return diffB - diffA;
-
-    // 3️⃣ HEAD TO HEAD
-    const h2h = a.headToHead[b.peserta.id];
-    if (h2h) {
-      if (h2h === a.peserta.id) return -1;
-      if (h2h === b.peserta.id) return 1;
-    }
-
-    // 4️⃣ fallback terakhir
-    return a.peserta.id - b.peserta.id;
-  });
-
-
-  return res.json({
-    juara1: ranking[0]?.peserta || null,
-    juara2: ranking[1]?.peserta || null,
-    juara3: ranking[2]?.peserta || null,
-    klasemen: ranking.map(r => ({
-      peserta: r.peserta,
-      poin: r.poin,
-      menang: r.menang,
-      kalah: r.kalah,
-      gameMenang: r.gameMenang,
-      gameKalah: r.gameKalah,
-      selisih: r.gameMenang - r.gameKalah
-    }))
-  });
-}
-
-
 
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 };

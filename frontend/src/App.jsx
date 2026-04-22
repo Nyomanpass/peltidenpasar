@@ -31,6 +31,8 @@ import Tournament from "./pages/admin/Tournament";
 import PesertaGanda from "./components/admin/PesertaGanda"; 
 import UiSettings from "./pages/UiSettings";
 import Profile from "./pages/admin/Profile";
+import SertifikatPage from "./pages/SertifikatPage";
+import ValidasiSertifikat from "./pages/ValidasiSertifikat";
 
 
 
@@ -45,6 +47,8 @@ import Struktur  from "./pages/user/Struktur";
 import Kepengurusan from "./pages/user/Kepengurusan";
 import Athlete  from "./pages/user/Athlete";
 import Club from "./pages/user/Club";
+
+
 
 
 
@@ -69,6 +73,7 @@ export default function App() {
           <Route path="/atlet" element={<Athlete/>}/>
           <Route path="/anggota" element={<Club/>}/>    
           <Route path="/tournament-detail" element={<TournamentDetailPage/>}/>
+          <Route path="/sertifikat/:id" element={<ValidasiSertifikat />} />
       
           <Route
             path="/admin"
@@ -94,7 +99,7 @@ export default function App() {
             <Route path="peserta-ganda" element={<PesertaGanda />} />
             <Route path="uisettings" element={<UiSettings/>}/>
             <Route path="profile" element={<Profile />} />
-            
+            <Route path="sertifikat" element={<SertifikatPage />} />
           </Route>
 
           <Route
