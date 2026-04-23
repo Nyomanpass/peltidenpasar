@@ -23,11 +23,6 @@ export default function SertifikatPage() {
 
   const API_URL = import.meta.env.VITE_API_URL;
 
-  // 🔥 peserta yang tidak boleh download / preview
-  const blockedParticipantIds = [152];
-
-  const isBlocked = (id) => blockedParticipantIds.includes(Number(id));
-
   const getImageUrl = (path) => {
     if (!path) return "";
     return `${API_URL}${path}`;
@@ -456,18 +451,21 @@ const download = async (w) => {
       </div>
 
       {/* JUARA 3 */}
-   {juara3List
-  .flatMap(j => getPlayers(j))
-  .filter(player => !isBlocked(getId(player))) // 🔥 HIDE DISINI
-  .map((player, i) => (
-    <Card
-      key={i}
-      title="Juara 3"
-      nama={player.namaLengkap}
-      onPreview={() => preview(player)}
-      onDownload={() => download(player)}
-    />
-))}
+        <div>
+      <h3 className="text-xs font-bold text-orange-500 uppercase tracking-widest mb-2">
+        Juara 3
+      </h3>
+
+      {juara3List.flatMap(j => getPlayers(j)).map((player, i) => (
+        <Card
+          key={i}
+          title="Juara 3"
+          nama={player.namaLengkap}
+          onPreview={() => preview(player)}
+          onDownload={() => download(player)}
+        />
+      ))}
+    </div>
 
     </div>
   )}
