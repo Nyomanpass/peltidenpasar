@@ -1,6 +1,7 @@
 import { Match } from "../models/MatchModel.js";
 import { Peserta } from "../models/PesertaModel.js";
 import { Bagan } from "../models/BaganModel.js";
+import { calculateBracketStructure } from "./BaganController.js";
 import { Jadwal } from "../models/JadwalModel.js";
 import { DoubleTeam } from "../models/DoubleTeamModel.js";
 import { MatchScoreLog } from "../models/MatchScoreLog.js";
@@ -146,7 +147,7 @@ export const updateWinner = async (req, res) => {
 };
 
 
-// 3. GENERATE UNDIAN (FIXED LOGIC)
+// 3. GENERATE UNDIAN (DENGAN SUB-BAGAN / PRELIMINARY ROUND)
 export const generateUndian = async (req, res) => {
   try {
     const { id } = req.params;
@@ -174,16 +175,16 @@ export const generateUndian = async (req, res) => {
       return res.status(400).json({ msg: `Data ${kategori} verified tidak ditemukan!` });
     }
 
-    // 3. Tentukan ukuran bracket
-    let bracketSize = 2;
-    while (bracketSize < allPeserta.length) bracketSize *= 2;
+    // 3. Hitung struktur bracket (sub-bagan / preliminary)
+    const { bracketSize, preliminaryCount } = calculateBracketStructure(allPeserta.length);
+    const hasPreliminary = preliminaryCount > 0;
+    const totalRounds = Math.log2(bracketSize);
 
-    const initialSlots = new Array(bracketSize).fill('EMPTY');
-    const assignedSlots = new Set();
+    // Update flag hasPreliminary di bagan
+    await bagan.update({ hasPreliminary });
 
     // --- PERBAIKAN DI SINI ---
     // Gunakan satu variabel saja untuk menampung ID yang akan dijadikan Seed
-    // Filter hanya yang memiliki properti isSeeded dari modal
     const idsYangAkanJadiSeed = seededPeserta
       .filter(p => p.isSeeded)
       .map(p => Number(p.id));
@@ -196,81 +197,264 @@ export const generateUndian = async (req, res) => {
       );
     }
 
-    // 5. Plotting Seeded ke slot bracket
-    // 5. Plotting peserta ke slot (seed & non-seed manual)
-    const plottedIds = new Set(); // 🔥 PENENTU UTAMA
-
+    // 5. Pisahkan peserta: seeded vs non-seeded
+    const plottedIds = new Set();
+    
+    // Kumpulkan peserta yang di-plot manual (seeded + non-seeded dari modal)
+    const manuallyPlotted = [];
     seededPeserta.forEach(p => {
-      const idx = p.slot - 1;
-      if (idx >= 0 && idx < bracketSize) {
-        const pid = Number(p.id);
-        initialSlots[idx] = pid;
-        assignedSlots.add(idx);
-        plottedIds.add(pid); // 🔥 CEGAH DOBEL
-      }
+      const pid = Number(p.id);
+      plottedIds.add(pid);
+      manuallyPlotted.push({ id: pid, slot: p.slot, isSeeded: p.isSeeded });
     });
 
-
-    // 6. Plotting BYE
-    let byeCount = bracketSize - allPeserta.length;
-    placeByes(initialSlots, assignedSlots, byeCount, seededPeserta);
-
-    // 7. Isi sisa slot dengan peserta Non-Seeded
-    // Gunakan variabel idsYangAkanJadiSeed untuk memfilter
+    // Non-seeded yang belum di-plot manual
     const nonSeededIds = shuffle(
       allPeserta
-        .filter(p => !plottedIds.has(Number(p.id))) // 🔥 FIX UTAMA
+        .filter(p => !plottedIds.has(Number(p.id)))
         .map(p => p.id)
     );
 
-    // --- AKHIR PERBAIKAN ---
-
-    let poolIdx = 0;
-    for (let i = 0; i < bracketSize; i++) {
-      if (initialSlots[i] === 'EMPTY') {
-        initialSlots[i] = poolIdx < nonSeededIds.length ? nonSeededIds[poolIdx++] : null;
-      }
-    }
-
-    // ... (Sisa kode Match.destroy dan Match.bulkCreate tetap sama seperti sebelumnya)
+    // --- HAPUS MATCH LAMA ---
     await Match.destroy({ where: { baganId: id } });
-    
-    let matchCount = bracketSize / 2;
-    let round = 1;
-    const totalRounds = Math.log2(bracketSize);
 
-    while (matchCount >= 1) {
-      let matchesToCreate = [];
-      for (let i = 0; i < matchCount; i++) {
-        const mObj = { baganId: id, round, slot: i + 1, tournamentId, status: "belum" };
-        if (round === 1) {
-          const s1 = initialSlots[i * 2];
-          const s2 = initialSlots[i * 2 + 1];
-          if (isDouble) {
-            mObj.doubleTeam1Id = s1; mObj.doubleTeam2Id = s2;
-          } else {
-            mObj.peserta1Id = s1; mObj.peserta2Id = s2;
+    // =============================================
+    // LOGIKA SUB-BAGAN (PRELIMINARY ROUND)
+    // =============================================
+    if (hasPreliminary) {
+      // Jumlah peserta yang masuk langsung ke bagan utama
+      const directEntryCount = bracketSize - preliminaryCount;
+      // Jumlah peserta yang harus bertanding di kualifikasi
+      const prelimPlayerCount = preliminaryCount * 2;
+
+      // --- Tentukan siapa masuk kualifikasi vs langsung ---
+      // Peserta yang di-plot manual (seeded) → masuk langsung ke bagan utama
+      // Peserta non-seeded diambil secukupnya untuk kualifikasi
+      
+      const directEntryIds = []; // peserta yang langsung masuk round 1
+      const prelimPlayerIds = []; // peserta yang harus bertanding di round 0
+
+      // Seeded peserta langsung masuk bagan utama
+      manuallyPlotted.forEach(p => {
+        directEntryIds.push(p.id);
+      });
+
+      // Non-seeded: ambil yang pertama untuk direct entry, sisanya kualifikasi
+      const nonSeededForDirect = directEntryCount - directEntryIds.length;
+      
+      for (let i = 0; i < nonSeededIds.length; i++) {
+        if (directEntryIds.length < directEntryCount && i < nonSeededForDirect) {
+          directEntryIds.push(nonSeededIds[i]);
+        } else {
+          prelimPlayerIds.push(nonSeededIds[i]);
+        }
+      }
+
+      // --- Buat slot bagan utama (round 1) ---
+      const mainSlots = new Array(bracketSize).fill('EMPTY');
+      const assignedMainSlots = new Set();
+
+      // Plot seeded peserta ke slot yang ditentukan dari modal
+      manuallyPlotted.forEach(p => {
+        const idx = p.slot - 1;
+        if (idx >= 0 && idx < bracketSize) {
+          mainSlots[idx] = p.id;
+          assignedMainSlots.add(idx);
+        }
+      });
+
+      // Slot terakhir dikosongkan untuk pemenang kualifikasi
+      // Tandai slot kosong untuk kualifikasi (dari belakang)
+      const prelimTargetSlots = [];
+      for (let i = bracketSize - 1; i >= 0 && prelimTargetSlots.length < preliminaryCount; i--) {
+        if (!assignedMainSlots.has(i)) {
+          mainSlots[i] = 'PRELIM'; // Ditandai untuk diisi pemenang kualifikasi
+          assignedMainSlots.add(i);
+          prelimTargetSlots.push(i);
+        }
+      }
+
+      // Isi sisa slot kosong dengan peserta direct entry (non-seeded)
+      const directNonSeeded = directEntryIds.filter(pid => !manuallyPlotted.find(mp => mp.id === pid));
+      let dIdx = 0;
+      for (let i = 0; i < bracketSize; i++) {
+        if (mainSlots[i] === 'EMPTY') {
+          mainSlots[i] = dIdx < directNonSeeded.length ? directNonSeeded[dIdx++] : null;
+        }
+      }
+
+      // --- Buat match babak kualifikasi (round 0) ---
+      const prelimMatches = [];
+      for (let i = 0; i < preliminaryCount; i++) {
+        const p1 = prelimPlayerIds[i * 2] || null;
+        const p2 = prelimPlayerIds[i * 2 + 1] || null;
+
+        const mObj = { 
+          baganId: id, 
+          round: 0, 
+          slot: i + 1, 
+          tournamentId, 
+          status: "belum" 
+        };
+
+        if (isDouble) {
+          mObj.doubleTeam1Id = p1;
+          mObj.doubleTeam2Id = p2;
+        } else {
+          mObj.peserta1Id = p1;
+          mObj.peserta2Id = p2;
+        }
+
+        const match = await Match.create(mObj);
+        prelimMatches.push(match);
+      }
+
+      // --- Buat match bagan utama (round 1 sampai final) ---
+      let matchCount = bracketSize / 2;
+      let round = 1;
+
+      while (matchCount >= 1) {
+        let matchesToCreate = [];
+        for (let i = 0; i < matchCount; i++) {
+          const mObj = { baganId: id, round, slot: i + 1, tournamentId, status: "belum" };
+          if (round === 1) {
+            const s1 = mainSlots[i * 2];
+            const s2 = mainSlots[i * 2 + 1];
+            // PRELIM slot dikosongkan (null), akan diisi pemenang kualifikasi nanti
+            const val1 = s1 === 'PRELIM' ? null : s1;
+            const val2 = s2 === 'PRELIM' ? null : s2;
+            if (isDouble) {
+              mObj.doubleTeam1Id = val1;
+              mObj.doubleTeam2Id = val2;
+            } else {
+              mObj.peserta1Id = val1;
+              mObj.peserta2Id = val2;
+            }
+          }
+          matchesToCreate.push(mObj);
+        }
+        await Match.bulkCreate(matchesToCreate);
+        matchCount /= 2; 
+        round++;
+      }
+
+      // --- Hubungkan nextMatchId ---
+      const finalMatches = await Match.findAll({ 
+        where: { baganId: id }, 
+        order: [['round', 'ASC'], ['slot', 'ASC']] 
+      });
+
+      // Hubungkan round 1+ ke round berikutnya
+      for (const m of finalMatches) {
+        if (m.round >= 1 && m.round < totalRounds) {
+          const nS = Math.ceil(m.slot / 2);
+          const nM = finalMatches.find(x => x.round === m.round + 1 && x.slot === nS);
+          if (nM) await m.update({ nextMatchId: nM.id });
+        }
+      }
+
+      // Hubungkan round 0 (kualifikasi) ke round 1
+      const round1Matches = finalMatches.filter(m => m.round === 1).sort((a, b) => a.slot - b.slot);
+      
+      for (let i = 0; i < prelimMatches.length; i++) {
+        const pMatch = finalMatches.find(m => m.round === 0 && m.slot === i + 1);
+        if (!pMatch) continue;
+
+        // Cari match round 1 yang punya slot kosong (PRELIM) 
+        // berdasarkan posisi prelimTargetSlots
+        const targetSlotIdx = prelimTargetSlots[i];
+        if (targetSlotIdx !== undefined) {
+          // Slot index → match round 1 (setiap match mengcover 2 slot)
+          const targetR1Slot = Math.floor(targetSlotIdx / 2) + 1;
+          const targetR1Match = round1Matches.find(m => m.slot === targetR1Slot);
+          if (targetR1Match) {
+            await pMatch.update({ nextMatchId: targetR1Match.id });
           }
         }
-        matchesToCreate.push(mObj);
       }
-      await Match.bulkCreate(matchesToCreate);
-      matchCount /= 2; round++;
-    }
 
-    // 8. Hubungkan nextMatchId dan proses BYE
-    const finalMatches = await Match.findAll({ where: { baganId: id }, order: [['round', 'ASC']] });
-    for (const m of finalMatches) {
-      if (m.round < totalRounds) {
-        const nS = Math.ceil(m.slot / 2);
-        const nM = finalMatches.find(x => x.round === m.round + 1 && x.slot === nS);
-        if (nM) await m.update({ nextMatchId: nM.id });
+      // Proses otomatis: kalau di round 1 salah satu sisi sudah terisi dan lawan kosong (BYE)
+      // TIDAK terjadi di sub-bagan karena slot yang kosong akan diisi pemenang kualifikasi
+      // Tapi tetap handle jika jumlah peserta kualifikasi ganjil
+      for (const m of finalMatches) {
+        if (m.round === 1) {
+          const side1 = isDouble ? m.doubleTeam1Id : m.peserta1Id;
+          const side2 = isDouble ? m.doubleTeam2Id : m.peserta2Id;
+          // Hanya proses BYE jika kedua sisi sudah terisi (bukan slot kualifikasi)
+          if ((side1 && !side2) || (!side1 && side2)) {
+            // Cek apakah slot ini menunggu pemenang kualifikasi
+            const hasIncomingPrelim = finalMatches.some(pm => pm.round === 0 && pm.nextMatchId === m.id);
+            if (!hasIncomingPrelim) {
+              await _processMatchPeserta(m.id, side1, side2, kategori);
+            }
+          }
+        }
       }
-      if (m.round === 1) {
-        const side1 = isDouble ? m.doubleTeam1Id : m.peserta1Id;
-        const side2 = isDouble ? m.doubleTeam2Id : m.peserta2Id;
-        if ((side1 && !side2) || (!side1 && side2)) {
-          await _processMatchPeserta(m.id, side1, side2, kategori);
+
+    } else {
+      // =============================================
+      // LOGIKA BRACKET NORMAL (Tanpa Sub-Bagan)
+      // Untuk kasus n sudah pangkat 2 (8, 16, 32)
+      // =============================================
+      const initialSlots = new Array(bracketSize).fill('EMPTY');
+      const assignedSlots = new Set();
+
+      // Plot seeded peserta
+      seededPeserta.forEach(p => {
+        const idx = p.slot - 1;
+        if (idx >= 0 && idx < bracketSize) {
+          const pid = Number(p.id);
+          initialSlots[idx] = pid;
+          assignedSlots.add(idx);
+          plottedIds.add(pid);
+        }
+      });
+
+      // Isi sisa slot
+      let poolIdx = 0;
+      for (let i = 0; i < bracketSize; i++) {
+        if (initialSlots[i] === 'EMPTY') {
+          initialSlots[i] = poolIdx < nonSeededIds.length ? nonSeededIds[poolIdx++] : null;
+        }
+      }
+
+      // Buat match
+      let matchCount = bracketSize / 2;
+      let round = 1;
+
+      while (matchCount >= 1) {
+        let matchesToCreate = [];
+        for (let i = 0; i < matchCount; i++) {
+          const mObj = { baganId: id, round, slot: i + 1, tournamentId, status: "belum" };
+          if (round === 1) {
+            const s1 = initialSlots[i * 2];
+            const s2 = initialSlots[i * 2 + 1];
+            if (isDouble) {
+              mObj.doubleTeam1Id = s1; mObj.doubleTeam2Id = s2;
+            } else {
+              mObj.peserta1Id = s1; mObj.peserta2Id = s2;
+            }
+          }
+          matchesToCreate.push(mObj);
+        }
+        await Match.bulkCreate(matchesToCreate);
+        matchCount /= 2; round++;
+      }
+
+      // Hubungkan nextMatchId dan proses BYE
+      const finalMatches = await Match.findAll({ where: { baganId: id }, order: [['round', 'ASC']] });
+      for (const m of finalMatches) {
+        if (m.round < totalRounds) {
+          const nS = Math.ceil(m.slot / 2);
+          const nM = finalMatches.find(x => x.round === m.round + 1 && x.slot === nS);
+          if (nM) await m.update({ nextMatchId: nM.id });
+        }
+        if (m.round === 1) {
+          const side1 = isDouble ? m.doubleTeam1Id : m.peserta1Id;
+          const side2 = isDouble ? m.doubleTeam2Id : m.peserta2Id;
+          if ((side1 && !side2) || (!side1 && side2)) {
+            await _processMatchPeserta(m.id, side1, side2, kategori);
+          }
         }
       }
     }

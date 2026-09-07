@@ -32,6 +32,10 @@ export const createBagan = async (req, res) => {
     let tipe = "roundrobin";
     if (jumlah > 4) tipe = "knockout";
 
+    // 3. Hitung struktur bracket (sub-bagan / preliminary)
+    const { bracketSize, preliminaryCount } = calculateBracketStructure(jumlah);
+    const hasPreliminary = tipe === "knockout" && preliminaryCount > 0;
+
     const bagan = await Bagan.create({
       nama: `${isDouble ? '(Ganda)' : '(Tunggal)'} ${kelompokumur.nama}`,
       tipe,
@@ -40,6 +44,7 @@ export const createBagan = async (req, res) => {
       tournamentId,
       kategori: kategori || "single",
       status: "draft",
+      hasPreliminary,
     });
 
     // --- LOGIKA ROUND ROBIN ---
@@ -68,15 +73,28 @@ export const createBagan = async (req, res) => {
       }
     }
 
-    // --- LOGIKA KNOCKOUT ---
+    // --- LOGIKA KNOCKOUT DENGAN SUB-BAGAN (PRELIMINARY) ---
     else {
-      let size = 2;
-      while (size < jumlah) size *= 2;
-      const totalRounds = Math.log2(size);
       const allMatches = [];
+      const totalRounds = Math.log2(bracketSize);
 
+      // Buat match babak kualifikasi (round 0) jika ada
+      if (preliminaryCount > 0) {
+        for (let slot = 1; slot <= preliminaryCount; slot++) {
+          const match = await Match.create({
+            baganId: bagan.id,
+            round: 0,  // Round 0 = babak kualifikasi
+            slot,
+            tournamentId,
+            status: "belum"
+          });
+          allMatches.push(match);
+        }
+      }
+
+      // Buat match bagan utama (round 1 sampai final)
       for (let round = 1; round <= totalRounds; round++) {
-        const numMatches = size / Math.pow(2, round);
+        const numMatches = bracketSize / Math.pow(2, round);
         for (let slot = 1; slot <= numMatches; slot++) {
           const match = await Match.create({
             baganId: bagan.id,
@@ -89,14 +107,34 @@ export const createBagan = async (req, res) => {
         }
       }
 
-      // Hubungkan Next Match
+      // Hubungkan nextMatchId untuk bagan utama (round 1+ ke round berikutnya)
       for (let m of allMatches) {
-        if (m.round < totalRounds) {
+        if (m.round >= 1 && m.round < totalRounds) {
           const nextSlot = Math.ceil(m.slot / 2);
           const next = allMatches.find(nm => nm.round === m.round + 1 && nm.slot === nextSlot);
           if (next) {
             m.nextMatchId = next.id;
             await m.save();
+          }
+        }
+      }
+
+      // Hubungkan nextMatchId untuk match kualifikasi (round 0 → round 1)
+      // Match kualifikasi slot N → masuk ke match round 1 slot terakhir yang tersedia
+      if (preliminaryCount > 0) {
+        const round1Matches = allMatches
+          .filter(m => m.round === 1)
+          .sort((a, b) => a.slot - b.slot);
+
+        // Pemenang kualifikasi masuk ke slot round 1 dari belakang
+        // (peserta seed rendah di bagian bawah bracket)
+        for (let i = 0; i < preliminaryCount; i++) {
+          const prelimMatch = allMatches.find(m => m.round === 0 && m.slot === i + 1);
+          // Target: match round 1 terakhir, mundur sesuai jumlah kualifikasi
+          const targetR1Index = round1Matches.length - 1 - i;
+          if (prelimMatch && targetR1Index >= 0) {
+            prelimMatch.nextMatchId = round1Matches[targetR1Index].id;
+            await prelimMatch.save();
           }
         }
       }
@@ -234,3 +272,20 @@ export const lockBagan = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// =============================================
+// Helper: Hitung struktur bracket sub-bagan
+// =============================================
+// Bulatkan ke BAWAH ke pangkat 2 terdekat, selisihnya jadi babak kualifikasi.
+// Contoh: 9 peserta → P=8, extra=1 → 1 match kualifikasi + bracket 8
+// Contoh: 13 peserta → P=8, extra=5 → 5 match kualifikasi + bracket 8
+// Kalau n sudah pangkat 2 → extra=0, tidak ada kualifikasi
+export function calculateBracketStructure(n) {
+  if (n <= 1) return { bracketSize: 2, preliminaryCount: 0 };
+  const P = Math.pow(2, Math.floor(Math.log2(n)));
+  const extra = n - P;
+  return {
+    bracketSize: P,           // ukuran bagan utama (bersih, tanpa BYE)
+    preliminaryCount: extra,  // jumlah match kualifikasi (round 0)
+  };
+}

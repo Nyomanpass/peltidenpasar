@@ -189,11 +189,15 @@ const formatSetScore = (m) => {
       setAllPeserta(data);
       
       const totalPeserta = data.length;
-      let bracketSize = 2;
-      while (bracketSize < totalPeserta) {
-        bracketSize *= 2;
+      // Sub-bagan: bulatkan ke BAWAH ke pangkat 2
+      const P = Math.pow(2, Math.floor(Math.log2(totalPeserta)));
+      const extra = totalPeserta - P;
+      // Kalau ada sub-bagan, tidak ada BYE. Kalau tidak, hitung BYE biasa.
+      if (extra > 0) {
+        setByeSlotsCount(0); // Sub-bagan menghilangkan BYE
+      } else {
+        setByeSlotsCount(0); // Pas pangkat 2, tidak ada BYE
       }
-      setByeSlotsCount(bracketSize - totalPeserta);
     } catch (error) {
       console.error(error);
     }
@@ -471,30 +475,55 @@ const revealSlots = (matches, newBagan) => {
     if (!roundsMap[m.round]) roundsMap[m.round] = [];
 
     // Fungsi pembantu untuk menentukan nama (Ganda atau Tunggal)
-    const getTeamName = (peserta, doubleTeam, id, doubleId) => {
+    const getTeamName = (peserta, doubleTeam, id, doubleId, match) => {
       if (isDouble) {
         if (doubleTeam) return `${doubleTeam.Player1?.namaLengkap} / ${doubleTeam.Player2?.namaLengkap}`;
-        return doubleId ? "TBD" : "BYE";
+        if (doubleId) return "TBD";
+        // Cek apakah slot ini menunggu pemenang kualifikasi
+        if (match.round === 1 && bagan.hasPreliminary) {
+          const hasIncomingPrelim = bagan.Matches.some(pm => pm.round === 0 && pm.nextMatchId === match.id);
+          if (hasIncomingPrelim) return "🔄 Pemenang Kualifikasi";
+        }
+        return "BYE";
       }
       if (peserta) return peserta.namaLengkap;
-      return id ? "TBD" : "BYE";
+      if (id) return "TBD";
+      // Cek apakah slot ini menunggu pemenang kualifikasi
+      if (match.round === 1 && bagan.hasPreliminary) {
+        const hasIncomingPrelim = bagan.Matches.some(pm => pm.round === 0 && pm.nextMatchId === match.id);
+        if (hasIncomingPrelim) return "🔄 Pemenang Kualifikasi";
+      }
+      return "BYE";
     };
 
     roundsMap[m.round].push({
       id: m.id,
       teams: [
-        { name: getTeamName(m.peserta1, m.doubleTeam1, m.peserta1Id, m.doubleTeam1Id) },
-        { name: getTeamName(m.peserta2, m.doubleTeam2, m.peserta2Id, m.doubleTeam2Id) },
+        { name: getTeamName(m.peserta1, m.doubleTeam1, m.peserta1Id, m.doubleTeam1Id, m) },
+        { name: getTeamName(m.peserta2, m.doubleTeam2, m.peserta2Id, m.doubleTeam2Id, m) },
       ],
       raw: m,
     });
   });
   // --- SAMPAI DI SINI ---
 
+  // Buat label babak yang lebih informatif
+  const getRoundTitle = (roundNum, totalMainRounds) => {
+    const r = Number(roundNum);
+    if (r === 0) return "⚡ Kualifikasi";
+    if (r === totalMainRounds) return "🏆 Final";
+    if (r === totalMainRounds - 1) return "Semi Final";
+    if (r === totalMainRounds - 2) return "Perempat Final";
+    return `Babak ${r}`;
+  };
+
+  const mainRounds = Object.keys(roundsMap).filter(r => Number(r) >= 1);
+  const totalMainRounds = mainRounds.length > 0 ? Math.max(...mainRounds.map(Number)) : 1;
+
   const rounds = Object.keys(roundsMap)
     .sort((a, b) => a - b)
     .map((round) => ({
-      title: `Babak ${round}`,
+      title: getRoundTitle(round, totalMainRounds),
       seeds: roundsMap[round],
     }));
 // --- GANTI BAGIAN JUARA INI ---
