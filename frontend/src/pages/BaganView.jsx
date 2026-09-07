@@ -467,51 +467,85 @@ const revealSlots = (matches, newBagan) => {
   }
   
   // Konversi Matches ke format react-brackets
- // --- MULAI GANTI DARI SINI ---
   const roundsMap = {};
   const isDouble = bagan.kategori === "double"; 
 
-  bagan.Matches.forEach((m) => {
-    if (!roundsMap[m.round]) roundsMap[m.round] = [];
+  // Urutkan matches per round dan slot
+  const sortedMatches = [...bagan.Matches].sort((a, b) => {
+    if (a.round !== b.round) return a.round - b.round;
+    return a.slot - b.slot;
+  });
 
-    // Fungsi pembantu untuk menentukan nama (Ganda atau Tunggal)
-    const getTeamName = (peserta, doubleTeam, id, doubleId, match) => {
-      if (isDouble) {
-        if (doubleTeam) return `${doubleTeam.Player1?.namaLengkap} / ${doubleTeam.Player2?.namaLengkap}`;
-        if (doubleId) return "TBD";
-        // Cek apakah slot ini menunggu pemenang kualifikasi
-        if (match.round === 1 && bagan.hasPreliminary) {
-          const hasIncomingPrelim = bagan.Matches.some(pm => pm.round === 0 && pm.nextMatchId === match.id);
-          if (hasIncomingPrelim) return "🔄 Pemenang Kualifikasi";
+  const prelimMatches = sortedMatches.filter((m) => m.round === 0);
+  const round1Matches = sortedMatches.filter((m) => m.round === 1);
+  const otherMatches = sortedMatches.filter((m) => m.round > 1);
+
+  // 1. Babak Kualifikasi (Round 0) jika ada
+  // Sejajarkan posisi seed kualifikasi dengan match babak 1 yang dituju
+  if (prelimMatches.length > 0 && round1Matches.length > 0) {
+    roundsMap[0] = [];
+
+    round1Matches.forEach((r1, r1Idx) => {
+      // Cari match kualifikasi yang terhubung ke match round 1 ini
+      let pMatch = prelimMatches.find((pm) => pm.nextMatchId === r1.id);
+
+      // Fallback jika nextMatchId belum tersimpan: pasangkan dari slot paling bawah
+      if (!pMatch) {
+        const prelimIndex = r1Idx - (round1Matches.length - prelimMatches.length);
+        if (prelimIndex >= 0 && prelimIndex < prelimMatches.length) {
+          pMatch = prelimMatches[prelimIndex];
         }
-        return "BYE";
       }
-      if (peserta) return peserta.namaLengkap;
-      if (id) return "TBD";
-      // Cek apakah slot ini menunggu pemenang kualifikasi
-      if (match.round === 1 && bagan.hasPreliminary) {
-        const hasIncomingPrelim = bagan.Matches.some(pm => pm.round === 0 && pm.nextMatchId === match.id);
-        if (hasIncomingPrelim) return "🔄 Pemenang Kualifikasi";
-      }
-      return "BYE";
-    };
 
+      if (pMatch) {
+        roundsMap[0].push({
+          id: pMatch.id,
+          teams: [
+            { name: isDouble ? (pMatch.doubleTeam1?.namaTim || "BYE") : (pMatch.peserta1?.namaLengkap || "BYE") },
+            { name: isDouble ? (pMatch.doubleTeam2?.namaTim || "BYE") : (pMatch.peserta2?.namaLengkap || "BYE") },
+          ],
+          raw: pMatch,
+          isPrelim: true,
+          targetMatchId: r1.id,
+        });
+      } else {
+        roundsMap[0].push({
+          id: `placeholder-r1-${r1.id || r1Idx}`,
+          isPlaceholder: true,
+          raw: null,
+        });
+      }
+    });
+  }
+
+  // 2. Babak Utama (Round 1)
+  roundsMap[1] = round1Matches.map((m) => ({
+    id: m.id,
+    teams: [
+      { name: isDouble ? (m.doubleTeam1?.namaTim || "BYE") : (m.peserta1?.namaLengkap || "BYE") },
+      { name: isDouble ? (m.doubleTeam2?.namaTim || "BYE") : (m.peserta2?.namaLengkap || "BYE") },
+    ],
+    raw: m,
+  }));
+
+  // 3. Babak Selanjutnya (Round 2+)
+  otherMatches.forEach((m) => {
+    if (!roundsMap[m.round]) roundsMap[m.round] = [];
     roundsMap[m.round].push({
       id: m.id,
       teams: [
-        { name: getTeamName(m.peserta1, m.doubleTeam1, m.peserta1Id, m.doubleTeam1Id, m) },
-        { name: getTeamName(m.peserta2, m.doubleTeam2, m.peserta2Id, m.doubleTeam2Id, m) },
+        { name: isDouble ? (m.doubleTeam1?.namaTim || "BYE") : (m.peserta1?.namaLengkap || "BYE") },
+        { name: isDouble ? (m.doubleTeam2?.namaTim || "BYE") : (m.peserta2?.namaLengkap || "BYE") },
       ],
       raw: m,
     });
   });
-  // --- SAMPAI DI SINI ---
 
-  // Buat label babak yang lebih informatif
+  // Buat label babak (tanpa icon)
   const getRoundTitle = (roundNum, totalMainRounds) => {
     const r = Number(roundNum);
-    if (r === 0) return "⚡ Kualifikasi";
-    if (r === totalMainRounds) return "🏆 Final";
+    if (r === 0) return "Kualifikasi";
+    if (r === totalMainRounds) return "Final";
     if (r === totalMainRounds - 1) return "Semi Final";
     if (r === totalMainRounds - 2) return "Perempat Final";
     return `Babak ${r}`;
@@ -526,6 +560,7 @@ const revealSlots = (matches, newBagan) => {
       title: getRoundTitle(round, totalMainRounds),
       seeds: roundsMap[round],
     }));
+
 // --- GANTI BAGIAN JUARA INI ---
   const finalRound = Math.max(...bagan.Matches.map((m) => m.round));
   const finalMatch = bagan.Matches.find((m) => m.round === finalRound);
@@ -780,59 +815,145 @@ if (isRoundRobin) {
                   /* Tambahkan properti mobileBreakpoint jika library mendukung untuk mematikannya */
                   mobileBreakpoint={0} 
                   renderSeedComponent={(props) => {
-                    const match = props.seed.raw;
+                    const seed = props.seed;
+                    const isRound0 = props.roundIndex === 0;
+
+                    // 1. Placeholder transparan di Kualifikasi (supaya posisi match kualifikasi sejajar presisi dengan babak 1)
+                    if (seed.isPlaceholder) {
+                      return (
+                        <div
+                          key={seed.id}
+                          className="invisible pointer-events-none select-none"
+                          style={{
+                            padding: "1em 1.5em",
+                            minWidth: "225px",
+                            width: "100%",
+                            position: "relative",
+                            display: "flex",
+                            alignItems: "center",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            fontSize: "14px",
+                          }}
+                        >
+                          <div className="w-full">
+                            <div className="rounded-lg min-w-[220px] px-3 py-2 text-lg border-2 border-transparent">
+                              &nbsp;
+                            </div>
+                            <div className="h-2" />
+                            <div className="rounded-lg min-w-[220px] px-3 py-2 text-lg border-2 border-transparent">
+                              &nbsp;
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const match = seed.raw;
+                    if (!match) return null;
                     const isDouble = bagan.kategori === "double";
 
+                    const cardContent = (
+                      <SeedItem>
+                        <div className="relative" style={{ backgroundColor: "#ffffff" }}>
+                          {/* TAMPILAN ASLI KAMU (GAYA LAMA) */}
+                          {formatSetScore(match) && (
+                            <div className="absolute -top-3 -right-3 z-10">
+                              <span style={{ color: "#000000" }} className="font-bold text-md px-2 py-0.5">
+                                {formatSetScore(match)}
+                              </span>
+                            </div>
+                          )}
+
+                          <SeedTeam
+                            className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
+                              ${(isDouble ? match.winnerDoubleId === match.doubleTeam1Id : match.winnerId === match.peserta1Id)
+                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                              }`}
+                          >
+                            {isDouble 
+                              ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
+                              : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
+                          </SeedTeam>
+
+                          {/* Pembatas tengah persis antara kedua peserta/tim */}
+                          <div className="relative h-2">
+                            {/* GARIS ALUR PENGHUBUNG DARI KUALIFIKASI KE BABAK UTAMA */}
+                            {isRound0 && (
+                              <div
+                                className="pointer-events-none"
+                                style={{
+                                  position: "absolute",
+                                  right: "-3em",
+                                  top: "50%",
+                                  transform: "translateY(-50%)",
+                                  width: "3em",
+                                  height: 0,
+                                  borderTop: "1px solid #707070",
+                                  zIndex: 5,
+                                }}
+                              />
+                            )}
+                          </div>
+
+                          <SeedTeam
+                            className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
+                              ${(isDouble ? match.winnerDoubleId === match.doubleTeam2Id : match.winnerId === match.peserta2Id)
+                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
+                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
+                              }`}
+                          >
+                            {isDouble 
+                              ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
+                              : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
+                          </SeedTeam>
+                        </div>
+                      </SeedItem>
+                    );
+
+                    const handleClick = () => {
+                      setSelectedMatch(match);
+                      const hasS1 = isDouble ? match.doubleTeam1Id : match.peserta1Id;
+                      const hasS2 = isDouble ? match.doubleTeam2Id : match.peserta2Id;
+                      const isFinished = isDouble ? !!match.winnerDoubleId : !!match.winnerId;
+
+                      if (hasS1 !== null && hasS2 !== null && !isFinished) {
+                        setModalType("winner");
+                      }
+                    };
+
+                    // Untuk Babak Kualifikasi: gunakan container bersih tanpa garis cabang pohon bawaan
+                    if (isRound0) {
+                      return (
+                        <div
+                          key={seed.id}
+                          style={{
+                            padding: "1em 1.5em",
+                            minWidth: "225px",
+                            width: "100%",
+                            position: "relative",
+                            display: "flex",
+                            alignItems: "center",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            fontSize: "14px",
+                            cursor: "pointer",
+                          }}
+                          onClick={handleClick}
+                        >
+                          {cardContent}
+                        </div>
+                      );
+                    }
+
+                    // Untuk Babak Utama (Round 1 sampai Final): gunakan Seed bawaan react-brackets
                     return (
                       <Seed
                         {...props}
-                        onClick={() => {
-                          setSelectedMatch(match);
-                          const hasS1 = isDouble ? match.doubleTeam1Id : match.peserta1Id;
-                          const hasS2 = isDouble ? match.doubleTeam2Id : match.peserta2Id;
-                          const isFinished = isDouble ? !!match.winnerDoubleId : !!match.winnerId;
-
-                          if (hasS1 !== null && hasS2 !== null && !isFinished) {
-                            setModalType("winner");
-                          }
-                        }}
+                        onClick={handleClick}
                       >
-                        <SeedItem>
-                          <div className="relative" style={{ backgroundColor: "#ffffff" }}>
-                            {/* TAMPILAN ASLI KAMU (GAYA LAMA) */}
-                            {formatSetScore(match) && (
-                              <div className="absolute -top-3 -right-3 z-10">
-                                <span style={{ color: "#000000" }} className="font-bold text-md px-2 py-0.5">
-                                  {formatSetScore(match)}
-                                </span>
-                              </div>
-                            )}
-
-                            <SeedTeam
-                              className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
-                                ${(isDouble ? match.winnerDoubleId === match.doubleTeam1Id : match.winnerId === match.peserta1Id)
-                                  ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                                  : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                                }`}
-                            >
-                              {isDouble 
-                                ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
-                                : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
-                            </SeedTeam>
-
-                            <SeedTeam
-                              className={`rounded-lg min-w-[220px] px-3 py-2 mt-2 text-start text-lg font-medium border-2 
-                                ${(isDouble ? match.winnerDoubleId === match.doubleTeam2Id : match.winnerId === match.peserta2Id)
-                                  ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                                  : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                                }`}
-                            >
-                              {isDouble 
-                                ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
-                                : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
-                            </SeedTeam>
-                          </div>
-                        </SeedItem>
+                        {cardContent}
                       </Seed>
                     );
                   }}
