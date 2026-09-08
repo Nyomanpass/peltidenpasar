@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { updateWinner, setMatchPeserta, generateUndian, getMatches, 
     getJuara, updateMatchPoint, getMatchDetailHistory, getMatchLog,
     undoLastPoint, getMatchLogs, setScoreRuleToMatch, getMatchById, 
@@ -6,6 +7,15 @@ import { updateWinner, setMatchPeserta, generateUndian, getMatches,
 import { requireAuth } from "../middleware/Auth.js";
 
 const router = express.Router();
+
+// 🔒 Rate limiter untuk endpoint scoring (anti spam-click)
+const scoringLimiter = rateLimit({
+  windowMs: 1000, // 1 detik
+  max: 5, // maksimal 5 request per detik per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { msg: "Terlalu banyak permintaan, coba lagi sebentar." }
+});
 
 // PATCH /api/matches/:matchId/winner → update pemenang
 router.patch("/:matchId/winner", requireAuth, updateWinner);
@@ -15,7 +25,7 @@ router.patch("/:matchId/peserta", setMatchPeserta);
 router.post("/bagan/:id/undian", generateUndian);
 router.get("/matches", getMatches);
 router.get("/juara/:baganId", getJuara);
-router.post('/update-point', updateMatchPoint);
+router.post('/update-point', scoringLimiter, updateMatchPoint);
 router.get('/history/:matchId', getMatchDetailHistory);
 router.get('/match-log/:id', getMatchLog);
 router.delete('/undo-point/:id', undoLastPoint);

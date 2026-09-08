@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import api from '../api';
 import { ChevronLeft, History, Trophy, RotateCcw, RefreshCw} from 'lucide-react';
 import AlertMessage from '../components/AlertMessage';
@@ -37,6 +37,8 @@ const RefereeForm = ({ match, onFinish, onBack }) => {
   const [error, setError] = useState("");
   const [confirmUndo, setConfirmUndo] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [isProcessingPoint, setIsProcessingPoint] = useState(false);
+  const lastClickRef = useRef(0);
 
   const [matchDuration, setMatchDuration] = useState(0); // dalam detik
   const [isTimerRunning, setIsTimerRunning] = useState(false);
@@ -232,7 +234,17 @@ const handleResetMatch = async () => {
 
 
 const handlePoint = async (player) => {
-  if (!scoreRule) return;
+  // 🔒 Lapis 2: Debounce 300ms
+  const now = Date.now();
+  if (now - lastClickRef.current < 300) return;
+  lastClickRef.current = now;
+
+  // 🔒 Lapis 1: Cegah klik ganda selama proses berjalan
+  if (!scoreRule || isProcessingPoint) return;
+  setIsProcessingPoint(true);
+
+  // 🔒 Lapis 3: Generate requestId unik untuk idempotency backend
+  const requestId = crypto.randomUUID();
 
   // 1. variable untuk kalkulasi
   let nP1 = p1Point, nP2 = p2Point;
@@ -406,6 +418,7 @@ if (isGameEnd) {
   try {
     await api.post('/update-point', {
      matchId: match.id,
+      requestId,
       // Jika set baru saja selesai, kirim log ke nomor set yang lama (misal Set 1)
       // Dan gunakan skor game terakhir (misal 3-6), bukan 0-0
       setKe: isSetFinished && !isMatchFinished ? setSelesaiTadi : nSetKe, 
@@ -464,7 +477,9 @@ if (isGameEnd) {
       setFinalWinnerData({ winnerId, score1: nSetW1, score2: nSetW2 });
       setShowResultConfirm(true);
     }
-  } catch (err) { console.error("Gagal update server:", err); }
+  } catch (err) { console.error("Gagal update server:", err); } finally {
+    setIsProcessingPoint(false);
+  }
 };
 
 
@@ -1023,7 +1038,8 @@ if (isGameEnd) {
     {/* BUTTON PLAYER 1 - SLIM VERSION */}
     <button 
       onClick={() => handlePoint(1)} 
-      className="group relative h-28 bg-gradient-to-br from-blue-600 to-blue-700 rounded-[1.5rem] overflow-hidden shadow-lg shadow-blue-900/30 active:scale-95 transition-all flex flex-col items-center justify-center border-t border-white/20"
+      disabled={isProcessingPoint}
+      className={`group relative h-28 bg-gradient-to-br from-blue-600 to-blue-700 rounded-[1.5rem] overflow-hidden shadow-lg shadow-blue-900/30 active:scale-95 transition-all flex flex-col items-center justify-center border-t border-white/20 ${isProcessingPoint ? "opacity-50 pointer-events-none" : ""}`}
     >
       {/* Overlay kilatan saat ditekan */}
       <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity"></div>
@@ -1040,7 +1056,8 @@ if (isGameEnd) {
     {/* BUTTON PLAYER 2 - SLIM VERSION */}
     <button 
       onClick={() => handlePoint(2)} 
-      className="group relative h-28 bg-gradient-to-br from-red-600 to-red-700 rounded-[1.5rem] overflow-hidden shadow-lg shadow-red-900/30 active:scale-95 transition-all flex flex-col items-center justify-center border-t border-white/20"
+      disabled={isProcessingPoint}
+      className={`group relative h-28 bg-gradient-to-br from-red-600 to-red-700 rounded-[1.5rem] overflow-hidden shadow-lg shadow-red-900/30 active:scale-95 transition-all flex flex-col items-center justify-center border-t border-white/20 ${isProcessingPoint ? "opacity-50 pointer-events-none" : ""}`}
     >
       <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity"></div>
       

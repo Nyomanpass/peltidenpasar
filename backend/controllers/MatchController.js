@@ -917,13 +917,18 @@ export const getMatchDetailHistory = async (req, res) => {
 export const updateMatchPoint = async (req, res) => {
     try {
         const { 
-            matchId, setKe, skorP1, skorP2, gameP1, gameP2, 
+            matchId, requestId, setKe, skorP1, skorP2, gameP1, gameP2, 
             setMenangP1, setMenangP2, statusMatch, winnerId 
         } = req.body;
 
         // 1. Cari data match dulu
         const match = await Match.findByPk(matchId);
         if (!match) return res.status(404).json({ msg: "Match tidak ditemukan" });
+
+        // 🔒 Tolak kalau requestId ini sudah pernah diproses (klik ganda/retry)
+        if (requestId && match.lastRequestId === requestId) {
+            return res.status(200).json({ msg: "Duplikat diabaikan (sudah diproses)", match });
+        }
 
         // 2. Simpan ke Log (History) - PASTIKAN INI BERHASIL
         await MatchScoreLog.create({
@@ -946,6 +951,7 @@ export const updateMatchPoint = async (req, res) => {
             winnerDoubleId: match.doubleTeam1Id ? winnerId : null,
             score1: setMenangP1, // Total set menang P1
             score2: setMenangP2, // Total set menang P2
+            lastRequestId: requestId || null, // 🔒 Simpan requestId terakhir
         };
 
         // Simpan skor game ke kolom set yang sesuai di MatchModel
