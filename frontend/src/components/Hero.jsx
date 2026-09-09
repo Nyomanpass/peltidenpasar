@@ -61,12 +61,12 @@ function Hero() {
             index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
           }`}
           style={{
-            backgroundImage: `url(${slide.image})`, // ✅ FIX ERROR DI SINI
+            backgroundImage: `url(${slide.image})`,
           }}
         >
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/50"></div>
-          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/30 to-transparent"></div>
+          {/* Overlay Gradient */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
+          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent"></div>
 
           {/* Content */}
           <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-10 lg:px-20">
@@ -80,31 +80,33 @@ function Hero() {
               </p>
 
               {slide.ctaLink && (
-                <a
-                  href={slide.ctaLink}
-                  className="mt-4 sm:mt-5 inline-block bg-primary text-white font-black text-xs sm:text-sm md:text-base px-4 sm:px-6 py-2 sm:py-3 rounded-xl hover:bg-[#c29841] transition duration-300 transform hover:scale-105 shadow-lg uppercase tracking-wide"
-                >
-                  {slide.ctaText || "Selengkapnya"} →
-                </a>
-              )}
+              <a
+                href={slide.ctaLink}
+                className="group mt-5 inline-flex items-center gap-2 bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm md:text-base px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:-translate-y-0.5"
+              >
+                <span>{slide.ctaText || "Lihat Selengkapnya"}</span>
+                <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+              </a>
+            )}
             </div>
           </div>
         </div>
       ))}
 
       {/* DOT NAVIGATION */}
-      <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex space-x-2 sm:space-x-3 z-20">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => setCurrentSlide(index)}
-            className={`h-2 sm:h-3 rounded-full transition-all duration-300 shadow-md ${
-              index === currentSlide
-                ? "bg-primary w-6 sm:w-8"
-                : "bg-white/40 w-2 sm:w-3"
-            }`}
-          />
-        ))}
+      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center space-x-2 sm:space-x-3 z-20 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
+      {slides.map((_, index) => (
+        <button
+          key={index}
+          onClick={() => setCurrentSlide(index)}
+          aria-label={`Go to slide ${index + 1}`}
+          className={`h-2 rounded-full transition-all duration-300 ${
+            index === currentSlide
+              ? "bg-white w-7 sm:w-8"
+              : "bg-white/40 w-2 hover:bg-white/70"
+          }`}
+        />
+      ))}
       </div>
     </section>
   );
