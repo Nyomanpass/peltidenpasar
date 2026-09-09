@@ -34,12 +34,17 @@ const TournamentComming = () => {
     fetchData();
   }, []);
 
-  
+  // CONDITIONAL RENDERING:
+  // Jika tidak ada data turnamen aktif, sembunyikan komponen secara total
+  if (!tournaments || tournaments.length === 0) {
+    return null;
+  }
+
   return (
     <section className="py-10 sm:py-16 bg-gray-50">
       <div className="mx-auto px-4 sm:px-10 lg:px-20">
         
-        {/* HEADER - Menggunakan text-balance agar baris teks lebih rapi */}
+        {/* HEADER */}
         <div className="text-center mb-10">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight text-balance">
             Turnamen Mendatang
@@ -73,7 +78,7 @@ const TournamentComming = () => {
                       className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
                     />
 
-                    {/* Status Badge di atas Gambar */}
+                    {/* Status Badge */}
                     <span
                       className={`absolute top-4 left-4 text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full shadow-sm backdrop-blur-md z-10 ${
                         isClosed ? "bg-red-500/90 text-white" : "bg-yellow-400 text-gray-900"
@@ -82,7 +87,6 @@ const TournamentComming = () => {
                       {isClosed ? "Pendaftaran Ditutup" : "Pendaftaran Dibuka"}
                     </span>
 
-                    {/* Overlay tipis agar transisi ke konten lebih smooth */}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent md:block hidden"></div>
                   </div>
 
@@ -99,7 +103,7 @@ const TournamentComming = () => {
                         {t.description}
                       </p>
 
-                      {/* INFO GRID - 2 Kolom yang rapi */}
+                      {/* INFO GRID */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 mb-6">
                         <InfoItem
                           icon={<Calendar size={18} className="text-blue-600" />}
@@ -166,7 +170,6 @@ const TournamentComming = () => {
   );
 };
 
-// Komponen InfoItem yang sudah dioptimasi tulisannya
 const InfoItem = ({ icon, label, value, isDeadline }) => (
   <div className="flex items-start gap-3 min-w-0">
     <div className="p-2 bg-gray-50 rounded-lg flex-shrink-0 group-hover:bg-white transition-colors border border-transparent group-hover:border-gray-100">
