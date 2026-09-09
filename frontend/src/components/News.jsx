@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../api";
 
 export default function News() {
   const [newsList, setNewsList] = useState([]);
   const [maxNews, setMaxNews] = useState(3);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
-  /* ===== Fetch News Asli ===== */
+  /* ===== Fetch News ===== */
   useEffect(() => {
     fetchNews();
   }, []);
@@ -22,7 +24,7 @@ export default function News() {
     }
   };
 
-  /* ===== Handle Resize (ZOOM / LAYAR BESAR) ===== */
+  /* ===== Handle Resize ===== */
   useEffect(() => {
     function handleResize() {
       const width = window.innerWidth;
@@ -41,85 +43,89 @@ export default function News() {
   const displayedNews = newsList.slice(0, maxNews);
 
   const getGridCols = () => {
-    if (maxNews === 8) return "grid-cols-1 sm:grid-cols-1 xl:grid-cols-4";
-    return "grid-cols-1 sm:grid-cols-1 lg:grid-cols-3";
+    if (maxNews === 8) return "grid-cols-1 sm:grid-cols-2 xl:grid-cols-4";
+    return "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3";
+  };
+
+  // Helper untuk membersihkan HTML & menangani spasi menggantung
+  const stripHtml = (html) => {
+    if (!html) return "";
+    const cleanText = html.replace(/&nbsp;/g, " ");
+    const div = document.createElement("div");
+    div.innerHTML = cleanText;
+    return div.textContent || div.innerText || "";
   };
 
   if (loading) {
     return (
-      <div className="py-20 text-center text-gray-500">
+      <div className="py-20 text-center text-gray-500 font-medium">
         Memuat berita...
       </div>
     );
   }
 
-  const stripHtml = (html) => {
-    if (!html) return "";
-    const div = document.createElement("div");
-    div.innerHTML = html;
-    return div.textContent || div.innerText || "";
-  };
-
+  if (newsList.length === 0) return null;
 
   return (
-    <section className="w-full py-8 sm:py-12">
+    <section className="w-full py-12 bg-white">
       {/* ===== Header ===== */}
-      <header className="text-center mb-8 sm:mb-12">
-        <p className="text-sm md:text-base text-yellow-600 font-medium tracking-wide uppercase">
+      <header className="text-center mb-10">
+        <p className="text-xs sm:text-sm font-bold text-yellow-600 tracking-widest uppercase">
           PELTI DENPASAR
         </p>
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mt-2">
+        <h2 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-gray-900 mt-2 tracking-tight">
           Berita Terbaru
         </h2>
+        <div className="w-12 h-1 bg-yellow-600 mx-auto mt-4 rounded-full"></div>
       </header>
 
       {/* ===== Grid Berita ===== */}
-      <div className="px-4 sm:px-10 lg:px-20">
-        <div className={`grid gap-0 sm:gap-8 md:gap-10 ${getGridCols()}`}>
+      <div className="px-4 sm:px-10 lg:px-20 max-w-7xl mx-auto">
+        <div className={`grid gap-6 md:gap-8 ${getGridCols()}`}>
           {displayedNews.map((b) => (
             <article
-              key={b.idNews}
-              className="bg-white shadow-sm sm:shadow-md rounded-md sm:rounded-lg overflow-hidden flex flex-col hover:shadow-xl transition-shadow duration-300 mb-3 sm:mb-0"
+              key={b.idNews || b.id}
+              className="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group"
             >
               {/* Gambar */}
-              <div className="relative w-full overflow-hidden aspect-[16/10]">
+              <div className="relative w-full overflow-hidden aspect-[16/10] bg-gray-100">
                 <img
                   src={b.image || "/placeholder.png"}
                   alt={b.title}
-                  className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
                 />
               </div>
 
               {/* Konten */}
-              <div className="p-6 flex flex-col flex-1">
-                <time className="text-xs md:text-sm text-yellow-600 font-semibold uppercase tracking-wide">
-                  {b.tanggalUpload
-                    ? new Date(b.tanggalUpload).toLocaleDateString("id-ID", {
-                        day: "2-digit",
-                        month: "short",
-                        year: "numeric",
-                      })
-                    : "-"}
-                </time>
+              <div className="p-6 flex flex-col flex-1 justify-between">
+                <div>
+                  <time className="text-xs font-bold text-yellow-600 uppercase tracking-wider">
+                    {b.tanggalUpload
+                      ? new Date(b.tanggalUpload).toLocaleDateString("id-ID", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "-"}
+                  </time>
 
-                <h3 className="text-lg md:text-xl font-semibold text-gray-900 mt-2 line-clamp-2">
-                  {b.title}
-                </h3>
+                  <h3 className="text-lg md:text-xl font-bold text-gray-900 mt-2 line-clamp-2 leading-snug group-hover:text-yellow-600 transition-colors">
+                    {b.title}
+                  </h3>
 
-                <p className="text-sm md:text-base text-gray-700 mt-3 flex-1 line-clamp-3">
-                  {stripHtml(b.desc).length > 120
-                    ? stripHtml(b.desc).slice(0, 120) + "..."
-                    : stripHtml(b.desc)}
-                </p>
+                  <p className="text-sm text-gray-500 mt-3 line-clamp-3 leading-relaxed">
+                    {stripHtml(b.desc)}
+                  </p>
+                </div>
 
-
+                {/* Tombol Baca */}
                 <button
-                  onClick={() => window.location.href = `/berita/${b.slug}`}
-                  className="mt-5 inline-flex items-center justify-start text-sm md:text-base font-semibold text-yellow-600 hover:text-yellow-700 transition-colors group"
+                  onClick={() => navigate(`/berita/${b.slug}`)}
+                  className="mt-6 inline-flex items-center text-sm font-bold text-yellow-600 hover:text-yellow-700 transition-colors group/btn"
                 >
                   Baca Selengkapnya
-                  <span className="ml-1 transform group-hover:translate-x-1 transition-transform">
+                  <span className="ml-1.5 transform group-hover/btn:translate-x-1 transition-transform">
                     →
                   </span>
                 </button>
@@ -129,14 +135,14 @@ export default function News() {
         </div>
       </div>
 
-      {/* ===== Lihat Selengkapnya ===== */}
-      <div className="mt-8 sm:mt-12 text-center px-4 sm:px-6 md:px-8 lg:px-12">
-        <a
-          href="/berita"
-          className="text-sm md:text-base text-gray-600 hover:text-yellow-600 underline underline-offset-4 transition-colors"
+      {/* ===== Lihat Semua Berita CTA ===== */}
+      <div className="mt-12 text-center">
+        <button
+          onClick={() => navigate("/berita")}
+          className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 hover:border-yellow-600 rounded-full text-sm font-bold text-gray-700 hover:text-yellow-600 bg-white hover:bg-yellow-50 transition-all duration-300 shadow-sm"
         >
           Lihat Selengkapnya
-        </a>
+        </button>
       </div>
     </section>
   );
