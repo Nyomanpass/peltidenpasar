@@ -105,7 +105,7 @@ export default function Footer() {
       {/* Copyright */}
       <div className="border-t border-slate-800 text-center py-4 
                       text-[10px] sm:text-xs text-gray-500">
-        © 2025 
+        © {new Date().getFullYear()}
         <span className="text-yellow-400 font-semibold ml-1">
           PELTI Denpasar
         </span>. All Rights Reserved.
