@@ -257,6 +257,13 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
               </span>
             )}
 
+            {/* NIK (Masked): Hanya Admin/Panitia yang lihat */}
+            {(role === "admin" || role === "panitia") && p.nik && (
+              <span className="text-[10px] text-blue-400 font-mono font-bold block">
+                NIK: {p.nik.substring(0, 4)}••••••••{p.nik.substring(12)}
+              </span>
+            )}
+
             {/* STATUS (Verified/Pending): Muncul di Mobile DAN Desktop (jika bukan admin) */}
             <div className={`${(role === "admin" || role === "panitia") ? "md:hidden" : "block"} mt-1`}>
               <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[8px] font-black uppercase

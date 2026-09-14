@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api";
-import { ArrowLeft, User, Phone, Calendar, Users, FileText, CheckCircle, X, Bell, XCircle, Send, Pencil } from "lucide-react";
+import { ArrowLeft, User, Phone, Calendar, Users, FileText, CheckCircle, X, Bell, XCircle, Send, Pencil, IdCard } from "lucide-react";
 import AlertMessage from "../AlertMessage";
 
 export default function DetailPeserta() {
@@ -44,6 +44,7 @@ const BASE_URL = import.meta.env.VITE_API_URL;
     if (peserta) {
       setFormData({
         namaLengkap: peserta.namaLengkap,
+        nik: peserta.nik || "",
         nomorWhatsapp: peserta.nomorWhatsapp,
         tanggalLahir: peserta.tanggalLahir,
         kelompokUmurId: peserta.kelompokUmurId,
@@ -91,6 +92,7 @@ const BASE_URL = import.meta.env.VITE_API_URL;
     try {
       const form = new FormData();
       form.append("namaLengkap", formData.namaLengkap);
+      form.append("nik", formData.nik);
       form.append("nomorWhatsapp", formData.nomorWhatsapp);
       form.append("tanggalLahir", formData.tanggalLahir);
       form.append("kelompokUmurId", formData.kelompokUmurId);
@@ -255,6 +257,7 @@ const BASE_URL = import.meta.env.VITE_API_URL;
               <div className="grid gap-3">
                
 
+                <InfoRow label="NIK" value={peserta.nik || "-"} icon={<IdCard size={16}/>} />
                 <InfoRow label="Whatsapp" value={peserta.nomorWhatsapp} icon={<Phone size={16}/>} />
                 <InfoRow label="Tgl Lahir" value={new Date(peserta.tanggalLahir).toLocaleDateString("id-ID", { day: 'numeric', month: 'long', year: 'numeric' })} icon={<Calendar size={16}/>} />
                 <InfoRow label="Kelompok Umur" value={peserta.kelompokUmur?.nama || "Umum"} icon={<Users size={16}/>} />
@@ -333,6 +336,24 @@ const BASE_URL = import.meta.env.VITE_API_URL;
             onChange={(e)=>setFormData({...formData, namaLengkap:e.target.value})}
             className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 outline-none shadow-sm"
           />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-sm font-semibold text-gray-700 mb-1">NIK</label>
+          <input
+            value={formData.nik}
+            inputMode="numeric"
+            maxLength={16}
+            onChange={(e) => {
+              const onlyDigits = e.target.value.replace(/\D/g, "");
+              setFormData({...formData, nik: onlyDigits});
+            }}
+            placeholder="16 digit NIK"
+            className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-500/70 focus:border-blue-500 outline-none shadow-sm"
+          />
+          {formData.nik && formData.nik.length !== 16 && (
+            <p className="text-xs text-red-500 mt-1">NIK harus 16 digit ({formData.nik.length}/16)</p>
+          )}
         </div>
 
         <div className="flex flex-col">
