@@ -22,7 +22,7 @@ const _processMatchPeserta = async (matchId, side1Id, side2Id, kategori) => {
   let newStatus = "belum";
   let newWinnerId = null;
 
-  // Logika BYE: Jika salah satu sisi null, yang ada isinya otomatis menang
+
   if (side1Id !== null && side2Id === null) {
     newStatus = "selesai";
     newWinnerId = side1Id;
@@ -30,7 +30,6 @@ const _processMatchPeserta = async (matchId, side1Id, side2Id, kategori) => {
     newStatus = "selesai";
     newWinnerId = side2Id;
   } else if (side1Id === null && side2Id === null) {
-    // Jika keduanya null (kasus jarang), tetap belum
     newStatus = "belum";
   }
 
@@ -47,7 +46,7 @@ const _processMatchPeserta = async (matchId, side1Id, side2Id, kategori) => {
   match.status = newStatus;
   await match.save();
 
-  // Promosi ke babak selanjutnya jika otomatis menang (BYE)
+
   if (newStatus === "selesai" && match.nextMatchId) {
     const nextMatch = await Match.findByPk(match.nextMatchId);
     if (nextMatch) {
@@ -65,11 +64,11 @@ const _processMatchPeserta = async (matchId, side1Id, side2Id, kategori) => {
 };
 
 
-// 2. UPDATE WINNER (FIXED UNTUK DOUBLE)
+
 export const updateWinner = async (req, res) => {
   try {
     const { matchId } = req.params;
-    // Ambil winnerId (ini bisa berisi ID Peserta atau ID DoubleTeam dari frontend)
+
     const { winnerId, winnerDoubleId, score1, score2 } = req.body;
 
     const match = await Match.findByPk(matchId, {
@@ -81,17 +80,16 @@ export const updateWinner = async (req, res) => {
 
     const isDouble = match.bagan?.kategori === "double";
 
-    // 1. Update Winner & Score pada Match saat ini
+
     if (isDouble) {
-      match.winnerDoubleId = winnerDoubleId || winnerId; // Menangani jika frontend kirim salah satu
+      match.winnerDoubleId = winnerDoubleId || winnerId;
     } else {
       match.winnerId = winnerId;
     }
 
-     // 🔥 Ambil user login
     const userId = req.user?.id;
 
-    // 🔥 Isi referee jika belum ada
+
     if (!match.refereeId) {
       match.refereeId = userId;
     }
@@ -101,25 +99,22 @@ export const updateWinner = async (req, res) => {
     match.status = "selesai";
     await match.save();
 
-    // 2. Update status Jadwal jika ada
+
     await Jadwal.update({ status: "selesai" }, { where: { matchId } });
 
-    // 3. LOGIKA PROMOSI: Pindahkan pemenang ke nextMatchId
+
     if (match.nextMatchId) {
       const next = await Match.findByPk(match.nextMatchId);
       if (next) {
         const idToPromote = isDouble ? match.winnerDoubleId : match.winnerId;
 
         if (isDouble) {
-          // Cek slot mana yang kosong di babak berikutnya untuk Double
           if (!next.doubleTeam1Id) {
             next.doubleTeam1Id = idToPromote;
-          } else if (next.doubleTeam1Id !== idToPromote) { 
-            // Isi slot 2 jika slot 1 sudah terisi oleh pemenang dari match lain
+          } else if (next.doubleTeam1Id !== idToPromote) {
             next.doubleTeam2Id = idToPromote;
           }
         } else {
-          // Cek slot mana yang kosong di babak berikutnya untuk Single
           if (!next.peserta1Id) {
             next.peserta1Id = idToPromote;
           } else if (next.peserta1Id !== idToPromote) {
@@ -128,14 +123,8 @@ export const updateWinner = async (req, res) => {
         }
         await next.save();
 
-        // 4. CEK BYE DI BABAK BERIKUTNYA
-        // Jika setelah promosi babak berikutnya ternyata lawannya KOSONG (BYE), 
-        // jalankan proses otomatis lagi agar dia naik terus
         const side1 = isDouble ? next.doubleTeam1Id : next.peserta1Id;
         const side2 = isDouble ? next.doubleTeam2Id : next.peserta2Id;
-        
-        // Jika salah satu sisi terisi dan yang lain memang tidak akan pernah diisi (BYE)
-        // Anda bisa memanggil _processMatchPeserta di sini jika diperlukan
       }
     }
 
@@ -147,7 +136,7 @@ export const updateWinner = async (req, res) => {
 };
 
 
-// 3. GENERATE UNDIAN (DENGAN SUB-BAGAN / PRELIMINARY ROUND)
+
 export const generateUndian = async (req, res) => {
   try {
     const { id } = req.params;
@@ -160,13 +149,13 @@ export const generateUndian = async (req, res) => {
     const isDouble = (kategori === "double"); 
     const ModelTarget = isDouble ? DoubleTeam : Peserta;
 
-    // 1. RESET semua status seed lama agar Budi Santoso dkk kembali ke 0
+
     await ModelTarget.update(
       { isSeeded: false }, 
       { where: { tournamentId, kelompokUmurId } }
     );
 
-    // 2. Ambil semua peserta yang statusnya 'verified'
+
     const allPeserta = await ModelTarget.findAll({ 
       where: { tournamentId, kelompokUmurId, status: "verified" } 
     });
@@ -175,21 +164,19 @@ export const generateUndian = async (req, res) => {
       return res.status(400).json({ msg: `Data ${kategori} verified tidak ditemukan!` });
     }
 
-    // 3. Hitung struktur bracket (sub-bagan / preliminary)
+
     const { bracketSize, preliminaryCount } = calculateBracketStructure(allPeserta.length);
     const hasPreliminary = preliminaryCount > 0;
     const totalRounds = Math.log2(bracketSize);
 
-    // Update flag hasPreliminary di bagan
+
     await bagan.update({ hasPreliminary });
 
-    // --- PERBAIKAN DI SINI ---
-    // Gunakan satu variabel saja untuk menampung ID yang akan dijadikan Seed
     const idsYangAkanJadiSeed = seededPeserta
       .filter(p => p.isSeeded)
       .map(p => Number(p.id));
     
-    // 4. Update database agar peserta yang dipilih sekarang menjadi isSeeded = true
+
     if (idsYangAkanJadiSeed.length > 0) {
       await ModelTarget.update(
         { isSeeded: true }, 
@@ -197,10 +184,10 @@ export const generateUndian = async (req, res) => {
       );
     }
 
-    // 5. Pisahkan peserta: seeded vs non-seeded
+
     const plottedIds = new Set();
     
-    // Kumpulkan peserta yang di-plot manual (seeded + non-seeded dari modal)
+
     const manuallyPlotted = [];
     seededPeserta.forEach(p => {
       const pid = Number(p.id);
@@ -208,38 +195,32 @@ export const generateUndian = async (req, res) => {
       manuallyPlotted.push({ id: pid, slot: p.slot, isSeeded: p.isSeeded });
     });
 
-    // Non-seeded yang belum di-plot manual
+
     const nonSeededIds = shuffle(
       allPeserta
         .filter(p => !plottedIds.has(Number(p.id)))
         .map(p => p.id)
     );
 
-    // --- HAPUS MATCH LAMA ---
+
     await Match.destroy({ where: { baganId: id } });
 
-    // =============================================
-    // LOGIKA SUB-BAGAN (PRELIMINARY ROUND)
-    // =============================================
+
     if (hasPreliminary) {
-      // Jumlah peserta yang masuk langsung ke bagan utama
       const directEntryCount = bracketSize - preliminaryCount;
-      // Jumlah peserta yang harus bertanding di kualifikasi
       const prelimPlayerCount = preliminaryCount * 2;
 
-      // --- Tentukan siapa masuk kualifikasi vs langsung ---
-      // Peserta yang di-plot manual (seeded) → masuk langsung ke bagan utama
-      // Peserta non-seeded diambil secukupnya untuk kualifikasi
-      
-      const directEntryIds = []; // peserta yang langsung masuk round 1
-      const prelimPlayerIds = []; // peserta yang harus bertanding di round 0
 
-      // Seeded peserta langsung masuk bagan utama
+      
+      const directEntryIds = [];
+      const prelimPlayerIds = [];
+
+
       manuallyPlotted.forEach(p => {
         directEntryIds.push(p.id);
       });
 
-      // Non-seeded: ambil yang pertama untuk direct entry, sisanya kualifikasi
+
       const nonSeededForDirect = directEntryCount - directEntryIds.length;
       
       for (let i = 0; i < nonSeededIds.length; i++) {
@@ -250,11 +231,11 @@ export const generateUndian = async (req, res) => {
         }
       }
 
-      // --- Buat slot bagan utama (round 1) ---
+
       const mainSlots = new Array(bracketSize).fill('EMPTY');
       const assignedMainSlots = new Set();
 
-      // Plot seeded peserta ke slot yang ditentukan dari modal
+
       manuallyPlotted.forEach(p => {
         const idx = p.slot - 1;
         if (idx >= 0 && idx < bracketSize) {
@@ -263,18 +244,17 @@ export const generateUndian = async (req, res) => {
         }
       });
 
-      // Slot terakhir dikosongkan untuk pemenang kualifikasi
-      // Tandai slot kosong untuk kualifikasi (dari belakang)
+
       const prelimTargetSlots = [];
       for (let i = bracketSize - 1; i >= 0 && prelimTargetSlots.length < preliminaryCount; i--) {
         if (!assignedMainSlots.has(i)) {
-          mainSlots[i] = 'PRELIM'; // Ditandai untuk diisi pemenang kualifikasi
+          mainSlots[i] = 'PRELIM';
           assignedMainSlots.add(i);
           prelimTargetSlots.push(i);
         }
       }
 
-      // Isi sisa slot kosong dengan peserta direct entry (non-seeded)
+
       const directNonSeeded = directEntryIds.filter(pid => !manuallyPlotted.find(mp => mp.id === pid));
       let dIdx = 0;
       for (let i = 0; i < bracketSize; i++) {
@@ -283,7 +263,7 @@ export const generateUndian = async (req, res) => {
         }
       }
 
-      // --- Buat match babak kualifikasi (round 0) ---
+
       const prelimMatches = [];
       for (let i = 0; i < preliminaryCount; i++) {
         const p1 = prelimPlayerIds[i * 2] || null;
@@ -309,7 +289,7 @@ export const generateUndian = async (req, res) => {
         prelimMatches.push(match);
       }
 
-      // --- Buat match bagan utama (round 1 sampai final) ---
+
       let matchCount = bracketSize / 2;
       let round = 1;
 
@@ -320,7 +300,7 @@ export const generateUndian = async (req, res) => {
           if (round === 1) {
             const s1 = mainSlots[i * 2];
             const s2 = mainSlots[i * 2 + 1];
-            // PRELIM slot dikosongkan (null), akan diisi pemenang kualifikasi nanti
+
             const val1 = s1 === 'PRELIM' ? null : s1;
             const val2 = s2 === 'PRELIM' ? null : s2;
             if (isDouble) {
@@ -338,13 +318,13 @@ export const generateUndian = async (req, res) => {
         round++;
       }
 
-      // --- Hubungkan nextMatchId ---
+
       const finalMatches = await Match.findAll({ 
         where: { baganId: id }, 
         order: [['round', 'ASC'], ['slot', 'ASC']] 
       });
 
-      // Hubungkan round 1+ ke round berikutnya
+
       for (const m of finalMatches) {
         if (m.round >= 1 && m.round < totalRounds) {
           const nS = Math.ceil(m.slot / 2);
@@ -353,18 +333,17 @@ export const generateUndian = async (req, res) => {
         }
       }
 
-      // Hubungkan round 0 (kualifikasi) ke round 1
+
       const round1Matches = finalMatches.filter(m => m.round === 1).sort((a, b) => a.slot - b.slot);
       
       for (let i = 0; i < prelimMatches.length; i++) {
         const pMatch = finalMatches.find(m => m.round === 0 && m.slot === i + 1);
         if (!pMatch) continue;
 
-        // Cari match round 1 yang punya slot kosong (PRELIM) 
-        // berdasarkan posisi prelimTargetSlots
+
         const targetSlotIdx = prelimTargetSlots[i];
         if (targetSlotIdx !== undefined) {
-          // Slot index → match round 1 (setiap match mengcover 2 slot)
+
           const targetR1Slot = Math.floor(targetSlotIdx / 2) + 1;
           const targetR1Match = round1Matches.find(m => m.slot === targetR1Slot);
           if (targetR1Match) {
@@ -373,16 +352,14 @@ export const generateUndian = async (req, res) => {
         }
       }
 
-      // Proses otomatis: kalau di round 1 salah satu sisi sudah terisi dan lawan kosong (BYE)
-      // TIDAK terjadi di sub-bagan karena slot yang kosong akan diisi pemenang kualifikasi
-      // Tapi tetap handle jika jumlah peserta kualifikasi ganjil
+
       for (const m of finalMatches) {
         if (m.round === 1) {
           const side1 = isDouble ? m.doubleTeam1Id : m.peserta1Id;
           const side2 = isDouble ? m.doubleTeam2Id : m.peserta2Id;
-          // Hanya proses BYE jika kedua sisi sudah terisi (bukan slot kualifikasi)
+
           if ((side1 && !side2) || (!side1 && side2)) {
-            // Cek apakah slot ini menunggu pemenang kualifikasi
+
             const hasIncomingPrelim = finalMatches.some(pm => pm.round === 0 && pm.nextMatchId === m.id);
             if (!hasIncomingPrelim) {
               await _processMatchPeserta(m.id, side1, side2, kategori);
@@ -392,14 +369,8 @@ export const generateUndian = async (req, res) => {
       }
 
     } else {
-      // =============================================
-      // LOGIKA BRACKET NORMAL (Tanpa Sub-Bagan)
-      // Untuk kasus n sudah pangkat 2 (8, 16, 32)
-      // =============================================
       const initialSlots = new Array(bracketSize).fill('EMPTY');
       const assignedSlots = new Set();
-
-      // Plot seeded peserta
       seededPeserta.forEach(p => {
         const idx = p.slot - 1;
         if (idx >= 0 && idx < bracketSize) {
@@ -410,7 +381,7 @@ export const generateUndian = async (req, res) => {
         }
       });
 
-      // Isi sisa slot
+
       let poolIdx = 0;
       for (let i = 0; i < bracketSize; i++) {
         if (initialSlots[i] === 'EMPTY') {
@@ -418,7 +389,7 @@ export const generateUndian = async (req, res) => {
         }
       }
 
-      // Buat match
+
       let matchCount = bracketSize / 2;
       let round = 1;
 
@@ -441,7 +412,7 @@ export const generateUndian = async (req, res) => {
         matchCount /= 2; round++;
       }
 
-      // Hubungkan nextMatchId dan proses BYE
+
       const finalMatches = await Match.findAll({ where: { baganId: id }, order: [['round', 'ASC']] });
       for (const m of finalMatches) {
         if (m.round < totalRounds) {
@@ -467,37 +438,37 @@ export const generateUndian = async (req, res) => {
 };
 
 
-// 4. GET MATCHES (FIXED: SEED SEKARANG TERBAWA)
+
 export const getMatches = async (req, res) => {
   try {
     const { baganId, tournamentId, status } = req.query;
     
-    // 1. Tentukan filter (Where)
+
     let whereCondition = {};
     
     if (baganId) {
-      // Jika dipanggil dari sistem BAGAN (seperti sebelumnya)
+
       whereCondition.baganId = baganId;
     } else if (tournamentId) {
-      // Jika dipanggil dari SKOR PAGE
+
       whereCondition.tournamentId = tournamentId;
     }
 
-    // 2. Tambahkan filter status jika dikirim (misal: 'selesai')
+
     if (status) {
       whereCondition.status = status;
     }
 
     const matches = await Match.findAll({
-      where: whereCondition, // Menggunakan filter dinamis
+      where: whereCondition,
       include: [
        { 
           model: Bagan, 
           as: "bagan",
-          // --- INI KUNCINYA: Ambil data KelompokUmur dari dalam Bagan ---
+
           include: [{ 
             model: KelompokUmur,
-            attributes: ["nama"] // Kita hanya butuh kolom 'nama'
+            attributes: ["nama"]
           }] 
         },
         { model: Peserta, as: "peserta1", attributes: ["namaLengkap", "isSeeded"] },
@@ -521,7 +492,7 @@ export const getMatches = async (req, res) => {
         {
           model: User,
           as: "referee",
-          attributes: ["id", "name"] // sesuaikan dengan kolom di tabel user kamu
+          attributes: ["id", "name"]
         },
         {
           model: ScoreRule,
@@ -529,7 +500,7 @@ export const getMatches = async (req, res) => {
           attributes: ["id", "name"]
         }
       ],
-      // Jika status 'selesai', urutkan berdasarkan waktu update terbaru
+
       order: status === 'selesai' 
         ? [['updatedAt', 'DESC']] 
         : [['round', 'ASC'], ['slot', 'ASC']]
@@ -586,15 +557,13 @@ function shuffle(array) {
   return array;
 }
 
-// 🔹 Helper untuk menempatkan BYE
+
 function placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta) {
   const bracketSize = initialSlots.length;
-  const blockSize = 4; // 1 blok = 4 slot
+  const blockSize = 4;
   const totalBlocks = Math.ceil(bracketSize / blockSize);
 
-  // ===============================
-  // 1. BYE untuk SEED (prioritas)
-  // ===============================
+
   const blocksWithBye = new Set();
 
   for (const seed of seededPeserta) {
@@ -615,9 +584,7 @@ function placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta) {
 
   if (byeSlotsCount <= 0) return;
 
-  // ===============================
-  // 2. Cari blok yang BELUM punya BYE
-  // ===============================
+
   let candidateBlocks = [];
   for (let b = 0; b < totalBlocks; b++) {
     if (!blocksWithBye.has(b)) {
@@ -625,12 +592,10 @@ function placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta) {
     }
   }
 
-  // Acak blok agar tidak selalu dari atas
+
   candidateBlocks = shuffle(candidateBlocks);
 
-  // ===============================
-  // 3. Taruh BYE di blok yang kosong
-  // ===============================
+
   for (const blockIndex of candidateBlocks) {
     if (byeSlotsCount <= 0) break;
 
@@ -656,9 +621,7 @@ function placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta) {
 
   if (byeSlotsCount <= 0) return;
 
-  // ===============================
-  // 4. SISA BYE (kalau masih ada)
-  // ===============================
+
   let fallbackSlots = [];
   for (let i = 0; i < bracketSize; i++) {
     const pairIndex = i % 2 === 0 ? i + 1 : i - 1;
@@ -716,9 +679,7 @@ export const getJuara = async (req, res) => {
 
     const isDouble = bagan.kategori === "double";
 
-    // =============================
-    // 🔥 KNOCKOUT
-    // =============================
+
     if (bagan.tipe === "knockout") {
       const finalMatch = await Match.findOne({
         where: { baganId, status: "selesai" },
@@ -756,7 +717,7 @@ export const getJuara = async (req, res) => {
           ? isDouble ? finalMatch.doubleTeam2 : finalMatch.peserta2
           : isDouble ? finalMatch.doubleTeam1 : finalMatch.peserta1;
 
-      // 🔥 semi final → juara3
+
       const semiMatches = await Match.findAll({
         where: { baganId, round: finalMatch.round - 1, status: "selesai" },
         include: [
@@ -795,9 +756,7 @@ export const getJuara = async (req, res) => {
       });
     }
 
-    // =============================
-    // 🔥 ROUND ROBIN
-    // =============================
+
     if (bagan.tipe === "roundrobin") {
       const matches = await Match.findAll({
         where: { baganId, status: "selesai" },
@@ -882,7 +841,6 @@ export const getJuara = async (req, res) => {
         juara1: ranking[0]?.peserta || null,
         juara2: ranking[1]?.peserta || null,
 
-        // 🔥 FIX UTAMA
         juara3: ranking[2]?.peserta ? [ranking[2].peserta] : [],
 
         klasemen: ranking
@@ -903,7 +861,7 @@ export const getMatchDetailHistory = async (req, res) => {
     
     const logs = await MatchScoreLog.findAll({
       where: { matchId },
-      order: [['createdAt', 'ASC']] // Urutkan dari poin pertama sampai terakhir
+      order: [['createdAt', 'ASC']]
     });
 
     res.json(logs);
@@ -921,16 +879,16 @@ export const updateMatchPoint = async (req, res) => {
             setMenangP1, setMenangP2, statusMatch, winnerId 
         } = req.body;
 
-        // 1. Cari data match dulu
+
         const match = await Match.findByPk(matchId);
         if (!match) return res.status(404).json({ msg: "Match tidak ditemukan" });
 
-        // 🔒 Tolak kalau requestId ini sudah pernah diproses (klik ganda/retry)
+
         if (requestId && match.lastRequestId === requestId) {
             return res.status(200).json({ msg: "Duplikat diabaikan (sudah diproses)", match });
         }
 
-        // 2. Simpan ke Log (History) - PASTIKAN INI BERHASIL
+
         await MatchScoreLog.create({
             matchId,
             setKe,
@@ -943,18 +901,18 @@ export const updateMatchPoint = async (req, res) => {
             keterangan: statusMatch === 'selesai' ? "Match Ended" : `Point: ${skorP1}-${skorP2} (Game: ${gameP1}-${gameP2})`
         });
 
-        // 3. Siapkan data update untuk tabel Match (Hanya satu kali update saja)
+
         const updateData = {
             status: statusMatch,
             currentSet: setKe,
             winnerId: (match.peserta1Id || !match.doubleTeam1Id) ? winnerId : null,
             winnerDoubleId: match.doubleTeam1Id ? winnerId : null,
-            score1: setMenangP1, // Total set menang P1
-            score2: setMenangP2, // Total set menang P2
-            lastRequestId: requestId || null, // 🔒 Simpan requestId terakhir
+            score1: setMenangP1,
+            score2: setMenangP2,
+            lastRequestId: requestId || null,
         };
 
-        // Simpan skor game ke kolom set yang sesuai di MatchModel
+
         if (setKe === 1) {
             updateData.set1P1 = gameP1;
             updateData.set1P2 = gameP2;
@@ -966,10 +924,10 @@ export const updateMatchPoint = async (req, res) => {
             updateData.set3P2 = gameP2;
         }
 
-        // 4. Jalankan Update Sekaligus
+
         await match.update(updateData);
 
-        // 5. LOGIKA OTOMATIS LOLOS (Jika Selesai)
+
         if (statusMatch === 'selesai' && match.nextMatchId && winnerId) {
             const nextMatch = await Match.findByPk(match.nextMatchId);
             if (nextMatch) {
@@ -991,20 +949,18 @@ export const updateMatchPoint = async (req, res) => {
     }
 };
 
-// Fungsi untuk mengambil log skor terakhir berdasarkan Match ID
+
 export const getMatchLog = async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Cari satu data terbaru di tabel MatchScoreLog (asumsi nama modelnya MatchScoreLog)
-        // Jika nama model log kamu berbeda, silakan sesuaikan namanya
         const log = await MatchScoreLog.findOne({
             where: { matchId: id },
-            order: [['id', 'DESC']] // Ambil yang paling baru (ID paling besar)
+            order: [['id', 'DESC']]
         });
 
         if (!log) {
-            return res.status(200).json(null); // Kirim null jika belum ada poin sama sekali
+            return res.status(200).json(null);
         }
 
         res.status(200).json(log);
@@ -1014,19 +970,17 @@ export const getMatchLog = async (req, res) => {
 };
 
 
-// Menghapus log skor paling baru untuk match tertentu
+
 export const undoLastPoint = async (req, res) => {
     try {
-        const { id } = req.params; // ini matchId
+        const { id } = req.params;
         
-        // 1. Cari log paling terakhir
         const lastLog = await MatchScoreLog.findOne({
             where: { matchId: id },
             order: [['id', 'DESC']]
         });
 
         if (lastLog) {
-            // 2. Hapus log tersebut
             await lastLog.destroy();
             res.status(200).json({ message: "Undo berhasil" });
         } else {
@@ -1079,17 +1033,15 @@ export const getMatchById = async (req, res) => {
 };
 
 
-// RESET SEMUA SKOR MATCH
+
 export const resetMatchScore = async (req, res) => {
   try {
-    const { id } = req.params; // matchId
+    const { id } = req.params;
 
-    // 1. Hapus semua log skor match ini
     await MatchScoreLog.destroy({
       where: { matchId: id }
     });
 
-    // 2. Reset data match
     await Match.update(
       {
         score1: 0,
@@ -1113,7 +1065,7 @@ export const resetMatchScore = async (req, res) => {
 export const manualWOPoint = async (req, res) => {
   try {
     const { matchId, winnerSide } = req.body; 
-    // winnerSide = "p1" atau "p2"
+
 
     const match = await Match.findByPk(matchId);
     if (!match) return res.status(404).json({ msg: "Match tidak ditemukan" });
@@ -1134,7 +1086,7 @@ export const manualWOPoint = async (req, res) => {
       let gameP2 = 0;
 
       while ((winnerIsP1 ? gameP1 : gameP2) < gamePerSet) {
-        // POINT 15–30–40
+
         for (let i = 1; i < points.length; i++) {
           await MatchScoreLog.create({
             matchId: match.id,
@@ -1149,7 +1101,6 @@ export const manualWOPoint = async (req, res) => {
           });
         }
 
-        // GAME MENANG
         if (winnerIsP1) gameP1++;
         else gameP2++;
 
@@ -1166,7 +1117,6 @@ export const manualWOPoint = async (req, res) => {
         });
       }
 
-      // SET SELESAI
       if (winnerIsP1) setMenangP1++;
       else setMenangP2++;
 
@@ -1193,7 +1143,6 @@ export const manualWOPoint = async (req, res) => {
       score1: setMenangP1,
       score2: setMenangP2,
 
-      // ⬇️ INI YANG KURANG
       set1P1: winnerIsP1 ? gamePerSet : 0,
       set1P2: winnerIsP1 ? 0 : gamePerSet,
 
