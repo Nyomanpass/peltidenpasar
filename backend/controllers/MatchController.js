@@ -381,6 +381,10 @@ export const generateUndian = async (req, res) => {
         }
       });
 
+      const byeSlotsCount = bracketSize - allPeserta.length;
+      if (byeSlotsCount > 0) {
+        placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta);
+      }
 
       let poolIdx = 0;
       for (let i = 0; i < bracketSize; i++) {
@@ -558,7 +562,7 @@ function shuffle(array) {
 }
 
 
-function placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta) {
+export function placeByes(initialSlots, assignedSlots, byeSlotsCount, seededPeserta) {
   const bracketSize = initialSlots.length;
   const blockSize = 4;
   const totalBlocks = Math.ceil(bracketSize / blockSize);
