@@ -7,6 +7,7 @@ function Hero() {
   const [slides, setSlides] = useState([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
 
   // ===============================
   // FETCH SLIDER
@@ -27,25 +28,37 @@ function Hero() {
   }, []);
 
   // ===============================
-  // AUTO SLIDE
+  // AUTO SLIDE WITH PAUSE ON HOVER
   // ===============================
   useEffect(() => {
-    if (slides.length === 0) return;
+    if (slides.length === 0 || isPaused) return;
 
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, AUTO_SLIDE_INTERVAL);
 
     return () => clearInterval(interval);
-  }, [slides]);
+  }, [slides, isPaused]);
+
+  const handleNext = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
+  };
 
   // ===============================
-  // LOADING
+  // LOADING SKELETON
   // ===============================
   if (loading) {
     return (
-      <section className="h-[450px] md:h-[500px] flex items-center justify-center">
-        <p className="text-gray-400">Loading slider...</p>
+      <section className="w-full mt-16 md:mt-28 h-[450px] md:h-[500px] lg:h-[550px] bg-gray-900 animate-pulse relative overflow-hidden flex items-center px-4 sm:px-10 lg:px-20">
+        <div className="max-w-3xl w-full space-y-4">
+          <div className="h-8 md:h-12 bg-gray-800 rounded-md w-3/4"></div>
+          <div className="h-4 md:h-6 bg-gray-800 rounded-md w-1/2"></div>
+          <div className="h-10 bg-gray-800 rounded-lg w-36 mt-6"></div>
+        </div>
       </section>
     );
   }
@@ -53,61 +66,95 @@ function Hero() {
   if (slides.length === 0) return null;
 
   return (
-    <section className="w-full mt-16 md:mt-28 h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden">
-      {slides.map((slide, index) => (
-        <div
-          key={slide.idSlider}
-          className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out bg-cover bg-center ${
-            index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
-          }`}
-          style={{
-            backgroundImage: `url(${slide.image})`,
-          }}
-        >
-          {/* Overlay Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
-          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent"></div>
+    <section 
+      className="w-full mt-16 md:mt-28 h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden group"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {slides.map((slide, index) => {
+        const imageUrl = slide.image 
+          ? (slide.image.startsWith('http') ? slide.image : `http://localhost:5004${slide.image}`)
+          : '/placeholder-hero.jpg';
 
-          {/* Content */}
-          <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-10 lg:px-20">
-            <div className="max-w-3xl text-left">
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-white leading-snug drop-shadow-lg">
-                {slide.title}
-              </h1>
+        return (
+          <div
+            key={slide.idSlider || index}
+            className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out bg-cover bg-center ${
+              index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+            }`}
+            style={{
+              backgroundImage: `url(${imageUrl})`,
+            }}
+          >
+            {/* Overlay Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
+            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent"></div>
 
-              <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base lg:text-lg text-gray-200 font-light leading-relaxed drop-shadow-md max-w-2xl">
-                {slide.description}
-              </p>
+            {/* Content */}
+            <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-10 lg:px-20">
+              <div className="max-w-3xl text-left">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-white leading-snug drop-shadow-lg">
+                  {slide.title}
+                </h1>
 
-              {slide.ctaLink && (
-              <a
-                href={slide.ctaLink}
-                className="group mt-5 inline-flex items-center gap-2 bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm md:text-base px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:-translate-y-0.5"
-              >
-                <span>{slide.ctaText || "Lihat Selengkapnya"}</span>
-                <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
-              </a>
-            )}
+                {slide.description && (
+                  <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base lg:text-lg text-gray-200 font-light leading-relaxed drop-shadow-md max-w-2xl line-clamp-2">
+                    {slide.description}
+                  </p>
+                )}
+
+                {slide.ctaLink && (
+                  <a
+                    href={slide.ctaLink}
+                    className="group/btn mt-5 inline-flex items-center gap-2 bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm md:text-base px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    <span>{slide.ctaText || "Lihat Selengkapnya"}</span>
+                    <span className="transition-transform duration-300 group-hover/btn:translate-x-1">→</span>
+                  </a>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
+
+      {/* TOMBOL NAVIGASI KIRI & KANAN (Tampil saat hover di Desktop) */}
+      {slides.length > 1 && (
+        <>
+          <button
+            onClick={handlePrev}
+            aria-label="Previous slide"
+            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/70 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+          >
+            ❮
+          </button>
+          <button
+            onClick={handleNext}
+            aria-label="Next slide"
+            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/70 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
+          >
+            ❯
+          </button>
+        </>
+      )}
 
       {/* DOT NAVIGATION */}
-      <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center space-x-2 sm:space-x-3 z-20 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
-      {slides.map((_, index) => (
-        <button
-          key={index}
-          onClick={() => setCurrentSlide(index)}
-          aria-label={`Go to slide ${index + 1}`}
-          className={`h-2 rounded-full transition-all duration-300 ${
-            index === currentSlide
-              ? "bg-white w-7 sm:w-8"
-              : "bg-white/40 w-2 hover:bg-white/70"
-          }`}
-        />
-      ))}
-      </div>
+      {slides.length > 1 && (
+        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center space-x-2 sm:space-x-3 z-20 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentSlide(index)}
+              aria-label={`Go to slide ${index + 1}`}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                index === currentSlide
+                  ? "bg-white w-7 sm:w-8"
+                  : "bg-white/40 w-2 hover:bg-white/70"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
