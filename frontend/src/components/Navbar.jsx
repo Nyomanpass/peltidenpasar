@@ -108,8 +108,8 @@ export default function Navbar() {
           <img src="/logo.png" alt="PELTI" className="w-10 md:w-12 object-contain" />
           <div>
             <h1 className="font-bold text-lg md:text-xl text-gray-900 leading-tight">PELTI DENPASAR</h1>
-            <p className="text-[10px] md:text-xs font-semibold text-gray-500 tracking-wide">
-              Persatuan Tennis Seluruh Indonesia
+            <p className="text-[10px] sm:text-xs text-gray-500">
+              Persatuan Lawn Tennis Seluruh Indonesia
             </p>
           </div>
         </div>
