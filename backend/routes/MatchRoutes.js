@@ -25,7 +25,7 @@ router.patch("/:matchId/peserta", setMatchPeserta);
 router.post("/bagan/:id/undian", generateUndian);
 router.get("/matches", getMatches);
 router.get("/juara/:baganId", getJuara);
-router.post('/update-point', scoringLimiter, updateMatchPoint);
+router.post('/update-point', requireAuth, scoringLimiter, updateMatchPoint);
 router.get('/history/:matchId', getMatchDetailHistory);
 router.get('/match-log/:id', getMatchLog);
 router.delete('/undo-point/:id', undoLastPoint);

@@ -11,6 +11,7 @@ import {
   getPesertaByKelompokUmur,
   getPesertaFiltered
 } from "../controllers/PesertaController.js";
+import { requireAuth, requireRole } from "../middleware/Auth.js";
 
 const router = express.Router();
 
@@ -24,8 +25,9 @@ router.get('/peserta/kelompok-umur', getPesertaByKelompokUmur);
 router.get('/pesertafilter', getPesertaFiltered);
 router.get("/peserta/:id", getPesertaById);
 router.post("/peserta", cpUpload, createPeserta);
-router.put("/peserta/:id", cpUpload, updatePeserta);
-router.delete("/peserta/:id", deletePeserta);
-router.put('/peserta/:id/verify', verifyPeserta);
+router.put("/peserta/:id", requireAuth, cpUpload, updatePeserta);
+router.delete("/peserta/:id", requireAuth, requireRole("admin"), deletePeserta);
+router.put('/peserta/:id/verify', requireAuth, requireRole("admin"), verifyPeserta);
 
 export default router;
+
