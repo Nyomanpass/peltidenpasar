@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { Op } from "sequelize";
 import { Peserta, KelompokUmur, Tournament } from "../models/index.js";
 
 // ====== Konfigurasi upload file ======
@@ -130,7 +131,7 @@ export const updatePeserta = async (req, res) => {
       const tId = tournamentId || peserta.tournamentId;
       const kId = kelompokUmurId || peserta.kelompokUmurId;
       const existing = await Peserta.findOne({
-        where: { nik, tournamentId: tId, kelompokUmurId: kId, id: { [require('sequelize').Op.ne]: peserta.id } }
+        where: { nik, tournamentId: tId, kelompokUmurId: kId, id: { [Op.ne]: peserta.id } }
       });
       if (existing) {
         return res.status(400).json({ message: "NIK ini sudah terdaftar di turnamen dan kategori yang sama" });
@@ -247,7 +248,7 @@ export const getPesertaByKelompokUmur = async (req, res) => {
         {
           model: Peserta,
           as: "peserta",
-          attributes: ["id", "namaLengkap", "nik", "status", "kelompokUmurId", "tournamentId", "asalSekolah", 'nomorWhatsapp', 'tanggalLahir'],
+          attributes: ["id", "namaLengkap", "status", "kelompokUmurId", "tournamentId", "asalSekolah", 'nomorWhatsapp', 'tanggalLahir'],
           where: pesertaFilter,
           required: false, // supaya kelompok umur tetap muncul meskipun tidak ada peserta
         },
@@ -283,7 +284,6 @@ export const getPesertaFiltered = async (req, res) => {
        attributes: [
         "id",
         "namaLengkap",
-        "nik",
         "asalSekolah",   
         "status",
         "kelompokUmurId",
