@@ -1,7 +1,10 @@
 import axios from "axios";
 
+const BASE = import.meta.env.VITE_API_URL;
+if (!BASE) console.error("VITE_API_URL belum di-set — cek file .env");
+
 const api = axios.create({
-  baseURL: `${import.meta.env.VITE_API_URL}/api`
+  baseURL: `${BASE}/api`
 });
 
 api.interceptors.request.use((config) => {
