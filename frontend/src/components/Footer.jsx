@@ -55,14 +55,20 @@ export default function Footer() {
           </h2>
           <div className="flex gap-3">
             <a
-              href="#"
+              href="https://www.facebook.com/share/1bsWifNPt3/?mibextid=wwXIfr"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook PELTI Denpasar"
               className="p-2 rounded-full bg-slate-800 hover:bg-yellow-400 
                          hover:text-black transition-all duration-300"
             >
               <Facebook size={16} />
             </a>
             <a
-              href="#"
+           href="https://www.instagram.com/peltidenpasar?stkn=OGUzMjZmZXgzODF2"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram PELTI Denpasar"
               className="p-2 rounded-full bg-slate-800 hover:bg-yellow-400 
                          hover:text-black transition-all duration-300"
             >
