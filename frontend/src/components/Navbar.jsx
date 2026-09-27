@@ -56,20 +56,21 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [lastScrollY]);
 
+  // MENU ITEMS (Menggunakan Bahasa Inggris)
   const navItems = [
     { name: "Home", path: "/" },
     {
-      name: "Tentang Kami",
+      name: "About Us",
       children: [
-        { name: "Visi & Misi", path: "/visi-misi" },
-        { name: "Struktur Organisasi", path: "/struktur-organisasi" },
-        { name: "Kepengurusan", path: "/kepengurusan" },
-        { name: "Club", path: "/anggota" },
-        { name: "Berita", path: "/berita" },
+        { name: "Vision & Mission", path: "/visi-misi" },
+        { name: "Organizational Structure", path: "/struktur-organisasi" },
+        { name: "Management", path: "/kepengurusan" },
+        { name: "Clubs", path: "/anggota" },
+        { name: "News", path: "/berita" },
       ],
     },
-    { name: "Turnamen", path: "/tournament" },
-    { name: "Atlet", path: "/atlet" },
+    { name: "Tournaments", path: "/tournament" },
+    { name: "Athletes", path: "/atlet" },
     { name: "Contact", path: "/contact" },
   ];
 
@@ -79,8 +80,8 @@ export default function Navbar() {
   const linkClass = ({ isActive }) =>
     `text-sm font-medium transition duration-200 py-1 border-b-2 ${
       isActive
-        ? "text-red-700 font-bold border-red-700"
-        : "text-gray-700 hover:text-red-700 border-transparent"
+        ? "text-yellow-600 font-bold border-yellow-600"
+        : "text-gray-700 hover:text-yellow-600 border-transparent"
     }`;
 
   return (
@@ -95,9 +96,15 @@ export default function Navbar() {
           Jalan Gunung Agung, Desa Pemecutan Kaja, Kota Denpasar, Bali
         </p>
         <div className="flex gap-4">
-          <IconWrapper><FacebookIcon className="w-4 h-4 hover:text-gray-300 transition" /></IconWrapper>
-          <IconWrapper><InstagramIcon className="w-4 h-4 hover:text-gray-300 transition" /></IconWrapper>
-          <IconWrapper><YoutubeIcon className="w-4 h-4 hover:text-gray-300 transition" /></IconWrapper>
+          <a href="https://www.facebook.com/share/1bsWifNPt3/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">
+            <IconWrapper><FacebookIcon className="w-4 h-4 hover:text-yellow-500 transition" /></IconWrapper>
+          </a>
+          <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer">
+            <IconWrapper><InstagramIcon className="w-4 h-4 hover:text-yellow-500 transition" /></IconWrapper>
+          </a>
+          <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
+            <IconWrapper><YoutubeIcon className="w-4 h-4 hover:text-yellow-500 transition" /></IconWrapper>
+          </a>
         </div>
       </div>
 
@@ -109,21 +116,21 @@ export default function Navbar() {
           <div>
             <h1 className="font-bold text-lg md:text-xl text-gray-900 leading-tight">PELTI DENPASAR</h1>
             <p className="text-[10px] sm:text-xs text-gray-500">
-              Persatuan Lawn Tennis Seluruh Indonesia
+              Persatuan Lawn Tenis Indonesia
             </p>
           </div>
         </div>
 
-        {/* DESKTOP MENU */}
-        <div className="hidden lg:flex items-center gap-8">
+        {/* DESKTOP MENU (Dimerapatkan dengan gap-5/gap-6) */}
+        <div className="hidden lg:flex items-center gap-5 xl:gap-6">
           {navItems.map((item) =>
             item.children ? (
               <div key={item.name} className="relative group py-2">
                 <span
-                  className={`cursor-pointer text-sm font-medium flex items-center gap-1.5 transition duration-200 ${
+                  className={`cursor-pointer text-sm font-medium flex items-center gap-1 transition duration-200 ${
                     isParentActive(item.children)
-                      ? "text-red-700 font-bold"
-                      : "text-gray-700 hover:text-red-700"
+                      ? "text-yellow-600 font-bold"
+                      : "text-gray-700 hover:text-yellow-600"
                   }`}
                 >
                   {item.name}
@@ -139,8 +146,8 @@ export default function Navbar() {
                         className={({ isActive }) =>
                           `block px-4 py-2.5 text-sm transition duration-150 ${
                             isActive 
-                              ? "text-red-700 font-bold bg-red-50" 
-                              : "text-gray-700 hover:bg-gray-50 hover:text-red-700"
+                              ? "text-yellow-600 font-bold bg-yellow-50" 
+                              : "text-gray-700 hover:bg-gray-50 hover:text-yellow-600"
                           }`
                         }
                       >
@@ -191,7 +198,7 @@ export default function Navbar() {
                 </button>
 
                 {dropdownOpen[item.name] && (
-                  <div className="pl-4 mt-1 space-y-1.5 border-l-2 border-red-100">
+                  <div className="pl-4 mt-1 space-y-1.5 border-l-2 border-yellow-200">
                     {item.children.map((child) => (
                       <NavLink
                         key={child.name}
@@ -199,7 +206,7 @@ export default function Navbar() {
                         onClick={() => setMenuOpen(false)}
                         className={({ isActive }) =>
                           `block py-1.5 text-xs ${
-                            isActive ? "text-red-700 font-bold" : "text-gray-600"
+                            isActive ? "text-yellow-600 font-bold" : "text-gray-600"
                           }`
                         }
                       >
@@ -216,7 +223,7 @@ export default function Navbar() {
                 onClick={() => setMenuOpen(false)}
                 className={({ isActive }) =>
                   `block py-2 text-sm font-semibold ${
-                    isActive ? "text-red-700 font-bold" : "text-gray-800"
+                    isActive ? "text-yellow-600 font-bold" : "text-gray-800"
                   }`
                 }
               >
