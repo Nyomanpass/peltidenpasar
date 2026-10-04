@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { Op } from "sequelize";
 import { Peserta, KelompokUmur, Tournament } from "../models/index.js";
 
 // ====== Konfigurasi upload file ======
@@ -74,14 +75,28 @@ export const getPesertaById = async (req, res) => {
 
 export const createPeserta = async (req, res) => {
   try {
-    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId, asalSekolah  } = req.body;
+    const { namaLengkap, nik, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId, asalSekolah  } = req.body;
     
+    // Validasi NIK: wajib 16 digit angka
+    if (!nik || !/^\d{16}$/.test(nik)) {
+      return res.status(400).json({ message: "NIK harus 16 digit angka" });
+    }
+
+    // Cek duplikasi NIK di turnamen & kelompok umur yang sama
+    const existing = await Peserta.findOne({
+      where: { nik, tournamentId, kelompokUmurId }
+    });
+    if (existing) {
+      return res.status(400).json({ message: "NIK ini sudah terdaftar di turnamen dan kategori yang sama" });
+    }
+
     // Gunakan Optional Chaining ?. untuk keamanan
     const fotoKartu = req.files?.fotoKartu ? req.files.fotoKartu[0].path : null;
     const buktiBayar = req.files?.buktiBayar ? req.files.buktiBayar[0].path : null;
 
     const newData = await Peserta.create({
       namaLengkap,
+      nik,
       nomorWhatsapp,
       tanggalLahir,
       kelompokUmurId,
@@ -104,7 +119,24 @@ export const updatePeserta = async (req, res) => {
     const peserta = await Peserta.findByPk(req.params.id);
     if (!peserta) return res.status(404).json({ message: "Peserta tidak ditemukan" });
 
-    const { namaLengkap, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId, status, asalSekolah } = req.body;
+    const { namaLengkap, nik, nomorWhatsapp, tanggalLahir, kelompokUmurId, tournamentId, status, asalSekolah } = req.body;
+
+    // Validasi NIK jika diubah
+    if (nik && !/^\d{16}$/.test(nik)) {
+      return res.status(400).json({ message: "NIK harus 16 digit angka" });
+    }
+
+    // Cek duplikasi NIK jika diubah (kecuali peserta itu sendiri)
+    if (nik && nik !== peserta.nik) {
+      const tId = tournamentId || peserta.tournamentId;
+      const kId = kelompokUmurId || peserta.kelompokUmurId;
+      const existing = await Peserta.findOne({
+        where: { nik, tournamentId: tId, kelompokUmurId: kId, id: { [Op.ne]: peserta.id } }
+      });
+      if (existing) {
+        return res.status(400).json({ message: "NIK ini sudah terdaftar di turnamen dan kategori yang sama" });
+      }
+    }
 
     // 1. Logika Update FOTO KARTU (Cek req.files)
     if (req.files?.fotoKartu) {
@@ -125,6 +157,7 @@ export const updatePeserta = async (req, res) => {
     // 3. Update data menggunakan method update() agar lebih bersih
     await peserta.update({
       namaLengkap: namaLengkap || peserta.namaLengkap,
+      nik: nik ?? peserta.nik,
       nomorWhatsapp: nomorWhatsapp || peserta.nomorWhatsapp,
       tanggalLahir: tanggalLahir || peserta.tanggalLahir,
       kelompokUmurId: kelompokUmurId || peserta.kelompokUmurId,

@@ -26,6 +26,10 @@ export const Bagan = sequelize.define("Bagan", {
   kelompokUmurId: {
     type: DataTypes.INTEGER,
     allowNull: false
+  },
+  hasPreliminary: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 }, {
   tableName: "bagans", // Paksa nama table agar konsisten

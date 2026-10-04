@@ -25,6 +25,7 @@ const [tournamentStatus, setTournamentStatus] = useState("checking");
 
   const [formData, setFormData] = useState({
     namaLengkap: "",
+    nik: "",
     nomorWhatsapp: "",
     tanggalLahir: "",
     kelompokUmurId: "",
@@ -179,6 +180,12 @@ const [tournamentStatus, setTournamentStatus] = useState("checking");
       return;
     }
 
+    // Validasi NIK wajib 16 digit
+    if (!formData.nik || formData.nik.length !== 16) {
+      setError("NIK harus 16 digit angka");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const data = new FormData();
@@ -193,7 +200,7 @@ const [tournamentStatus, setTournamentStatus] = useState("checking");
       setSuccess("Pendaftaran berhasil! Data Anda akan diverifikasi panitia.");
       
       setFormData({
-        namaLengkap: "", nomorWhatsapp: "", tanggalLahir: "",
+        namaLengkap: "", nik: "", nomorWhatsapp: "", tanggalLahir: "",
         kelompokUmurId: "", tournamentId: "",   asalSekolah: "",  fotoKartu: null, buktiBayar: null,
       });
       setPreviewFoto(null);
@@ -485,6 +492,29 @@ if (tournamentStatus === "closed") {
                     <label className="text-xs font-bold text-slate-500 uppercase ml-1">Nama Lengkap</label>
                     <input type="text" name="namaLengkap" value={formData.namaLengkap} onChange={handleChange} className="w-full border-2 border-slate-100 p-3.5 rounded-xl outline-none focus:border-primary transition text-sm shadow-sm" placeholder="Nama Lengkap" required />
                   </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-slate-500 uppercase ml-1">NIK (Nomor Induk Kependudukan)</label>
+                    <input
+                      type="text"
+                      name="nik"
+                      inputMode="numeric"
+                      maxLength={16}
+                      value={formData.nik}
+                      onChange={(e) => {
+                        const onlyDigits = e.target.value.replace(/\D/g, "");
+                        setFormData({ ...formData, nik: onlyDigits });
+                      }}
+                      placeholder="16 digit sesuai KTP/KK"
+                      className="w-full border-2 border-slate-100 p-3.5 rounded-xl outline-none focus:border-primary transition text-sm shadow-sm"
+                      required
+                    />
+                    {formData.nik && formData.nik.length !== 16 && (
+                      <p className="text-[11px] text-red-500 font-medium ml-1">NIK harus 16 digit ({formData.nik.length}/16)</p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-500 uppercase ml-1">No. WhatsApp</label>
                     <input type="text" name="nomorWhatsapp" value={formData.nomorWhatsapp} onChange={handleChange} className="w-full border-2 border-slate-100 p-3.5 rounded-xl outline-none focus:border-primary transition text-sm shadow-sm" placeholder="08xxxxxxxx" required />

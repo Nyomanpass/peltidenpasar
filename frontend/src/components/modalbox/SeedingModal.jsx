@@ -5,15 +5,11 @@ export default function SeedingModal({ pesertaList, onClose, onSaved }) {
   const [seededPeserta, setSeededPeserta] = useState([]);
   const selectedIds = seededPeserta.map(p => p.id).filter(id => id !== null);
 
-  // --- 1. HITUNG KAPASITAS BAGAN ---
-  // Mencari angka pangkat 2 terdekat yang lebih besar atau sama dengan jumlah peserta
+  // --- 1. HITUNG KAPASITAS BAGAN (SUB-BAGAN) ---
+  // Bulatkan ke BAWAH ke pangkat 2 terdekat (sub-bagan menghilangkan BYE)
   const getBaganCapacity = (count) => {
-    if (count <= 0) return 0;
-    let capacity = 2;
-    while (capacity < count) {
-      capacity *= 2;
-    }
-    return capacity;
+    if (count <= 1) return 2;
+    return Math.pow(2, Math.floor(Math.log2(count)));
   };
 
   const maxSlot = getBaganCapacity(pesertaList.length);
