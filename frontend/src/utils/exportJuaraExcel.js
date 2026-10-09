@@ -1,7 +1,17 @@
 import * as XLSX from "xlsx";
+import { hitungSelisih } from "./hitungSelisih";
 
 export function exportJuaraToExcel(winnersData, tournamentName, filterKategori) {
   const wb = XLSX.utils.book_new();
+
+  const used = new Set(["ringkasan juara"]);
+  function sheetName(raw, fallback) {
+    const base = (raw || fallback).replace(/[:\\/?*\[\]]/g, "-").substring(0, 25).trim() || fallback;
+    let name = base, i = 2;
+    while (used.has(name.toLowerCase())) name = `${base}-${i++}`;
+    used.add(name.toLowerCase());
+    return name;
+  }
 
   // Sheet 1: Ringkasan
   const ringkasan = winnersData.map((d) => ({
@@ -28,14 +38,13 @@ export function exportJuaraToExcel(winnersData, tournamentName, filterKategori) 
         Poin: p.poin || 0,
         Menang: p.menang || 0,
         Kalah: p.kalah || 0,
-        "Selisih": p.selisih,
+        "Selisih": hitungSelisih(p),
       }));
-      const sheetName = d.baganNama.substring(0, 28); // Excel limit 31 char
       const ws = XLSX.utils.json_to_sheet(rows);
       ws["!cols"] = [
         { wch: 10 }, { wch: 30 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 10 },
       ];
-      XLSX.utils.book_append_sheet(wb, ws, sheetName || `Bagan ${d.baganId}`);
+      XLSX.utils.book_append_sheet(wb, ws, sheetName(d.baganNama, `Bagan ${d.baganId}`));
     }
   });
 

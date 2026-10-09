@@ -4,6 +4,7 @@ import { Trophy, Award, Crown, CheckCircle, Layout, FileText, FileSpreadsheet, U
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import JuaraPDF from './JuaraPDF'; 
 import { exportJuaraToExcel } from '../utils/exportJuaraExcel';
+import { hitungSelisih } from "../utils/hitungSelisih";
 
 const JuaraPage = () => {
   const [winnersData, setWinnersData] = useState([]);
@@ -330,7 +331,7 @@ const JuaraPage = () => {
                             <td className="px-3 py-3 text-center text-blue-600 font-black bg-blue-50/20">{p.poin || '0'}</td>
                             <td className="px-2 py-3 text-center font-bold text-green-600">{p.menang || '0'}</td>
                             <td className="px-2 py-3 text-center text-red-400">{p.kalah || '0'}</td>
-                            <td className="px-3 py-3 text-center font-bold text-gray-600">{p.selisih}</td>
+                            <td className="px-3 py-3 text-center font-bold text-gray-600">{hitungSelisih(p)}</td>
                           </tr>
                         ))}
                       </tbody>

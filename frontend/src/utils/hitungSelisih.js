@@ -1,0 +1,1 @@
+export const hitungSelisih = (p) => (p.gameMenang ?? 0) - (p.gameKalah ?? 0);
