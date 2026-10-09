@@ -6,23 +6,23 @@ export default function Visimisi() {
     <>
       <Navbar />
 
-      {/* HERO */}
-      <div className="relative w-full h-[260px] sm:h-[320px] md:h-[380px] mt-16">
+          {/* HERO BANNER RESPONSIF */}
+      <div className="relative w-full aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4] min-h-[220px] max-h-[450px] mt-[65px] sm:mt-[75px] overflow-hidden">
         <img
           src="/hero.jpg"
           alt="Visi dan Misi Pelti Denpasar"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-black/55"></div>
+        <div className="absolute inset-0 bg-black/60"></div>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center text-white">
-          <span className="text-yellow-400 font-bold text-xs sm:text-sm tracking-widest uppercase mb-1">
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center text-white">
+          <span className="text-yellow-400 font-bold text-xs sm:text-sm tracking-widest uppercase mb-1 drop-shadow">
             PELTI Denpasar
           </span>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight">
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-md">
             Visi & Misi
           </h1>
-          <div className="w-12 h-1 bg-yellow-500 rounded-full mt-3"></div>
+          <div className="w-12 h-1 bg-yellow-500 rounded-full mt-2 sm:mt-3"></div>
         </div>
       </div>
 
