@@ -3,8 +3,9 @@
 import React, { useEffect, useState, useCallback } from "react";
 import api from "../../api";
 import { Link, useLocation } from "react-router-dom"; // Tambahkan useLocation
-import { Eye, Trash2, Search, ChevronDown, ChevronUp, User, Users2 } from "lucide-react"; // Tambahkan Users2
+import { Eye, Trash2, Search, ChevronDown, ChevronUp, User, Users2, FileSpreadsheet } from "lucide-react"; // Tambahkan Users2
 import AlertMessage from "../AlertMessage";
+import { exportPesertaToExcel } from "../../utils/exportPesertaExcel";
 
 function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
   const location = useLocation();
@@ -38,7 +39,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
     }
     try {
       setLoading(true);
-      const res = await api.get(`/peserta/kelompok-umur?tournamentId=${idToUse}`);
+      const res = await api.get(`/admin/peserta/kelompok-umur?tournamentId=${idToUse}`);
       setKelompokUmur(res.data);
     } catch (err) {
       setError("Gagal mengambil data peserta");
@@ -110,6 +111,16 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
 
            
             <div className="flex flex-col sm:flex-row items-center gap-4">
+              {/* Tombol Export */}
+              {(role === "admin" || role === "panitia") && (
+                <button
+                  onClick={() => exportPesertaToExcel(kelompokUmur, currentTournamentName)}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold shadow-md flex items-center gap-2 text-[11px] uppercase tracking-wider transition-colors"
+                >
+                  <FileSpreadsheet size={16} /> Export Excel
+                </button>
+              )}
+
               {/* Navigasi Button Kategori (Single / Double) */}
               {(role === "admin" || role === "wasit" || role === "panitia") && (
                 <div className="flex bg-gray-100 p-1 rounded-xl border border-gray-200 shadow-sm">

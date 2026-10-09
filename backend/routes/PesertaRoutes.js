@@ -9,6 +9,7 @@ import {
   upload,
   verifyPeserta,
   getPesertaByKelompokUmur,
+  getPesertaAdminByKelompokUmur,
   getPesertaFiltered
 } from "../controllers/PesertaController.js";
 import { requireAuth, requireRole } from "../middleware/Auth.js";
@@ -22,6 +23,7 @@ const cpUpload = upload.fields([
 
 router.get("/peserta", getPesertaByStatus);
 router.get('/peserta/kelompok-umur', getPesertaByKelompokUmur);
+router.get('/admin/peserta/kelompok-umur', requireAuth, getPesertaAdminByKelompokUmur);
 router.get('/pesertafilter', getPesertaFiltered);
 router.get("/peserta/:id", getPesertaById);
 router.post("/peserta", cpUpload, createPeserta);

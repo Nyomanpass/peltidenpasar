@@ -263,6 +263,36 @@ export const getPesertaByKelompokUmur = async (req, res) => {
   }
 };
 
+export const getPesertaAdminByKelompokUmur = async (req, res) => {
+  try {
+    const { tournamentId } = req.query;
+
+    const pesertaFilter = { status: "verified" };
+
+    if (tournamentId) {
+      pesertaFilter.tournamentId = tournamentId;
+    }
+
+    const result = await KelompokUmur.findAll({
+      attributes: ["id", "nama"],
+      include: [
+        {
+          model: Peserta,
+          as: "peserta",
+          attributes: ["id", "namaLengkap", "nik", "status", "kelompokUmurId", "tournamentId", "asalSekolah", 'nomorWhatsapp', 'tanggalLahir'],
+          where: pesertaFilter,
+          required: false,
+        },
+      ],
+    });
+
+    res.json(result);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Terjadi kesalahan server" });
+  }
+};
 
 export const getPesertaFiltered = async (req, res) => {
   try {
