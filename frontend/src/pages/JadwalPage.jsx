@@ -8,6 +8,19 @@ import RefereeForm from './RefereeForm';
 import AlertMessage from '../components/AlertMessage';
 
 
+const getHasilMatch = (m) => {
+  if (!m) return null;
+  const isDouble = !!(m.doubleTeam1Id || m.doubleTeam2Id);
+  const winnerId = isDouble ? m.winnerDoubleId : m.winnerId;
+  const side1Id = isDouble ? m.doubleTeam1Id : m.peserta1Id;
+  const side2Id = isDouble ? m.doubleTeam2Id : m.peserta2Id;
+  const p1Won = winnerId != null && winnerId === side1Id;
+  const p2Won = winnerId != null && winnerId === side2Id;
+  const nama1 = m.doubleTeam1?.namaTim || m.peserta1?.namaLengkap;
+  const nama2 = m.doubleTeam2?.namaTim || m.peserta2?.namaLengkap;
+  return { p1Won, p2Won, winnerName: p1Won ? nama1 : p2Won ? nama2 : null };
+};
+
 const JadwalPage = () => {
   const [jadwal, setJadwal] = useState([]);
   const [matches, setMatches] = useState([]);
@@ -751,6 +764,7 @@ const groupedJadwal = [...jadwal]
                     j.lapangan?.nama === lap &&
                     j.tanggal === selectedTanggalFilter
                   );
+                  const hasil = match?.status === "selesai" ? getHasilMatch(match.match) : null;
 
                   return (
                     <td key={lap} className="py-2 md:py-3 align-top">
@@ -818,32 +832,22 @@ const groupedJadwal = [...jadwal]
                             </div>
 
                             {/* Skor & Pemenang (muncul kalau match selesai) */}
-                            {match.status === "selesai" && match.match && (
+                            {hasil && (
                               <div className="mt-2 mb-1 p-2.5 bg-gradient-to-br from-slate-50 to-green-50/40 rounded-xl border border-green-100/60">
                                 <div className="flex items-center justify-center gap-3">
-                                  <span className={`text-lg font-black ${
-                                    match.match.winnerId === match.match.peserta1Id ||
-                                    match.match.winnerDoubleId === match.match.doubleTeam1Id
-                                      ? "text-green-600" : "text-slate-400"
-                                  }`}>
+                                  <span className={`text-lg font-black ${hasil.p1Won ? "text-green-600" : "text-slate-400"}`}>
                                     {match.match.score1 ?? 0}
                                   </span>
                                   <span className="text-[10px] text-slate-300 font-black tracking-wider">SET</span>
-                                  <span className={`text-lg font-black ${
-                                    match.match.winnerId === match.match.peserta2Id ||
-                                    match.match.winnerDoubleId === match.match.doubleTeam2Id
-                                      ? "text-green-600" : "text-slate-400"
-                                  }`}>
+                                  <span className={`text-lg font-black ${hasil.p2Won ? "text-green-600" : "text-slate-400"}`}>
                                     {match.match.score2 ?? 0}
                                   </span>
                                 </div>
-                                <p className="text-center text-[9px] font-black text-green-600 uppercase tracking-wider mt-1.5">
-                                  🏆 {
-                                    match.match.winnerId === match.match.peserta1Id || match.match.winnerDoubleId === match.match.doubleTeam1Id
-                                      ? (match.match.doubleTeam1?.namaTim || match.match.peserta1?.namaLengkap)
-                                      : (match.match.doubleTeam2?.namaTim || match.match.peserta2?.namaLengkap)
-                                  } Menang
-                                </p>
+                                {hasil.winnerName && (
+                                  <p className="text-center text-[9px] font-black text-green-600 uppercase tracking-wider mt-1.5">
+                                    🏆 {hasil.winnerName} Menang
+                                  </p>
+                                )}
                               </div>
                             )}
 
