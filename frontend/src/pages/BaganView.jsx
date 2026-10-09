@@ -239,12 +239,13 @@ const handleExportPDF = async () => {
       backgroundColor: "#ffffff"
     });
 
-    const img = canvas.toDataURL("image/png", 1.0); // pakai PNG biar warna aman
+    const img = canvas.toDataURL("image/jpeg", 0.85); // JPEG quality 85% — jauh lebih kecil, teks tetap terbaca
 
     const pdf = new jsPDF({
       orientation: canvas.width > canvas.height ? "l" : "p",
       unit: "px",
-      format: [canvas.width + 40, canvas.height + 140]
+      format: [canvas.width + 40, canvas.height + 140],
+      compress: true, // aktifkan flate compression di level PDF
     });
 
     const pageWidth = pdf.internal.pageSize.getWidth();
@@ -260,7 +261,7 @@ const handleExportPDF = async () => {
     pdf.setFontSize(18);
     pdf.text(bagan.nama, pageWidth / 2, 70, { align: "center" });
 
-    pdf.addImage(img, "PNG", 20, 100, canvas.width, canvas.height);
+    pdf.addImage(img, "JPEG", 20, 100, canvas.width, canvas.height);
 
     if (ketPdfEl && !isRoundRobin) {
       ketPdfEl.style.display = "block";
@@ -273,8 +274,8 @@ const handleExportPDF = async () => {
 
       pdf.addPage();
       pdf.addImage(
-        ketCanvas.toDataURL("image/png", 1.0),
-        "PNG",
+        ketCanvas.toDataURL("image/jpeg", 0.85),
+        "JPEG",
         20,
         40,
         ketCanvas.width,
