@@ -817,6 +817,36 @@ const groupedJadwal = [...jadwal]
                               </p>
                             </div>
 
+                            {/* Skor & Pemenang (muncul kalau match selesai) */}
+                            {match.status === "selesai" && match.match && (
+                              <div className="mt-2 mb-1 p-2.5 bg-gradient-to-br from-slate-50 to-green-50/40 rounded-xl border border-green-100/60">
+                                <div className="flex items-center justify-center gap-3">
+                                  <span className={`text-lg font-black ${
+                                    match.match.winnerId === match.match.peserta1Id ||
+                                    match.match.winnerDoubleId === match.match.doubleTeam1Id
+                                      ? "text-green-600" : "text-slate-400"
+                                  }`}>
+                                    {match.match.score1 ?? 0}
+                                  </span>
+                                  <span className="text-[10px] text-slate-300 font-black tracking-wider">SET</span>
+                                  <span className={`text-lg font-black ${
+                                    match.match.winnerId === match.match.peserta2Id ||
+                                    match.match.winnerDoubleId === match.match.doubleTeam2Id
+                                      ? "text-green-600" : "text-slate-400"
+                                  }`}>
+                                    {match.match.score2 ?? 0}
+                                  </span>
+                                </div>
+                                <p className="text-center text-[9px] font-black text-green-600 uppercase tracking-wider mt-1.5">
+                                  🏆 {
+                                    match.match.winnerId === match.match.peserta1Id || match.match.winnerDoubleId === match.match.doubleTeam1Id
+                                      ? (match.match.doubleTeam1?.namaTim || match.match.peserta1?.namaLengkap)
+                                      : (match.match.doubleTeam2?.namaTim || match.match.peserta2?.namaLengkap)
+                                  } Menang
+                                </p>
+                              </div>
+                            )}
+
                             <div className="mt-auto pt-2 md:pt-3 border-t border-gray-50 flex flex-col gap-2 md:gap-3">
                                <div className="flex items-center justify-between gap-1">
                                   <span className={`px-2 md:px-3 py-0.5 md:py-1 rounded-full text-[7px] md:text-[9px] font-black uppercase tracking-widest truncate
