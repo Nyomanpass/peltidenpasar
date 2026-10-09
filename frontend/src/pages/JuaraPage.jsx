@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Trophy, Award, Crown, CheckCircle, Layout, FileText, Users2, User } from "lucide-react"; 
+import { Trophy, Award, Crown, CheckCircle, Layout, FileText, FileSpreadsheet, Users2, User } from "lucide-react"; 
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import JuaraPDF from './JuaraPDF'; 
+import { exportJuaraToExcel } from '../utils/exportJuaraExcel';
 
 const JuaraPage = () => {
   const [winnersData, setWinnersData] = useState([]);
@@ -197,7 +198,7 @@ const JuaraPage = () => {
   {/* TOMBOL PDF */}
   
 {(role === "admin" || role === "panitia")  && filteredWinners.length > 0 && (
-  <div className="flex items-center">
+  <div className="flex items-center gap-3 flex-wrap">
     {!readyPDF ? (
       <button 
         key="btn-siapkan"
@@ -227,6 +228,12 @@ const JuaraPage = () => {
         )}
       </PDFDownloadLink>
     )}
+    <button
+      onClick={() => exportJuaraToExcel(filteredWinners, tName, filterKategori)}
+      className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 transition-all active:scale-95"
+    >
+      <FileSpreadsheet size={20} /> Export Excel
+    </button>
   </div>
 )}
 </div>
