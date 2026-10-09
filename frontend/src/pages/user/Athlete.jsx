@@ -13,7 +13,6 @@ export default function Athlete() {
   const role = localStorage.getItem("role");
   const [kelompokUmur, setKelompokUmur] = useState([]);
 
-
   const fetchAthletes = async () => {
     try {
       const res = await api.get("/athlete/get");
@@ -39,7 +38,6 @@ export default function Athlete() {
     }
   };
 
-
   useEffect(() => {
     fetchAthletes();
     fetchKelompokUmur();
@@ -63,68 +61,48 @@ export default function Athlete() {
     });
 
     pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
-
     pdf.save(`kartu-atlet-${selectedAthlete.name}.pdf`);
   };
 
   const totalAthletes = athletes.length;
 
-
-
-
-
   return (
     <>
       <Navbar />
 
-      {/* HERO */}
-       <div className="relative w-full h-[400px] mt-18">
+      {/* HERO BANNER RESPONSIF (Selaras dengan Halaman Publik Lainnya) */}
+      <div className="relative w-full aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4] min-h-[220px] max-h-[450px] mt-[65px] sm:mt-[75px] overflow-hidden">
         <img
           src="/hero.jpg"
-          alt="Kepengurusan Pelti Denpasar"
-          className="w-full h-full object-cover"
+          alt="Atlet PELTI Denpasar"
+          className="w-full h-full object-cover object-center"
         />
+        <div className="absolute inset-0 bg-black/60"></div>
 
-        <div className="absolute inset-0 bg-black/50"></div>
-
-        <div
-          className="
-            absolute inset-0
-            flex flex-col items-center justify-center
-            px-4 sm:px-6 md:px-10 lg:px-20
-            text-center text-white
-          "
-        >
-          <h2 className="text-xl sm:text-2xl md:text-4xl font-bold mb-3 leading-tight">
-              Atlet PELTI Kota Denpasar
-          </h2>
-
-          <p
-            className="
-              max-w-md sm:max-w-xl md:max-w-2xl
-              text-xs sm:text-sm md:text-base
-              opacity-90 leading-relaxed
-            "
-          >
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center text-white">
+          <span className="text-yellow-400 font-bold text-xs sm:text-sm tracking-widest uppercase mb-1 drop-shadow">
+            PELTI Denpasar
+          </span>
+          <h1 className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight drop-shadow-md">
+            Atlet PELTI Kota Denpasar
+          </h1>
+          <p className="text-gray-200 text-xs sm:text-sm max-w-lg mt-1.5 opacity-90 hidden sm:block">
             Atlet binaan yang dipersiapkan melalui latihan terstruktur untuk meraih prestasi di tingkat daerah dan nasional.
-
           </p>
+          <div className="w-12 h-1 bg-yellow-500 rounded-full mt-2 sm:mt-3"></div>
         </div>
       </div>
 
-      {/* CONTENT */}
-      <section className="relative px-3 sm:px-6 md:px-10 lg:px-20 py-8 sm:py-12 md:py-16 bg-gray-50 space-y-12 sm:space-y-16">
-
+      {/* MAIN CONTENT */}
+      <section className="relative px-4 sm:px-6 md:px-10 lg:px-20 py-12 sm:py-16 bg-gray-50 space-y-12 sm:space-y-16">
         {/* RANKING NASIONAL */}
-        <div className="bg-white rounded-2xl shadow-md p-4 sm:p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="text-center md:text-left">
-            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-1 sm:mb-2">
+            <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 mb-2">
               Ranking Nasional Atlet
             </h3>
-            <p className="text-gray-600 text-xs sm:text-sm md:text-base max-w-xs sm:max-w-xl md:max-w-2xl leading-relaxed">
-              Untuk mengetahui peringkat resmi atlet secara nasional,
-              silakan mengunjungi situs resmi Persatuan Lawn Tenis
-              Indonesia (PELTI).
+            <p className="text-gray-600 text-xs sm:text-sm max-w-2xl leading-relaxed">
+              Untuk mengetahui peringkat resmi atlet secara nasional, silakan mengunjungi situs resmi Persatuan Lawn Tenis Indonesia (PELTI).
             </p>
           </div>
 
@@ -132,135 +110,124 @@ export default function Athlete() {
             href="https://pelti.org"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3 md:mt-0 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold px-5 py-2 sm:px-6 sm:py-3 rounded-xl shadow-lg transition text-sm sm:text-base"
+            className="shrink-0 bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-6 py-3 rounded-2xl shadow-sm hover:shadow-md transition text-xs sm:text-sm"
           >
-            Kunjungi pelti.org
+            Kunjungi pelti.org →
           </a>
         </div>
 
         {/* DAFTAR ATLET */}
         <div>
-          <h3 className="text-lg sm:text-2xl md:text-3xl font-bold text-gray-800 mb-4 text-center">
-            Daftar Atlet
+          <h3 className="text-xl sm:text-3xl font-extrabold text-gray-900 mb-8 text-center tracking-tight">
+            Daftar Atlet Binaan
           </h3>
-        
 
-          {/* GRID ATLET */}
- {totalAthletes === 0 ? (
-  <div className="text-center py-20">
-    <h3 className="text-lg font-bold text-gray-600">
-      Belum ada atlet terdaftar
-    </h3>
-   
-  </div>
-    ) : (
-    <div className="space-y-6">
-      {kelompokUmur.map((ku) => {
-       const athletesByGroup = athletes.filter(
-          (a) => a.kelompokUmurId === ku.id
-        );
+          {totalAthletes === 0 ? (
+            <div className="text-center py-16 bg-white rounded-3xl border border-gray-100">
+              <h3 className="text-base font-bold text-gray-500">
+                Belum ada data atlet terdaftar.
+              </h3>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {kelompokUmur.map((ku) => {
+                const athletesByGroup = athletes.filter(
+                  (a) => a.kelompokUmurId === ku.id
+                );
 
+                if (athletesByGroup.length === 0) return null;
 
-        if (athletesByGroup.length === 0) return null;
+                const isCollapsed = collapsedGroups[ku.id];
 
-        const isCollapsed = collapsedGroups[ku.id];
+                return (
+                  <div
+                    key={ku.id}
+                    className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden transition-all"
+                  >
+                    {/* HEADER KELOMPOK UMUR */}
+                    <button
+                      onClick={() => toggleGroup(ku.id)}
+                      className="w-full flex items-center justify-between px-6 py-5 bg-gray-50/70 hover:bg-gray-100/80 transition-all"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 bg-yellow-500 text-black rounded-2xl flex items-center justify-center font-extrabold text-sm shadow-sm">
+                          {ku.nama.substring(0, 2).toUpperCase()}
+                        </div>
 
-        return (
-          <div
-            key={ku.id}
-            className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden transition-all"
-          >
-            {/* HEADER */}
-            <button
-              onClick={() => toggleGroup(ku.id)}
-              className="w-full flex items-center justify-between px-6 py-5 bg-gray-50 hover:bg-gray-100 transition-all"
-            >
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 bg-yellow-500 text-white rounded-xl flex items-center justify-center font-black text-sm">
-                  {ku.nama.substring(0, 2).toUpperCase()}
-                </div>
+                        <div className="text-left">
+                          <h2 className="font-bold text-gray-900 uppercase text-sm tracking-wide">
+                            {ku.nama}
+                          </h2>
+                          <span className="text-[11px] text-yellow-800 font-bold uppercase tracking-wider">
+                            {athletesByGroup.length} Atlet
+                          </span>
+                        </div>
+                      </div>
 
-                <div className="text-left">
-                  <h2 className="font-black text-gray-900 uppercase text-sm tracking-wide">
-                    {ku.nama}
-                  </h2>
-                  <span className="text-[10px] text-yellow-600 font-bold uppercase tracking-widest">
-                    {athletesByGroup.length} Atlet
-                  </span>
-                </div>
-              </div>
+                      <div className="text-gray-400">
+                        {isCollapsed ? (
+                          <ChevronDown size={20} />
+                        ) : (
+                          <ChevronUp size={20} />
+                        )}
+                      </div>
+                    </button>
 
-              <div className="text-gray-400 transition-transform duration-300">
-                {isCollapsed ? (
-                  <ChevronDown size={20} />
-                ) : (
-                  <ChevronUp size={20} />
-                )}
-              </div>
-            </button>
+                    {/* GRID ATLET */}
+                    {!isCollapsed && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-6 border-t border-gray-100">
+                        {athletesByGroup.map((a) => (
+                          <div
+                            key={a.id}
+                            onClick={() => setSelectedAthlete(a)}
+                            className="bg-gray-50/70 hover:bg-white rounded-2xl border border-gray-100 hover:border-yellow-300 p-4 hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col items-center"
+                          >
+                            <div className="relative w-full aspect-square mb-3 overflow-hidden rounded-xl bg-gray-100 border border-white shadow-sm">
+                              {a.photo ? (
+                                <img
+                                  src={a.photo}
+                                  alt={a.name}
+                                  className="w-full h-full object-contain"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] text-center p-2">
+                                  Tidak ada foto
+                                </div>
+                              )}
+                            </div>
 
-            {/* CONTENT */}
-            {!isCollapsed && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 p-6 border-t border-gray-50">
-                {athletesByGroup.map((a) => (
-                <div
-                  key={a.id}
-                  onClick={() => setSelectedAthlete(a)}
-                  className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col items-center"
-                >
-                  {/* Container Foto - Dibuat Aspek Rasio 1:1 (Kotak) */}
-                  <div className="relative w-full aspect-square mb-3 overflow-hidden rounded-xl bg-gray-50">
-                    {a.photo ? (
-                      <img
-                        src={a.photo}
-                        alt={a.name}
-                        // Menggunakan object-contain agar gambar tidak terpotong meski ukurannya beda
-                        className="w-full h-full object-contain" 
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] text-center p-2">
-                        Tidak ada foto
+                            <div className="text-center w-full">
+                              <h4 className="font-bold text-xs sm:text-sm text-gray-900 line-clamp-2 leading-snug min-h-[2.2rem] flex items-center justify-center">
+                                {a.name}
+                              </h4>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
-
-                  {/* Informasi Atlet */}
-                  <div className="text-center w-full">
-                    <h4 className="font-bold text-xs md:text-sm text-gray-800 line-clamp-2 leading-tight min-h-[2.5rem] flex items-center justify-center">
-                      {a.name}
-                    </h4>
-                   
-                  </div>
-                </div>
-                ))}
-              </div>
-            )}
-          </div>
-        );
-      })}
-    </div>
-    )}
-
-
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
-      {/* MODAL */}
+      {/* MODAL ATLET */}
       {selectedAthlete && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-md px-2 sm:px-4">
-          <div className="bg-white rounded-xl w-full max-w-[95vw] sm:max-w-[400px] overflow-hidden shadow-xl relative">
-
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-3xl w-full max-w-[400px] overflow-hidden shadow-2xl relative border border-gray-100">
             {/* CLOSE */}
             <button
               onClick={() => setSelectedAthlete(null)}
-              className="absolute top-2 right-2 text-gray-500 hover:text-red-500"
+              className="absolute top-3 right-3 z-10 text-gray-400 hover:text-gray-600 w-8 h-8 rounded-full bg-white/80 backdrop-blur flex items-center justify-center shadow-sm transition"
             >
               ✕
             </button>
 
-            {/* MODAL CARD */}
+            {/* MODAL CONTENT */}
             <div>
-              <div className="relative h-[40vh] sm:h-72 md:h-[350px] w-full overflow-hidden rounded-t-3xl">
+              <div className="relative h-[280px] w-full overflow-hidden bg-gray-100">
                 {selectedAthlete.photo ? (
                   <img
                     src={selectedAthlete.photo}
@@ -268,46 +235,48 @@ export default function Athlete() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500 text-sm sm:text-base">
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
                     Tidak ada foto
                   </div>
                 )}
-                <div className="absolute bottom-2 sm:bottom-4 left-2 sm:left-4">
-                  <span className="inline-block text-xs sm:text-sm px-3 sm:px-5 py-1 sm:py-2 bg-yellow-400/95 text-black rounded-full font-extrabold shadow-lg">
+                <div className="absolute bottom-3 left-3">
+                  <span className="inline-block text-xs px-4 py-1.5 bg-yellow-400 text-black rounded-full font-bold shadow-md">
                     {selectedAthlete.kelompokUmur?.nama}
                   </span>
                 </div>
               </div>
 
-              <div className="p-3 sm:p-5 text-center space-y-2 sm:space-y-3">
-                <h3 className="font-extrabold text-lg sm:text-xl text-gray-800 tracking-wide">
+              <div className="p-5 text-center space-y-3">
+                <h3 className="font-extrabold text-lg text-gray-900">
                   {selectedAthlete.name}
                 </h3>
 
-                <div className="bg-gray-50 rounded-xl py-2 sm:py-3 shadow-sm">
-                  <p className="text-gray-400 text-[10px] sm:text-xs">Gender</p>
-                  <p className="font-semibold text-gray-800 capitalize text-sm">
-                    {selectedAthlete.gender}
-                  </p>
-                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-gray-50 rounded-2xl p-2.5 border border-gray-100">
+                    <p className="text-gray-400 text-[10px] font-semibold uppercase">Gender</p>
+                    <p className="font-bold text-gray-900 capitalize text-xs mt-0.5">
+                      {selectedAthlete.gender}
+                    </p>
+                  </div>
 
-                <div className="bg-gray-50 rounded-xl py-2 sm:py-3 shadow-sm">
-                  <p className="text-gray-400 text-[10px] sm:text-xs">Club</p>
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {selectedAthlete.club || "-"}
-                  </p>
-                </div>
+                  <div className="bg-gray-50 rounded-2xl p-2.5 border border-gray-100">
+                    <p className="text-gray-400 text-[10px] font-semibold uppercase">Club</p>
+                    <p className="font-bold text-gray-900 text-xs mt-0.5 truncate">
+                      {selectedAthlete.club || "-"}
+                    </p>
+                  </div>
 
-                <div className="bg-gray-50 rounded-xl py-2 sm:py-3 shadow-sm">
-                  <p className="text-gray-400 text-[10px] sm:text-xs">No Telp</p>
-                  <p className="font-semibold text-gray-800 text-sm">
-                    {selectedAthlete.phoneNumber || "-"}
-                  </p>
+                  <div className="bg-gray-50 rounded-2xl p-2.5 border border-gray-100">
+                    <p className="text-gray-400 text-[10px] font-semibold uppercase">No Telp</p>
+                    <p className="font-bold text-gray-900 text-xs mt-0.5 truncate">
+                      {selectedAthlete.phoneNumber || "-"}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* CARD PDF */}
+            {/* HIDDEN PRINT CARD */}
             <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
               <div
                 id="athlete-card-pdf"
@@ -360,11 +329,9 @@ export default function Athlete() {
                   <div style={{ fontSize: "16px", fontWeight: "bold" }}>
                     {selectedAthlete.name}
                   </div>
-
                   <div style={{ fontSize: "12px", marginBottom: "6px" }}>
                     {selectedAthlete.kelompokUmur?.nama}
                   </div>
-
                   <div style={{ fontSize: "12px" }}>
                     Gender: {selectedAthlete.gender}
                   </div>
@@ -374,33 +341,34 @@ export default function Athlete() {
                   <div style={{ fontSize: "12px" }}>
                     No Telp: {selectedAthlete.phoneNumber || "-"}
                   </div>
-
-                  <div style={{ fontSize: "10px", marginTop: "10px", color: "#888" }}>
+                  <div
+                    style={{
+                      fontSize: "10px",
+                      marginTop: "10px",
+                      color: "#888",
+                    }}
+                  >
                     PELTI DENPASAR
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* BUTTON */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 p-3 border-t bg-gray-50">
+            {/* BUTTONS */}
+            <div className="flex gap-2 p-4 border-t border-gray-100 bg-gray-50/50">
               <button
                 onClick={() => setSelectedAthlete(null)}
-                className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl
-                  bg-white border border-gray-300 text-gray-700 font-semibold
-                  hover:bg-gray-100 hover:shadow transition text-sm"
+                className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-100 transition text-xs"
               >
-                <X size={18} /> Tutup
+                <X size={16} /> Tutup
               </button>
 
               {role === "admin" && (
                 <button
                   onClick={handleExportPDF}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl
-                    bg-green-600 text-white font-semibold shadow-md
-                    hover:bg-green-700 hover:shadow-lg transition text-sm"
+                  className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-green-600 text-white font-bold shadow-md hover:bg-green-700 transition text-xs"
                 >
-                  <FileDown size={18} /> Cetak PDF
+                  <FileDown size={16} /> Cetak PDF
                 </button>
               )}
             </div>
