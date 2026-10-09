@@ -125,8 +125,9 @@ function Tournament() {
       resetForm();
       fetchTournaments();
     } catch (err) {
-       setErrorAlert("Gagal menyimpan data turnamen. Periksa kembali inputan.");
-    }
+    console.error(err); 
+    setErrorAlert("Gagal menyimpan data turnamen. Periksa kembali inputan.");
+  }
   };
 
 
