@@ -1,16 +1,16 @@
-import { Menu, LogOut, Bell, User, Settings, Globe, Link } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Menu, LogOut, Bell, User, Settings, Globe } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import VerificationDrawer from "./VerificationDrawer";
 import api from "../api"; // Pastikan Anda mengimpor API instance
 
-function NavbarDashboard({ toggleSidebar, toggleCollapse, isCollapsed }) {
+function NavbarDashboard({ toggleSidebar, isCollapsed, onToggleCollapse }) {
   const navigate = useNavigate();
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State untuk drawer verifikasi
   const [pendingUsers, setPendingUsers] = useState([]); // State untuk data pending
 
-  const userName = localStorage.getItem("role");
+  const userName = localStorage.getItem("role") || "admin";
   const role = localStorage.getItem("role") || "Admin";
 
   const handleLogout = () => {
@@ -109,46 +109,37 @@ const handleReject = async (id, message) => {
   return (
     <>
     <nav className={`
-      w-full bg-white shadow-sm px-4 py-3 flex items-center justify-between
-      fixed top-0 left-0 z-50
-      transition-all duration-300
+      fixed top-0 left-0 z-30 flex h-16 w-full items-center justify-between
+      border-b border-gray-200 bg-white/90 px-4 backdrop-blur
+      transition-[left,width] duration-300 motion-reduce:transition-none
       ${isCollapsed
         ? "md:left-20 md:w-[calc(100%-5rem)]"
-        : "md:left-72 md:w-[calc(100%-18rem)]"}
+        : "md:left-64 md:w-[calc(100%-16rem)]"}
     `}>
 
-
-
-        {/* KIRI: Logo, Toggle Menu, dan Judul */}
-        <div className="flex items-center gap-2">
-          {/* tombol buka sidebar (mobile) */}
+        {/* KIRI: logo + nama brand + tombol toggle sidebar */}
+        <div className="flex min-w-0 items-center gap-2">
+          {/* Tombol buka sidebar (mobile) */}
           <button
-            className="md:hidden p-2 rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
+            type="button"
+            className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors focus-visible:outline-2 focus-visible:outline-primary"
             onClick={toggleSidebar}
+            aria-label="Buka menu"
           >
             <Menu size={22} />
           </button>
 
-          {/* tombol minimize sidebar (desktop) */}
-          <button
-            onClick={toggleCollapse}
-            className="hidden md:block p-2 rounded-full hover:bg-gray-100 text-gray-700"
-            title="Minimize Sidebar"
-          >
-            <Menu size={20} />
-          </button>
-
-          {/* Logo Pelatnas Denpasar */}
-          <div className="flex items-center gap-4">
-            <img 
-              src="/logo.png" 
-              alt="Logo Persatuan Tenis Seluruh Indonesia PELTI" 
-              className="w-10 md:w-12 h-auto" 
-              onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/80x80/000000/ffffff?text=PELTI" }} 
+          {/* Logo + Nama Brand */}
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="Logo PELTI"
+              className="h-11 w-11 shrink-0 rounded-full object-contain ring-2 ring-gray-200"
+              onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
             />
-            <div className="hidden md:block">
-              <h1 className="font-bold text-lg text-black leading-none">PELTI DENPASAR</h1>
-              <p className="text-xs text-gray-600 font-semibold mt-1">Persatuan Tennis Seluruh Indonesia</p>
+            <div className="hidden sm:block leading-tight">
+              <p className="text-base font-bold text-gray-800 leading-none">PELTI Denpasar</p>
+              <p className="text-xs text-gray-400 mt-0.5">Persatuan Tennis Seluruh Indonesia</p>
             </div>
           </div>
         </div>
@@ -183,8 +174,8 @@ const handleReject = async (id, message) => {
               onClick={handleDropdownToggle}
               className="flex items-center gap-2 p-2 pl-4 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500"
             >
-              <span className="text-sm font-semibold text-gray-700 hidden sm:inline">
-                Halo, {userName}
+              <span className="text-sm font-semibold text-gray-700 hidden sm:inline capitalize">
+                {userName}
               </span>
               <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold">
                 {userName[0].toUpperCase()}
@@ -214,26 +205,26 @@ const handleReject = async (id, message) => {
                     {role === "admin" && (
                       <>
                         <li>
-                          <a
-                            href="/admin/profile"
+                          <Link
+                            to="/admin/profile"
                             className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                             onClick={() => setIsProfileDropdownOpen(false)}
                           >
                             <User size={18} className="text-yellow-500"/>
                             Profile
-                          </a>
+                          </Link>
                         </li>
                     
                       
                       <li>
                         {/* Menggunakan elemen <a> atau Link dari React Router, bukan Link dari Lucide */}
-                        <a
-                          href="/admin/settings" 
+                        <Link
+                          to="/admin/settings"
                           className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                           onClick={() => setIsProfileDropdownOpen(false)} 
                         >
                           <Settings size={18} className="text-gray-500"/> Pengaturan
-                        </a>
+                        </Link>
                       </li>
                       </>
                     )}

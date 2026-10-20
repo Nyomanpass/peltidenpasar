@@ -73,4 +73,11 @@ body {
 @theme {
   --color-primary: #EAB308;
   --color-secondary: #6E332C;
+
+  /* Sidebar dashboard: maroon gelap turunan dari warna brand */
+  --color-ink-950: #1d0c0a;
+  --color-ink-900: #2a1310;
+  --color-ink-800: #3b1b16;
+  --color-ink-300: #dccdc9;
+  --color-ink-500: #ab9690;
 }

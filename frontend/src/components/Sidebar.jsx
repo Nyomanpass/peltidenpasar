@@ -1,314 +1,489 @@
-import { Users, Calendar, Trophy, List, Monitor, ClipboardList, CheckSquare, Settings, Award, ChevronDown, ChevronUp, FileBadge } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import {
+  Check,
+  ChevronDown,
+  ChevronsUpDown,
+  Trophy,
+  X,
+} from "lucide-react";
 import api from "../api";
+import { getMenuForRole, isItemActive } from "../config/menu";
 
-function Sidebar({ isOpen, isCollapsed }) {
-  const location = useLocation();
-  const role = localStorage.getItem("role");
-  const [openTournamentMenu, setOpenTournamentMenu] = useState(false);
-  const basePath = `/${role}`;
+/* ------------------------------------------------------------------ */
+/*  Helper kecil                                                       */
+/* ------------------------------------------------------------------ */
 
+// Jari-jari sudut cekung tempat tab aktif menyatu dengan konten (px)
+const CURVE = 32;
 
+const focusRing =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
-  const [tournaments, setTournaments] = useState([]);
-  const [selectedTournament, setSelectedTournament] = useState(
-    localStorage.getItem("selectedTournament") || ""
-  );
-  
-  // STATE BARU untuk mengontrol tampilan list tournament (Accordion)
-  const [isTournamentListOpen, setIsTournamentListOpen] = useState(false);
-
-  // Ambil daftar tournament aktif
-  useEffect(() => {
-    const fetchTournament = async () => {
-      try {
-        const res = await api.get('/tournaments');
-        const active = res.data.filter((t) => t.status === "aktif");
-        setTournaments(active);
-      } catch (err) {
-        console.error("Fetch tournament error:", err);
-      }
-    };
-
-    fetchTournament();
-  }, []);
-
-  // Listener event
-  useEffect(() => {
-    const handleTournamentChangeLocal = () => {
-      console.log("Tournament berubah (Sidebar menerima event)");
-    };
-
-    window.addEventListener("tournament-changed", handleTournamentChangeLocal);
-    return () => {
-      window.removeEventListener("tournament-changed", handleTournamentChangeLocal);
-    };
-  }, []);
-  
-  // FUNGSI BARU: Menggantikan handleTournamentChange (untuk Menu Accordion)
-  const handleTournamentSelect = (t) => {
-    const id = t.id;              
-    const name = t.name; 
-
-    setSelectedTournament(id);
-    localStorage.setItem("selectedTournament", id);
-    localStorage.setItem("selectedTournamentName", name);
-
-    // Broadcast event
-    window.dispatchEvent(new Event("tournament-changed"));
-  };
-
-
-  // Catatan: Saya mengubah ukuran icon menjadi 18px agar seragam dan lebih proporsional di sidebar
-const adminMenu = [
-  { label: "Peserta", path: "/admin/peserta", icon: <Users size={20} /> },
-  { label: "Bagan", path: "/admin/bagan-peserta", icon: <List size={20} /> },
-  { label: "Jadwal Pertandingan", path: "/admin/jadwal-pertandingan", icon: <Calendar size={20} /> },
-  { label: "Skor", path: "/admin/skor", icon: <ClipboardList size={20} /> },
-  { label: "Hasil Pertandingan", path: "/admin/hasil-pertandingan", icon: <Trophy size={20} /> },
-  { label: "Sertifikat", path: "/admin/sertifikat", icon: <FileBadge size={20} /> },
-  {
-    label: "Tournament",
-    icon: <Award size={20} />,
-    children: [
-      { label: "Local", path: "/admin/tournament?level=local" },
-      { label: "Nasional", path: "/admin/tournament?level=nasional" },
-      { label: "Internasional", path: "/admin/tournament?level=internasional" },
-    ],
-  },
-
-  { label: "Game Settings", path: "/admin/settings", icon: <Settings size={20} /> },
-  { label: "UI Settings", path: "/admin/uisettings", icon: <Monitor size={20} /> },
-];
-
-  const wasitMenu = [
-    { label: "Peserta", path: "/wasit/peserta", icon: <Users size={20} /> },
-    { label: "Jadwal Pertandingan", path: "/wasit/jadwal-pertandingan", icon: <Calendar size={20} /> },
-    { label: "Bagan", path: "/wasit/bagan-peserta", icon: <List size={20} /> },
-    { label: "Skor", path: "/wasit/skor", icon: <ClipboardList size={20} /> },
-  ];
-
-  const panitiaMenu = [
-  { label: "Peserta", path: "/panitia/peserta", icon: <Users size={20} /> },
-  { label: "Bagan", path: "/panitia/bagan-peserta", icon: <List size={20} /> },
-  { label: "Jadwal Pertandingan", path: "/panitia/jadwal-pertandingan", icon: <Calendar size={20} /> },
-  { label: "Skor", path: "/panitia/skor", icon: <ClipboardList size={20} /> },
-  { label: "Hasil Pertandingan", path: "/panitia/hasil-pertandingan", icon: <Trophy size={20} /> },
-];
-
-  const menuItems =
-  role === "admin"
-    ? adminMenu
-    : role === "panitia"
-    ? panitiaMenu
-    : wasitMenu;
-
+/** Buka-tutup halus tanpa tinggi tetap; isi yang tertutup tidak bisa difokus. */
+function Collapsible({ open, children }) {
   return (
-  <aside
-    className={`
-      fixed top-0 left-0 h-screen ${isCollapsed ? "w-20" : "w-72"}
-      bg-secondary shadow-xl
-      z-50
-      overflow-visible
-      border-r border-gray-200
-      flex flex-col
-      transform transition-transform duration-300 ease-in-out
-      ${isOpen ? "translate-x-0" : "-translate-x-full"} 
-      md:translate-x-0
-      pt-20 md:pt-0
-    `}
-  >
-  {/* ===== SCROLL AREA ===== */}
-  <nav className="px-4 mt-3 flex-1 overflow-visible relative">
-    {/* ===============================
-        BLOK PILIH TOURNAMENT (ACCORDION)
-    =============================== */}
-    <div className={`mb-6 ${isCollapsed ? "hidden" : ""}`}>
-      <button
-        onClick={() => setIsTournamentListOpen(!isTournamentListOpen)}
-        className="
-          flex items-center justify-between w-full p-3 rounded-lg
-          text-white font-bold
-          hover:bg-primary/80 transition-colors
-        "
-      >
-        <div className="flex items-center gap-3">
-          <List size={20} className="text-white" />
-          {!isCollapsed && <span className="text-md">Pilih Tournament</span>}
-        </div>
-        {isTournamentListOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-      </button>
-
-      {isTournamentListOpen && (
-        <ul
-          className="
-            mt-2 space-y-1 bg-black/20 rounded-lg p-2
-            max-h-56 overflow-y-auto
-          "
-        >
-          {tournaments.map((t) => (
-            <li key={t.id}>
-              <button
-                onClick={() => handleTournamentSelect(t)}
-                className={`
-                  w-full text-left p-3 rounded-md text-sm
-                  transition-all duration-150
-                  ${selectedTournament === t.id
-                    ? "bg-primary text-white font-bold"
-                    : "text-gray-200 hover:bg-primary/80 hover:pl-4"}
-                `}
-              >
-                {t.name}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
+    <div
+      className={`grid transition-[grid-template-rows,visibility] duration-200 ease-out motion-reduce:transition-none ${
+        open ? "visible grid-rows-[1fr]" : "invisible grid-rows-[0fr]"
+      }`}
+    >
+      <div className="overflow-hidden">{children}</div>
     </div>
-
-    {/* ===============================
-        MENU UTAMA
-    =============================== */}
-   <ul className="space-y-1 mt-6 border-t border-white/30 pt-4 overflow-y-auto max-h-[70vh]">
-  {menuItems.map((item) => {
-    const currentPath = location.pathname;
-
-    // ===== JIKA ITEM PUNYA SUBMENU (TOURNAMENT) =====
-if (item.children) {
-  const isTournamentActive = currentPath.includes("/admin/tournament");
-
-  // ======================
-  // MODE COLLAPSED (kecil) → LANGSUNG KE LOCAL
-  // ======================
-  if (isCollapsed) {
-    return (
-      <li key={item.label}>
-        <Link
-          to="/admin/tournament?level=local"
-          className={`
-            flex items-center justify-center p-3 mb-3 rounded-lg
-            transition-all
-            ${isTournamentActive
-              ? "bg-primary text-white"
-              : "text-white hover:bg-white/30"}
-          `}
-          title="Tournament (Local)"
-        >
-          {item.icon}
-        </Link>
-      </li>
-    );
-  }
-
-  // ======================
-  // MODE NORMAL (besar) → ACCORDION
-  // ======================
-  return (
-    <li key={item.label}>
-      <button
-        onClick={() => setOpenTournamentMenu(!openTournamentMenu)}
-        className={`
-          flex items-center justify-between w-full mb-3 p-3 rounded-lg text-md font-medium
-          transition-all
-          ${isTournamentActive
-            ? "bg-primary text-white shadow-md"
-            : "text-white hover:bg-white/30"}
-        `}
-      >
-        <div className="flex items-center gap-4">
-          {item.icon}
-          {item.label}
-        </div>
-        {openTournamentMenu ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-      </button>
-
-      {openTournamentMenu && (
-        <ul className="ml-6 space-y-1">
-          {item.children.map((sub) => {
-            const isSubActive = location.search.includes(
-              sub.path.split("?")[1]
-            );
-
-            return (
-              <li key={sub.path}>
-                <Link
-                  to={sub.path}
-                  className={`
-                    flex items-center gap-2 px-3 py-2 text-sm transition-all
-                    ${isSubActive
-                      ? "text-yellow-400 font-bold"
-                      : "text-gray-300 hover:text-white"}
-                  `}
-                >
-                  <span
-                    className={`
-                      w-2 h-2 rounded-full
-                      ${isSubActive ? "bg-yellow-400" : "bg-gray-200"}
-                    `}
-                  />
-                  {sub.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </li>
   );
 }
 
+/**
+ * Tooltip untuk mode mini. Dirender lewat portal ke <body> supaya tidak
+ * terpotong area scroll sidebar.
+ */
+function Tip({ label, enabled, children }) {
+  const [pos, setPos] = useState(null);
 
+  const show = (e) => {
+    if (!enabled) return;
+    if (!window.matchMedia("(min-width: 768px)").matches) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    setPos({ top: r.top + r.height / 2, left: r.right + 10 });
+  };
+  const hide = () => setPos(null);
 
-    // ===== MENU BIASA =====
-    const isExact = currentPath === item.path;
+  return (
+    <div
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocus={show}
+      onBlur={hide}
+    >
+      {children}
+      {enabled &&
+        pos &&
+        createPortal(
+          <div
+            role="tooltip"
+            style={{ top: pos.top, left: pos.left }}
+            className="pointer-events-none fixed z-[70] max-w-56 -translate-y-1/2 rounded-md bg-ink-950 px-2.5 py-1.5 text-xs font-medium text-white shadow-lg"
+          >
+            {label}
+          </div>,
+          document.body
+        )}
+    </div>
+  );
+}
 
-    // khusus Bagan (list + detail)
-    const isBaganActive =
-        item.label === "Bagan" &&
-        (currentPath.startsWith(`${basePath}/bagan-peserta`) ||
-        currentPath.startsWith(`${basePath}/bagan-view`));
+/* ------------------------------------------------------------------ */
+/*  Sidebar                                                            */
+/* ------------------------------------------------------------------ */
 
+function Sidebar({ isOpen, isCollapsed, onClose, onExpand, onToggleCollapse }) {
+  const location = useLocation();
+  const role = localStorage.getItem("role") || "admin";
+  const groups = getMenuForRole(role);
 
-    // khusus Peserta (kalau mau sekalian aman)
-   const isPesertaActive =
-    item.label === "Peserta" &&
-    (
-      currentPath.startsWith(`${basePath}/peserta`) ||
-      currentPath.startsWith(`${basePath}/detail-peserta`) ||
-      currentPath.startsWith(`${basePath}/peserta-ganda`)
+  // Di mobile sidebar selalu tampil penuh; mode mini hanya berlaku di md ke atas.
+  const hideMini = isCollapsed ? "md:hidden" : "";
+  const centerMini = isCollapsed ? "md:justify-center md:px-0" : "";
+
+  /* ---------- Turnamen yang dipilih ---------- */
+  const [tournaments, setTournaments] = useState([]);
+  const [selectedId, setSelectedId] = useState(
+    localStorage.getItem("selectedTournament") || ""
+  );
+  const [selectedName, setSelectedName] = useState(
+    localStorage.getItem("selectedTournamentName") || ""
+  );
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  useEffect(() => {
+    api
+      .get("/tournaments")
+      .then((res) =>
+        setTournaments(res.data.filter((t) => t.status === "aktif"))
+      )
+      .catch((err) => console.error("Fetch tournament error:", err));
+  }, []);
+
+  // Pilihan turnamen bisa berubah dari halaman lain (event yang sama dipakai Peserta, Bagan, dll.)
+  useEffect(() => {
+    const sync = () => {
+      setSelectedId(localStorage.getItem("selectedTournament") || "");
+      setSelectedName(localStorage.getItem("selectedTournamentName") || "");
+    };
+    window.addEventListener("tournament-changed", sync);
+    return () => window.removeEventListener("tournament-changed", sync);
+  }, []);
+
+  const handleTournamentSelect = (t) => {
+    localStorage.setItem("selectedTournament", t.id);
+    localStorage.setItem("selectedTournamentName", t.name);
+    setSelectedId(String(t.id));
+    setSelectedName(t.name);
+    setSwitcherOpen(false);
+    window.dispatchEvent(new Event("tournament-changed"));
+  };
+
+  /* ---------- Submenu Tournament ---------- */
+  // null = ikuti halaman aktif; true/false = sudah dibuka/ditutup manual
+  const [tournamentManual, setTournamentManual] = useState(null);
+
+  const params = new URLSearchParams(location.search);
+  const activeLevel = params.get("level");
+
+  /* ---------- Indikator tab aktif (bergeser + menyatu dengan konten) ---------- */
+  const shellRef = useRef(null); // pembungkus area menu (tempat tab digambar)
+  const navRef = useRef(null); // area menu yang bisa di-scroll
+  const navInnerRef = useRef(null); // isi menu (diamati ukurannya)
+  const indicatorRef = useRef(null);
+  const placedOnce = useRef(false);
+
+  const placeIndicator = useCallback((instant = false) => {
+    const shell = shellRef.current;
+    const nav = navRef.current;
+    const ind = indicatorRef.current;
+    if (!shell || !nav || !ind) return;
+
+    // Baris aktif yang sedang terlihat (versi mini / mobile bisa ada dua di DOM)
+    const row = [...nav.querySelectorAll("[data-nav-active]")].find(
+      (el) => el.getClientRects().length > 0
     );
+    if (!row) {
+      ind.style.opacity = "0";
+      return;
+    }
 
+    const r = row.getBoundingClientRect();
+    const c = shell.getBoundingClientRect();
+    // Penempatan pertama & saat scroll langsung; perpindahan menu meluncur.
+    ind.style.transition = instant || !placedOnce.current ? "none" : "";
+    // Tepi tab dibulatkan ke piksel layar nyata (mis. skala 125%) supaya
+    // tidak ada baris buram di atas/bawah kapsul.
+    const dpr = window.devicePixelRatio || 1;
+    const snap = (v) => Math.round(v * dpr) / dpr;
+    const top = snap(r.top);
+    const bottom = snap(r.bottom);
+    ind.style.height = `${bottom - top}px`;
+    ind.style.top = `${top - c.top}px`;
+    ind.style.opacity = "1";
+    placedOnce.current = true;
+  }, []);
 
+  useLayoutEffect(() => {
+    placeIndicator();
+  }, [location.pathname, location.search, isCollapsed, role, placeIndicator]);
 
-    const isActive = isExact || isBaganActive || isPesertaActive;
+  // Submenu membuka/menutup atau font selesai dimuat → posisi baris bergeser
+  useEffect(() => {
+    const inner = navInnerRef.current;
+    const shell = shellRef.current;
+    if (!inner || !shell || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => placeIndicator());
+    ro.observe(inner);
+    ro.observe(shell);
+    return () => ro.disconnect();
+  }, [placeIndicator]);
 
+  return (
+    <aside
+      aria-label="Navigasi dashboard"
+      className={`
+        fixed inset-y-0 left-0 z-40 flex w-64 max-w-[85vw] flex-col
+        bg-linear-to-b from-ink-900 to-ink-950
+        transition-[transform,width] duration-300 ease-out motion-reduce:transition-none
+        ${isOpen ? "translate-x-0" : "-translate-x-full"}
+        md:max-w-none md:translate-x-0
+        ${isCollapsed ? "md:w-20" : "md:w-64"}
+      `}
+    >
+      {/* ===== HEADER: Tombol tutup drawer (mobile only) ===== */}
+      <div className="flex h-14 shrink-0 items-center justify-end px-3 md:hidden">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Tutup menu"
+          className={`rounded-md p-1.5 text-ink-300 hover:bg-white/10 hover:text-white ${focusRing}`}
+        >
+          <X size={20} />
+        </button>
+      </div>
 
-    return (
-      <li key={item.path}>
-        <Link
-        to={item.path}
-        className={`
-          flex items-center gap-4 mb-3 p-3 rounded-lg text-md font-medium
-          transition-all duration-150
-          ${isActive
-            ? "bg-primary text-white shadow-md"
-            : "text-white hover:bg-white/30 hover:text-white"}
-        `}
+      {/* Spacer atas di desktop (menggantikan area brand yang dulu) */}
+      <div className="hidden md:block h-4 shrink-0" />
+
+      {/* ===== TURNAMEN AKTIF ===== */}
+      <div className="shrink-0 px-3 pt-3">
+        {/* Mode lebar: satu baris pemilih */}
+        <div className={hideMini}>
+          <button
+            type="button"
+            onClick={() => setSwitcherOpen((v) => !v)}
+            aria-expanded={switcherOpen}
+            className={`group flex w-full items-start gap-3 rounded-lg px-3 py-[11px] text-left text-sm transition-colors hover:bg-white/[0.06] motion-reduce:transition-none ${focusRing}`}
+          >
+            <span
+              aria-hidden="true"
+              className="flex h-5 w-[19px] shrink-0 items-center justify-center"
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  selectedName ? "bg-primary" : "bg-ink-500"
+                }`}
+              />
+            </span>
+            <span
+              className={`line-clamp-2 break-words font-semibold leading-5 ${
+                selectedName ? "text-white" : "text-ink-300"
+              }`}
+            >
+              {selectedName || "Pilih turnamen"}
+            </span>
+            <ChevronsUpDown
+              size={16}
+              className="ml-auto mt-0.5 shrink-0 text-ink-500 transition-colors group-hover:text-ink-300"
+            />
+          </button>
+
+          <Collapsible open={switcherOpen}>
+            <ul className="ml-[1.4rem] mt-0.5 max-h-52 space-y-0.5 overflow-y-auto border-l border-white/10 pl-2">
+              {tournaments.length === 0 && (
+                <li className="px-3 py-2 text-xs text-ink-500">
+                  Belum ada turnamen aktif.
+                </li>
+              )}
+              {tournaments.map((t) => {
+                const selected = String(t.id) === String(selectedId);
+                return (
+                  <li key={t.id}>
+                    <button
+                      type="button"
+                      onClick={() => handleTournamentSelect(t)}
+                      aria-pressed={selected}
+                      className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors motion-reduce:transition-none ${focusRing} ${
+                        selected
+                          ? "font-semibold text-primary"
+                          : "text-ink-300 hover:bg-white/[0.06] hover:text-white"
+                      }`}
+                    >
+                      <span className="line-clamp-2 break-words leading-5">{t.name}</span>
+                      {selected && (
+                        <Check size={15} className="ml-auto shrink-0" />
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </Collapsible>
+        </div>
+
+        {/* Mode mini: ikon saja; klik untuk melebarkan sidebar */}
+        {isCollapsed && (
+          <div className="hidden md:block">
+            <Tip
+              enabled
+              label={`Turnamen: ${selectedName || "belum dipilih"}`}
+            >
+              <button
+                type="button"
+                onClick={onExpand}
+                aria-label="Pilih turnamen"
+                className={`flex w-full items-center justify-center rounded-lg py-[11px] text-primary transition-colors hover:bg-white/[0.06] motion-reduce:transition-none ${focusRing}`}
+              >
+                <Trophy size={19} />
+              </button>
+            </Tip>
+            <div
+              aria-hidden="true"
+              className="mx-3 mt-2 border-t border-white/10"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* ===== MENU ===== */}
+      <div ref={shellRef} className="relative min-h-0 flex-1">
+        {/* Tab putih yang meluncur ke menu aktif. Digambar di lapisan sendiri
+            (di luar area scroll) supaya tepinya selalu tajam di semua skala
+            layar. Di desktop ujung kanannya menempel ke konten dengan dua
+            sudut cekung; di mobile jadi pil biasa. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          <span
+            ref={indicatorRef}
+            className="absolute left-3 right-3 top-0 rounded-lg bg-white opacity-0 transition-[top,height,opacity] duration-[450ms] ease-[cubic-bezier(0.34,1.35,0.64,1)] motion-reduce:transition-none md:-right-px md:rounded-l-full md:rounded-r-none"
+          >
+            <span
+              className="absolute bottom-full right-0 hidden md:block"
+              style={{
+                width: CURVE,
+                height: CURVE,
+                background: `radial-gradient(circle at 0 0, transparent ${CURVE - 0.5}px, #fff ${CURVE + 0.5}px)`,
+              }}
+            />
+            <span
+              className="absolute right-0 top-full hidden md:block"
+              style={{
+                width: CURVE,
+                height: CURVE,
+                background: `radial-gradient(circle at 0 100%, transparent ${CURVE - 0.5}px, #fff ${CURVE + 0.5}px)`,
+              }}
+            />
+          </span>
+        </div>
+
+      <nav
+        ref={navRef}
+        aria-label="Menu utama"
+        onScroll={() => placeIndicator(true)}
+        className="absolute inset-0 overflow-y-auto overscroll-contain pb-9 pl-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
+       <div ref={navInnerRef}>
+        {groups.map((group, gi) => (
+          <div key={group.label} className="mt-4 first:mt-3">
+            <p
+              className={`px-3 pb-1.5 pr-6 text-xs font-medium text-ink-500 ${hideMini}`}
+            >
+              {group.label}
+            </p>
+            {isCollapsed && gi > 0 && (
+              <div
+                aria-hidden="true"
+                className="ml-3 mr-6 mb-2 hidden border-t border-white/10 md:block"
+              />
+            )}
 
-          {item.icon}
-         {!isCollapsed && item.label}
+            <ul className="space-y-1.5 pr-3">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const active = isItemActive(item, location.pathname, role);
 
-        </Link>
-      </li>
-    );
-  })}
-</ul>
+                const iconEl = (
+                  <Icon
+                    size={19}
+                    strokeWidth={active ? 2.25 : 1.9}
+                    className={`shrink-0 transition-colors motion-reduce:transition-none ${
+                      active
+                        ? "text-secondary delay-150 duration-200"
+                        : "text-ink-500 duration-150 group-hover:text-ink-300"
+                    }`}
+                  />
+                );
 
-  </nav>
-</aside>
+                // Warna teks aktif baru berganti setelah tab putih hampir sampai (delay)
+                const rowClass = `group relative z-10 flex w-full items-center gap-3 rounded-lg px-3 py-[11px] text-sm transition-colors motion-reduce:transition-none ${centerMini} ${focusRing} ${
+                  active
+                    ? "font-semibold text-secondary delay-150 duration-200"
+                    : "font-medium text-ink-300 duration-150 hover:bg-white/[0.06] hover:text-white"
+                }`;
+                const navActive = active ? "" : undefined;
 
+                /* ----- Item dengan submenu (Tournament) ----- */
+                if (item.children) {
+                  const open = tournamentManual ?? active;
+
+                  const accordion = (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setTournamentManual(!open)}
+                        aria-expanded={open}
+                        data-nav-active={navActive}
+                        className={rowClass}
+                      >
+                        {iconEl}
+                        <span className="truncate">{item.label}</span>
+                        <ChevronDown
+                          size={16}
+                          className={`ml-auto shrink-0 transition-[transform,color] duration-200 motion-reduce:transition-none ${
+                            active ? "text-secondary/70" : "text-ink-500"
+                          } ${open ? "rotate-180" : ""}`}
+                        />
+                      </button>
+
+                      <Collapsible open={open}>
+                        <ul className="ml-[1.4rem] mt-0.5 space-y-0.5 border-l border-white/10 pl-2">
+                          {item.children.map((sub) => {
+                            const subActive =
+                              active && (activeLevel || "local") === sub.level;
+                            return (
+                              <li key={sub.level}>
+                                <Link
+                                  to={`${item.path}?level=${sub.level}`}
+                                  onClick={onClose}
+                                  aria-current={subActive ? "page" : undefined}
+                                  className={`block rounded-md px-3 py-2 text-sm transition-colors motion-reduce:transition-none ${focusRing} ${
+                                    subActive
+                                      ? "font-semibold text-primary"
+                                      : "text-ink-300 hover:bg-white/[0.06] hover:text-white"
+                                  }`}
+                                >
+                                  {sub.label}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </Collapsible>
+                    </>
+                  );
+
+                  // Mode mini (desktop): ikon saja, langsung ke level Local.
+                  // Di mobile drawer tetap memakai accordion lengkap.
+                  if (isCollapsed) {
+                    return (
+                      <li key={item.key}>
+                        <div className="md:hidden">{accordion}</div>
+                        <div className="hidden md:block">
+                          <Tip label={item.label} enabled>
+                            <Link
+                              to={`${item.path}?level=local`}
+                              aria-current={active ? "page" : undefined}
+                              aria-label={item.label}
+                              data-nav-active={navActive}
+                              className={rowClass}
+                            >
+                              {iconEl}
+                            </Link>
+                          </Tip>
+                        </div>
+                      </li>
+                    );
+                  }
+
+                  return <li key={item.key}>{accordion}</li>;
+                }
+
+                /* ----- Item biasa ----- */
+                return (
+                  <li key={item.key}>
+                    <Tip label={item.label} enabled={isCollapsed}>
+                      <Link
+                        to={item.path}
+                        onClick={onClose}
+                        aria-current={active ? "page" : undefined}
+                        aria-label={isCollapsed ? item.label : undefined}
+                        data-nav-active={navActive}
+                        className={rowClass}
+                      >
+                        {iconEl}
+                        <span className={`truncate ${hideMini}`}>
+                          {item.label}
+                        </span>
+                      </Link>
+                    </Tip>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+       </div>
+      </nav>
+      </div>
+    </aside>
   );
 }
 
