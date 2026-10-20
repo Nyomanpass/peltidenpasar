@@ -60,17 +60,17 @@ export default function Navbar() {
   const navItems = [
     { name: "Home", path: "/" },
     {
-      name: "About Us",
+      name: "Tentang Kami",
       children: [
-        { name: "Vision & Mission", path: "/visi-misi" },
-        { name: "Organizational Structure", path: "/struktur-organisasi" },
-        { name: "Management", path: "/kepengurusan" },
-        { name: "Clubs", path: "/anggota" },
-        { name: "News", path: "/berita" },
+        { name: "Visi & Misi", path: "/visi-misi" },
+        { name: "Struktur Organisasi", path: "/struktur-organisasi" },
+        { name: "Kepengurusan", path: "/kepengurusan" },
+        { name: "Club", path: "/anggota" },
+        { name: "Berita", path: "/berita" },
       ],
     },
-    { name: "Tournaments", path: "/tournament" },
-    { name: "Athletes", path: "/atlet" },
+    { name: "Turnamen", path: "/tournament" },
+    { name: "Atlet", path: "/atlet" },
     { name: "Contact", path: "/contact" },
   ];
 
@@ -93,17 +93,14 @@ export default function Navbar() {
       {/* TOP BAR */}
       <div className="bg-black hidden md:flex text-white text-xs px-4 sm:px-10 lg:px-20 py-1.5 justify-between items-center">
         <p className="truncate">
-          Jalan Gunung Agung, Desa Pemecutan Kaja, Kota Denpasar, Bali
+         
         </p>
         <div className="flex gap-4">
           <a href="https://www.facebook.com/share/1bsWifNPt3/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">
-            <IconWrapper><FacebookIcon className="w-4 h-4 hover:text-yellow-500 transition" /></IconWrapper>
           </a>
           <a href="https://www.instagram.com" target="_blank" rel="noopener noreferrer">
-            <IconWrapper><InstagramIcon className="w-4 h-4 hover:text-yellow-500 transition" /></IconWrapper>
           </a>
           <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer">
-            <IconWrapper><YoutubeIcon className="w-4 h-4 hover:text-yellow-500 transition" /></IconWrapper>
           </a>
         </div>
       </div>
