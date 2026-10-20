@@ -6,7 +6,7 @@ export default function StrukturOrganisasi() {
     name: "Made Widiatmika, SE, M.Si",
     role: "Ketua Umum",
     initials: "MW",
-    photo: "", // untuk mengisi foto jika URL fot ada
+    photo: "",
   };
 
   const wakil = [
@@ -53,30 +53,40 @@ export default function StrukturOrganisasi() {
 
   const MemberCard = ({ name, role, initials, photo, isLeader = false }) => (
     <div
-      className={`bg-white rounded-2xl shadow-sm hover:shadow-md border border-gray-100 p-6 flex flex-col items-center text-center transition-all duration-200 ${
-        isLeader ? "w-full max-w-sm border-yellow-300 ring-2 ring-yellow-400/20" : "w-full"
+      className={`bg-white rounded-2xl shadow-sm hover:shadow-md border border-gray-100 p-6 flex flex-col justify-between items-center text-center transition-all duration-200 ${
+        isLeader ? "w-full max-w-sm" : "w-full"
       }`}
     >
-      <div className="relative mb-4">
-        {photo ? (
-          <img
-            src={photo}
-            alt={name}
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-yellow-400 shadow-sm"
-          />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-yellow-500 to-yellow-300 text-black font-extrabold text-xl flex items-center justify-center shadow-inner border-2 border-white">
-            {initials}
-          </div>
-        )}
+      <div className="flex flex-col items-center w-full">
+        {/* AVATAR / INITIALS */}
+        <div className="relative mb-4">
+          {photo ? (
+            <img
+              src={photo}
+              alt={name}
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-2 border-white shadow-sm"
+            />
+          ) : (
+            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-yellow-500 to-yellow-300 text-black font-extrabold text-xl flex items-center justify-center shadow-inner border-2 border-white">
+              {initials}
+            </div>
+          )}
+        </div>
+
+        {/* NAMA PENGURUS (Memiliki min-h agar tinggi kontainer konsisten) */}
+        <div className="min-h-[2.8rem] sm:min-h-[3.2rem] flex items-center justify-center w-full mb-3">
+          <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-snug">
+            {name}
+          </h3>
+        </div>
       </div>
 
-      <h3 className="font-bold text-gray-900 text-base sm:text-lg leading-snug mb-1">
-        {name}
-      </h3>
-      <span className="inline-block px-3 py-1 bg-yellow-50 text-yellow-700 text-xs font-semibold rounded-full border border-yellow-200">
-        {role}
-      </span>
+      {/* BADGE JABATAN (Selalu rata di bawah) */}
+      <div className="mt-auto">
+        <span className="inline-block px-3 py-1 bg-yellow-50 text-yellow-800 text-xs font-semibold rounded-full border border-yellow-200">
+          {role}
+        </span>
+      </div>
     </div>
   );
 
@@ -84,7 +94,7 @@ export default function StrukturOrganisasi() {
     <>
       <Navbar />
 
-            {/* HERO BANNER RESPONSIF */}
+      {/* HERO BANNER RESPONSIF */}
       <div className="relative w-full aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4] min-h-[220px] max-h-[450px] mt-[65px] sm:mt-[75px] overflow-hidden">
         <img
           src="/hero.jpg"
@@ -106,10 +116,10 @@ export default function StrukturOrganisasi() {
           <div className="w-12 h-1 bg-yellow-500 rounded-full mt-2 sm:mt-3"></div>
         </div>
       </div>
+
       {/* MAIN CONTENT */}
       <section className="bg-gray-50 py-12 sm:py-16 min-h-[60vh]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 space-y-10">
-          
           {/* LEVEL 1: KETUA UMUM */}
           <div className="flex flex-col items-center">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
@@ -145,7 +155,6 @@ export default function StrukturOrganisasi() {
               ))}
             </div>
           </div>
-
         </div>
       </section>
 
