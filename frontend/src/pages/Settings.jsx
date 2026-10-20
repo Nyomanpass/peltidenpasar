@@ -368,7 +368,7 @@ export default function Settings() {
                 <tr>
                   <th className="px-5 py-3 text-left">ID</th>
                   <th className="px-5 py-3 text-left">Nama Kelompok</th>
-                  <th className="px-5 py-3 text-left">Umur</th> {/* KOLOM BARU */}
+                  <th className="px-5 py-3 text-left">Umur</th>
                   <th className="px-5 py-3 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -377,7 +377,7 @@ export default function Settings() {
                   <tr key={item.id} className="hover:bg-yellow-50/50 transition">
                     <td className="px-5 py-3 font-medium text-gray-700">{item.id}</td>
                     <td className="px-5 py-3 font-semibold text-gray-800">{item.nama}</td>
-                    <td className="px-5 py-3 text-blue-600 font-bold">{item.umur} Tahun</td> {/* DATA BARU */}
+                    <td className="px-5 py-3 text-blue-600 font-bold">{item.umur} Tahun</td>
                     <td className="px-5 py-3 flex gap-3 justify-center">
                       <button
                         onClick={() => handleEditUmur(item)}

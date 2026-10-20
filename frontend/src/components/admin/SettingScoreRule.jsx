@@ -243,22 +243,22 @@ const handleEdit = (rule) => {
               </span>
             </td>
             <td className="px-5 py-3 text-center">
-              <td className="px-5 py-3 text-center flex gap-2 justify-center">
-                <button
-                  onClick={() => handleEdit(r)}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition"
-                >
-                  Edit
-                </button>
+            <div className="flex gap-2 justify-center">
+              <button
+                onClick={() => handleEdit(r)}
+                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md transition"
+              >
+                Edit
+              </button>
 
-                <button
-                  onClick={() => handleDelete(r.id)}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition"
-                >
-                  Hapus
-                </button>
-              </td>
-            </td>
+              <button
+                onClick={() => handleDelete(r.id)}
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg shadow-md transition"
+              >
+                Hapus
+              </button>
+            </div>
+          </td>
           </tr>
         ))}
 
