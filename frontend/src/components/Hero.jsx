@@ -53,7 +53,7 @@ function Hero() {
   // ===============================
   if (loading) {
     return (
-      <section className="w-full mt-16 md:mt-28 h-[450px] md:h-[500px] lg:h-[550px] bg-gray-900 animate-pulse relative overflow-hidden flex items-center px-4 sm:px-10 lg:px-20">
+      <section className="w-full mt-[65px] sm:mt-[75px] h-[450px] md:h-[500px] lg:h-[550px] bg-gray-900 animate-pulse relative overflow-hidden flex items-center px-4 sm:px-10 lg:px-20">
         <div className="max-w-3xl w-full space-y-4">
           <div className="h-8 md:h-12 bg-gray-800 rounded-md w-3/4"></div>
           <div className="h-4 md:h-6 bg-gray-800 rounded-md w-1/2"></div>
@@ -67,7 +67,7 @@ function Hero() {
 
   return (
     <section 
-      className="w-full mt-16 md:mt-28 h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden group"
+      className="w-full mt-[65px] sm:mt-[75px] h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden group"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
