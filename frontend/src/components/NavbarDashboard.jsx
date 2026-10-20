@@ -1,6 +1,6 @@
 import { Menu, LogOut, Bell, User, Settings, Globe } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import VerificationDrawer from "./VerificationDrawer";
 import api from "../api"; // Pastikan Anda mengimpor API instance
 
@@ -19,17 +19,34 @@ function NavbarDashboard({ toggleSidebar, isCollapsed, onToggleCollapse }) {
   };
 
   const handleGoToWebsite = () => {
-    window.open("/",); 
+    setIsProfileDropdownOpen(false);
+    window.open("/");
   };
-  
-  const handleDropdownToggle = () => {
-    setIsProfileDropdownOpen(!isProfileDropdownOpen);
-  };
-  
-  // Menutup dropdown saat klik di luar
-  const handleBlur = () => {
-      setTimeout(() => setIsProfileDropdownOpen(false), 200);
-  }
+
+  const profileRef = useRef(null);
+
+  const handleDropdownToggle = () => setIsProfileDropdownOpen((v) => !v);
+
+  // Tutup dropdown saat klik di luar atau tekan Escape
+  useEffect(() => {
+    if (!isProfileDropdownOpen) return;
+
+    const handleClickOutside = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    const handleEscape = (e) => {
+      if (e.key === "Escape") setIsProfileDropdownOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isProfileDropdownOpen]);
 
   // --- LOGIKA FETCH DAN HANDLER VERIFIKASI ---
   
@@ -164,14 +181,24 @@ const handleReject = async (id, message) => {
             </button>
           )}
 
+          {/* Tombol Pengaturan (di samping kanan lonceng) */}
+          {role === "admin" && (
+            <Link
+              to="/admin/settings"
+              className="p-3 rounded-full text-gray-600 hover:bg-gray-100 transition-colors"
+              title="Pengaturan"
+              aria-label="Pengaturan"
+            >
+              <Settings size={20} />
+            </Link>
+          )}
+
           {/* Menu Profil dengan Dropdown */}
-          <div 
-              className="relative" 
-              onBlur={handleBlur} 
-              tabIndex={0} 
-          >
+          <div ref={profileRef} className="relative">
             <button
               onClick={handleDropdownToggle}
+              aria-haspopup="menu"
+              aria-expanded={isProfileDropdownOpen}
               className="flex items-center gap-2 p-2 pl-4 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500"
             >
               <span className="text-sm font-semibold text-gray-700 hidden sm:inline capitalize">
@@ -202,32 +229,18 @@ const handleReject = async (id, message) => {
                       <Globe size={18} className="text-blue-500"/> Kembali ke Website
                     </button>
                   </li>
-                    {role === "admin" && (
-                      <>
-                        <li>
-                          <Link
-                            to="/admin/profile"
-                            className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                            onClick={() => setIsProfileDropdownOpen(false)}
-                          >
-                            <User size={18} className="text-yellow-500"/>
-                            Profile
-                          </Link>
-                        </li>
-                    
-                      
-                      <li>
-                        {/* Menggunakan elemen <a> atau Link dari React Router, bukan Link dari Lucide */}
-                        <Link
-                          to="/admin/settings"
-                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          onClick={() => setIsProfileDropdownOpen(false)} 
-                        >
-                          <Settings size={18} className="text-gray-500"/> Pengaturan
-                        </Link>
-                      </li>
-                      </>
-                    )}
+                  {role === "admin" && (
+                    <li>
+                      <Link
+                        to="/admin/profile"
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                      >
+                        <User size={18} className="text-yellow-500"/>
+                        Profile
+                      </Link>
+                    </li>
+                  )}
 
                   <li>
                     <button
