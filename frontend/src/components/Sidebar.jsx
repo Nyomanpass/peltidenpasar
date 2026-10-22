@@ -219,25 +219,27 @@ function Sidebar({ isOpen, isCollapsed, onClose, onExpand, onToggleCollapse }) {
             type="button"
             onClick={() => setSwitcherOpen((v) => !v)}
             aria-expanded={switcherOpen}
-            className={`group flex w-full items-start gap-3 rounded-lg px-3 py-[11px] text-left text-sm transition-colors hover:bg-white/[0.06] motion-reduce:transition-none ${focusRing}`}
+            className={`group flex w-full items-start gap-3 rounded-lg px-3 py-[11px] text-center text-sm transition-colors hover:bg-white/[0.06] motion-reduce:transition-none ${focusRing}`}
           >
+            <div className="flex flex-1 items-center justify-center gap-2">
             <span
               aria-hidden="true"
-              className="flex h-5 w-[19px] shrink-0 items-center justify-center"
+              className="flex shrink-0 items-center justify-center"
             >
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  selectedName ? "bg-primary" : "bg-ink-500"
-                }`}
+              <Trophy
+                size={17}
+                className={selectedName ? "text-primary" : "text-ink-500"}
               />
             </span>
+
             <span
-              className={`line-clamp-2 break-words font-semibold leading-5 ${
+              className={`line-clamp-2 break-words text-center font-semibold leading-5 ${
                 selectedName ? "text-white" : "text-ink-300"
               }`}
             >
               {selectedName || "Pilih turnamen"}
             </span>
+          </div>
             <ChevronsUpDown
               size={16}
               className="ml-auto mt-0.5 shrink-0 text-ink-500 transition-colors group-hover:text-ink-300"
@@ -293,12 +295,14 @@ function Sidebar({ isOpen, isCollapsed, onClose, onExpand, onToggleCollapse }) {
                 <Trophy size={19} />
               </button>
             </Tip>
-            <div
-              aria-hidden="true"
-              className="mx-3 mt-2 border-t border-white/10"
-            />
           </div>
         )}
+
+        {/* Pemisah turnamen aktif dan menu: garis memudar di kedua ujung */}
+        <div
+          aria-hidden="true"
+          className="mx-1 mt-4 h-px bg-linear-to-r from-transparent via-white/25 to-transparent"
+        />
       </div>
 
       {/* ===== MENU ===== */}
@@ -342,7 +346,7 @@ function Sidebar({ isOpen, isCollapsed, onClose, onExpand, onToggleCollapse }) {
       >
        <div ref={navInnerRef}>
         {groups.map((group, gi) => (
-          <div key={group.label} className="mt-4 first:mt-3">
+          <div key={group.label} className="mt-4">
             <p
               className={`px-3 pb-1.5 pr-6 text-xs font-medium text-ink-500 ${hideMini}`}
             >
