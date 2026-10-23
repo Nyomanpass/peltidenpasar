@@ -1,19 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Trash2, Eye, PlusCircle, Layout, Filter, User, Users, Users2, ChevronRight } from "lucide-react";
+import {
+  Trash2,
+  Eye,
+  PlusCircle,
+  Layout,
+  User,
+  Users,
+  Users2,
+  ChevronRight,
+  Trophy,
+  GitFork,
+  Filter,
+} from "lucide-react";
 import AlertMessage from "../components/AlertMessage";
+import api from "../api";
 
-
-import api from "../api"; 
-
-
-export default function BaganPage({onSelectBagan}) {
+export default function BaganPage({ onSelectBagan }) {
   const [kelompokUmurList, setKelompokUmurList] = useState([]);
   const [selectedKelompok, setSelectedKelompok] = useState("");
-  const [selectedKategori, setSelectedKategori] = useState("single"); 
+  const [selectedKategori, setSelectedKategori] = useState("single");
   const [baganList, setBaganList] = useState([]);
-  const role = localStorage.getItem('role');
-  const selectedTournamentName = localStorage.getItem("selectedTournamentName");
   const [filterKategori, setFilterKategori] = useState("all");
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -23,28 +30,26 @@ export default function BaganPage({onSelectBagan}) {
     baganId: null,
     baganName: "",
   });
-    const isExactMatch = confirmInput === confirmDelete.baganName;
 
-
-  
-
+  const role = localStorage.getItem("role");
+  const selectedTournamentName = localStorage.getItem("selectedTournamentName");
+  const isExactMatch = confirmInput === confirmDelete.baganName;
   const navigate = useNavigate();
   const isSelectorMode = !!onSelectBagan;
 
+  const isAdmin = role === "admin" || role === "panitia";
 
-const fetchBagan = async () => {
-  try {
-    const newTournamentId = localStorage.getItem("selectedTournament"); // ← ambil ulang setiap kali fetch
-    const res = await api.get("/bagan", {
-      params: { tournamentId: newTournamentId }
-    });
- 
-    setBaganList(res.data);
-  } catch (err) {
-    console.error("Gagal fetch bagan:", err);
-  }
-};
-
+  const fetchBagan = async () => {
+    try {
+      const newTournamentId = localStorage.getItem("selectedTournament");
+      const res = await api.get("/bagan", {
+        params: { tournamentId: newTournamentId },
+      });
+      setBaganList(res.data);
+    } catch (err) {
+      console.error("Gagal fetch bagan:", err);
+    }
+  };
 
   const fetchKelompokUmur = async () => {
     try {
@@ -56,398 +61,346 @@ const fetchBagan = async () => {
   };
 
   useEffect(() => {
-      const reloadBagan = () => {
-        console.log("Tournament berubah → reload bagan");
-        fetchBagan();
-        fetchKelompokUmur();
-      };
-
-      window.addEventListener("tournament-changed", reloadBagan);
-
-      return () => {
-        window.removeEventListener("tournament-changed", reloadBagan);
-      };
-    }, []);
-
+    const reloadBagan = () => {
+      fetchBagan();
+      fetchKelompokUmur();
+    };
+    window.addEventListener("tournament-changed", reloadBagan);
+    return () => window.removeEventListener("tournament-changed", reloadBagan);
+  }, []);
 
   useEffect(() => {
     fetchKelompokUmur();
     fetchBagan();
   }, []);
 
-
   const handleCreateBagan = async () => {
-  if (!selectedKelompok) {
-     setError("Pilih kelompok umur terlebih dahulu.");
-    return;
-  }
+    if (!selectedKelompok) {
+      setError("Pilih kelompok umur terlebih dahulu.");
+      return;
+    }
+    const tournamentId = localStorage.getItem("selectedTournament");
+    try {
+      await api.post("/bagan", {
+        kelompokUmurId: selectedKelompok,
+        tournamentId,
+        kategori: selectedKategori,
+      });
+      setSuccess("Bagan berhasil dibuat!");
+      setSelectedKelompok("");
+      fetchBagan();
+    } catch (err) {
+      console.error("Gagal membuat bagan:", err);
+      setError("Gagal membuat bagan. Pastikan data peserta sudah ada.");
+    }
+  };
 
-  const tournamentId = localStorage.getItem("selectedTournament");
-
-  try {
-    await api.post("/bagan", { 
-      kelompokUmurId: selectedKelompok,
-      tournamentId,
-      kategori: selectedKategori // Kirim kategori ke backend
+  const handleDeleteBagan = (bagan) => {
+    setConfirmDelete({
+      show: true,
+      baganId: bagan.id,
+      baganName: bagan.nama,
     });
+  };
 
-    setSuccess("Bagan berhasil dibuat!");
-    setSelectedKelompok(""); // Reset pilihan
-    fetchBagan();
-  } catch (err) {
-    console.error("Gagal membuat bagan:", err);
-    setError("Gagal membuat bagan. Pastikan data peserta sudah ada.");
-  }
-};
-
-
-  // --- DELETE BAGAN ---
-
-const handleDeleteBagan = (bagan) => {
-  setConfirmDelete({ 
-    show: true, 
-    baganId: bagan.id,
-    baganName: bagan.nama
-  });
-};
-
-
-  
-
-const confirmDeleteBagan = async () => {
-  try {
-    await api.delete(`/bagan/${confirmDelete.baganId}`);
-    setSuccess("Bagan berhasil dihapus!");
-    fetchBagan();
-  } catch (err) {
-    console.error("Gagal menghapus bagan:", err);
-    setError("Gagal menghapus bagan.");
-  } finally {
-    setConfirmDelete({ show: false, baganId: null });
-  }
-};
-
-
-
+  const confirmDeleteBagan = async () => {
+    try {
+      await api.delete(`/bagan/${confirmDelete.baganId}`);
+      setSuccess("Bagan berhasil dihapus!");
+      fetchBagan();
+    } catch (err) {
+      console.error("Gagal menghapus bagan:", err);
+      setError("Gagal menghapus bagan.");
+    } finally {
+      setConfirmDelete({ show: false, baganId: null, baganName: "" });
+      setConfirmInput("");
+    }
+  };
 
   const handleViewDetail = (baganId) => {
     if (isSelectorMode) {
-        // 1. MODE USER/SELECTOR: Panggil prop yang akan mengubah konten di parent (TournamentDetailPage)
-        onSelectBagan(baganId); 
+      onSelectBagan(baganId);
     } else {
-        // 2. MODE ADMIN/HALAMAN TERPISAH: Gunakan navigate
-        navigate(`/${role}/bagan-view/${baganId}`);
+      navigate(`/${role}/bagan-view/${baganId}`);
     }
-}
+  };
 
+  // Derived data
+  const totalBagan = baganList.length;
+  const filteredData = baganList
+    .filter((b) => filterKategori === "all" || b.kategori === filterKategori)
+    .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId);
 
+  const singleCount = baganList.filter((b) => b.kategori === "single").length;
+  const doubleCount = baganList.filter((b) => b.kategori === "double").length;
 
   return (
-    <div className="min-h-screen"> 
-
-  
-{success && (
-  <AlertMessage
-    type="success"
-    message={success}
-    onClose={() => setSuccess("")}
-  />
-)}
-
-{error && (
-  <AlertMessage
-    type="error"
-    message={error}
-    onClose={() => setError("")}
-  />
-)}
-
-    
- {/* --- HEADER UTAMA --- */}
-<div className="mb-6 border-gray-100">
-    <div className="text-center md:text-left">
-        <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight leading-tight">
-            Bagan Pertandingan
-        </h1>
-        <div className="inline-flex items-center gap-2 mt-1 px-3 py-1 bg-yellow-50 rounded-full border border-yellow-100 md:bg-transparent md:border-none md:px-0">
-            <p className="text-[10px] md:text-sm text-yellow-700 md:text-yellow-600 font-bold uppercase tracking-widest">
-                Tournament: {selectedTournamentName || "Semua Tournament"}
-            </p>
-        </div>
-    </div>
-</div>
-
-{/* --- TAB FILTER KATEGORI --- */}
-<div className="flex bg-gray-100 p-1 
-                rounded-xl 
-                border border-gray-200 
-                shadow-sm 
-                w-full sm:w-fit mb-5">
-
-  {/* SEMUA */}
-  <button
-    onClick={() => setFilterKategori("all")}
-    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 
-                px-4 md:px-5 
-                py-2 md:py-2.5 
-                rounded-lg 
-                font-bold 
-                text-[11px] md:text-[12px] 
-                uppercase tracking-wide 
-                transition-all duration-300 ${
-      filterKategori === "all"
-        ? "bg-white text-yellow-600 shadow-sm"
-        : "text-gray-500 hover:text-gray-700"
-    }`}
-  >
-    Semua
-  </button>
-
-  {/* SINGLE */}
-  <button
-    onClick={() => setFilterKategori("single")}
-    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 
-                px-4 md:px-5 
-                py-2 md:py-2.5 
-                rounded-lg 
-                font-bold 
-                text-[11px] md:text-[12px] 
-                uppercase tracking-wide 
-                transition-all duration-300 ${
-      filterKategori === "single"
-        ? "bg-white text-yellow-600 shadow-sm"
-        : "text-gray-500 hover:text-gray-700"
-    }`}
-  >
-    <span className="hidden md:inline">
-      <User size={14} />
-    </span>
-    Single
-  </button>
-
-  {/* DOUBLE */}
-  <button
-    onClick={() => setFilterKategori("double")}
-    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 
-                px-4 md:px-5 
-                py-2 md:py-2.5 
-                rounded-lg 
-                font-bold 
-                text-[11px] md:text-[12px] 
-                uppercase tracking-wide 
-                transition-all duration-300 ${
-      filterKategori === "double"
-        ? "bg-white text-yellow-600 shadow-sm"
-        : "text-gray-500 hover:text-gray-700"
-    }`}
-  >
-    <span className="hidden md:inline">
-      <Users2 size={14} />
-    </span>
-    Double
-  </button>
-
-</div>
-
-
-   {/* --- FILTER DAN AKSI (ADMIN SECTION) --- */}
-{(role === "admin" || role === "panitia") && (
-    <div className="bg-white p-6 rounded-2xl shadow-xl mb-8 flex flex-col md:flex-row md:items-center gap-4 border border-gray-100">
-        
-        <div className="flex items-center gap-2 text-gray-700 font-semibold">
-            <Filter size={20} />
-            <span>Buat Bagan:</span>
-        </div>
-
-        {/* 1. Select Kategori */}
-          <select
-              className="border border-gray-300 p-3 rounded-xl focus:ring-3 focus:ring-yellow-500/50 bg-white"
-              value={selectedKategori}
-              onChange={(e) => {
-                  setSelectedKategori(e.target.value);
-                  setSelectedKelompok(""); // Tambahkan ini agar tidak terjadi bentrok pilihan lama
-              }}
-          >
-              <option value="single">Single (Perseorangan)</option>
-              <option value="double">Double (Ganda)</option>
-          </select>
-
-        {/* 2. Select Kelompok Umur */}
-       <select
-              className="border border-gray-300 p-3 rounded-xl focus:ring-3 focus:ring-yellow-500/50 md:flex-1 bg-white"
-              value={selectedKelompok}
-              onChange={(e) => setSelectedKelompok(e.target.value)}
-          >
-              <option value="">Pilih Kelompok Umur</option>
-              {kelompokUmurList
-                  .filter((k) => {
-                      // Kita cek: Apakah sudah ada bagan dengan kelompok umur 'k.id' 
-                      // DAN kategori 'selectedKategori' di list bagan yang sudah jadi?
-                      const sudahAda = baganList.some(
-                          (b) => b.kelompokUmurId === k.id && b.kategori === selectedKategori
-                      );
-                      // Jika sudah ada, kita sembunyikan (return false)
-                      return !sudahAda;
-                  })
-
-                  .map((k) => (
-                      <option key={k.id} value={k.id}>
-                          {k.nama}
-                      </option>
-                  ))}
-          </select>
-
-        {/* Tombol Buat Bagan */}
-        <button
-            onClick={handleCreateBagan}
-            className="flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 rounded-xl shadow-lg hover:bg-green-700 transition font-semibold"
-            disabled={!selectedKelompok}
-        >
-            <PlusCircle size={20} /> Buat Bagan
-        </button>
-    </div>
-)}
-
-<div className="space-y-3 md:space-y-4">
-  {(() => {
-    const filteredData = baganList
-      .filter((b) => (filterKategori === "all" ? true : b.kategori === filterKategori))
-      .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId);
-
-    if (filteredData.length === 0) {
-      return (
-        <div className="p-10 text-center bg-gray-50 rounded-2xl shadow-inner border border-gray-100">
-          <Layout size={32} className="text-gray-300 mx-auto mb-3" />
-          <p className="text-sm md:text-lg text-gray-500 font-medium">
-            Tidak ada bagan yang tersedia.
-          </p>
-        </div>
-      );
-    }
-
-    return filteredData.map((bagan) => (
-      <div
-        key={bagan.id}
-        className="group flex flex-row items-center justify-between bg-white border border-gray-100 p-3 md:p-5 rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer"
-        onClick={() => handleViewDetail(bagan.id)}
-      >
-        {/* INFO BAGAN (KIRI) */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <span className={`shrink-0 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider ${
-                bagan.kategori === 'double' 
-                ? 'bg-purple-100 text-purple-600' 
-                : 'bg-blue-100 text-blue-600'
-            }`}>
-                {bagan.kategori}
-            </span>
-            <h2 className="font-black text-sm md:text-lg text-gray-800 group-hover:text-yellow-600 transition-colors truncate">
-              {bagan.nama}
-            </h2>
-          </div>
-
-          <div className="flex items-center text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-tight">
-            <Users size={12} className="mr-1 text-gray-300" /> 
-            <span>{bagan.jumlahPeserta} Peserta</span>
-          </div>
-        </div>
-
-        {/* TOMBOL AKSI (KANAN) */}
-        <div className="flex items-center gap-1 md:gap-3 ml-3">
-          {(role === "admin" || role === "panitia") && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteBagan(bagan);
-              }}
-              className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-            >
-              <Trash2 size={16} />
-            </button>
-          )}
-
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewDetail(bagan.id);
-            }}
-            className="flex items-center justify-center gap-2 bg-yellow-500 text-white p-2.5 md:px-5 md:py-2.5 rounded-xl shadow-sm hover:bg-yellow-600 transition-all"
-          >
-            <Eye size={16} />
-            {/* Teks "Lihat" disembunyikan di mobile, muncul di desktop */}
-            <span className="hidden md:block text-[10px] font-black uppercase tracking-wider">
-              Lihat
-            </span>
-          </button>
-          
-          {/* Pemanis: Panah kecil hanya muncul di mobile sebagai indikator klik */}
-          <ChevronRight size={16} className="md:hidden text-gray-300" />
-        </div>
-      </div>
-    ));
-  })()}
-</div>
-
-{confirmDelete.show && (
-  <AlertMessage
-    type="warning"
-    message={
-      <div className="space-y-4">
-        <p className="text-sm text-gray-700">
-          Untuk menghapus bagan ini, ketik nama berikut dengan tepat:
-        </p>
-
-        <div className="bg-gray-100 px-4 py-3 rounded-xl text-center font-black text-sm tracking-wide">
-          {confirmDelete.baganName}
-        </div>
-
-        <input
-          type="text"
-          value={confirmInput}
-          onChange={(e) => setConfirmInput(e.target.value)}
-          placeholder="Ketik nama bagan persis di sini..."
-          className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-red-400 outline-none"
+    <div className="w-full space-y-4">
+      {/* --- NOTIFIKASI TOAST --- */}
+      {success && (
+        <AlertMessage
+          type="success"
+          message={success}
+          onClose={() => setSuccess("")}
         />
+      )}
+      {error && (
+        <AlertMessage
+          type="error"
+          message={error}
+          onClose={() => setError("")}
+        />
+      )}
 
-        {confirmInput !== "" && !isExactMatch && (
-          <p className="text-xs text-red-500 font-semibold">
-            Nama tidak cocok. Perhatikan huruf besar, kecil, dan spasi.
+      {/* --- PAGE HEADER --- */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        {/* Sisi Kiri */}
+        <div>
+          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+            {/* Badge Turnamen: mobile only */}
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 sm:hidden">
+              <Trophy size={13} className="text-amber-500" />
+              <span className="truncate max-w-[220px]">
+                {selectedTournamentName || "Belum Memilih Turnamen"}
+              </span>
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+              <GitFork size={13} className="text-slate-500" />
+              <span>{totalBagan} Bagan Dibuat</span>
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Bagan Pertandingan
+          </h1>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
+            Kelola dan pantau struktur bagan turnamen per kategori.
           </p>
-        )}
+        </div>
+
+        {/* Tab Filter Kanan */}
+        <div className="inline-flex p-1 bg-white rounded-xl border border-slate-200/80 shadow-xs self-start sm:self-auto">
+          {[
+            { key: "all", label: "Semua", icon: null },
+            { key: "single", label: "Single", icon: <User size={13} /> },
+            { key: "double", label: "Double", icon: <Users2 size={13} /> },
+          ].map(({ key, label, icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setFilterKategori(key)}
+              className={`inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+                filterKategori === key
+                  ? "bg-amber-500 text-white shadow-xs"
+                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+              }`}
+            >
+              {icon}
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
-    }
-    onClose={() => {
-      setConfirmDelete({ show: false, baganId: null, baganName: "" });
-      setConfirmInput("");
-    }}
-  >
-    <div className="flex flex-col sm:flex-row gap-3 w-full mt-4">
-      <button
-        onClick={() => {
-          setConfirmDelete({ show: false, baganId: null, baganName: "" });
-          setConfirmInput("");
-        }}
-        className="flex-1 px-6 py-4 rounded-2xl bg-gray-100 text-gray-700 font-bold text-xs uppercase tracking-widest hover:bg-gray-200 transition-all"
-      >
-        Batal
-      </button>
 
-      <button
-        onClick={confirmDeleteBagan}
-        disabled={!isExactMatch}
-        className={`flex-1 px-6 py-4 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all ${
-          isExactMatch
-            ? "bg-red-600 text-white hover:bg-red-700 shadow-xl shadow-red-200"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-        }`}
-      >
-        Ya, Hapus
-      </button>
+      {/* --- FORM BUAT BAGAN (Admin/Panitia) --- */}
+      {isAdmin && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Select Kategori */}
+          <select
+            className="flex-1 sm:flex-none px-3.5 py-2.5 bg-white border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 rounded-xl outline-none text-xs sm:text-sm font-medium text-slate-700 transition-all shadow-xs"
+            value={selectedKategori}
+            onChange={(e) => {
+              setSelectedKategori(e.target.value);
+              setSelectedKelompok("");
+            }}
+          >
+            <option value="single">Single (Perseorangan)</option>
+            <option value="double">Double (Ganda)</option>
+          </select>
+
+          {/* Select Kelompok Umur */}
+          <select
+            className="flex-1 px-3.5 py-2.5 bg-white border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 rounded-xl outline-none text-xs sm:text-sm font-medium text-slate-700 transition-all shadow-xs"
+            value={selectedKelompok}
+            onChange={(e) => setSelectedKelompok(e.target.value)}
+          >
+            <option value="">Pilih Kelompok Umur</option>
+            {kelompokUmurList
+              .filter((k) => {
+                const sudahAda = baganList.some(
+                  (b) =>
+                    b.kelompokUmurId === k.id &&
+                    b.kategori === selectedKategori
+                );
+                return !sudahAda;
+              })
+              .map((k) => (
+                <option key={k.id} value={k.id}>
+                  {k.nama}
+                </option>
+              ))}
+          </select>
+
+          {/* Tombol Buat */}
+          <button
+            type="button"
+            onClick={handleCreateBagan}
+            disabled={!selectedKelompok}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+          >
+            <span>Buat Bagan</span>
+          </button>
+        </div>
+      )}
+
+      {/* --- DAFTAR BAGAN --- */}
+      {filteredData.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs p-12 flex flex-col items-center justify-center text-center">
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center mb-4 border border-slate-200">
+            <Layout size={26} />
+          </div>
+          <h3 className="text-sm font-bold text-slate-800">
+            Belum Ada Bagan
+          </h3>
+          <p className="mt-1 text-xs text-slate-500 max-w-xs">
+            {filterKategori === "all"
+              ? "Belum ada bagan yang dibuat untuk turnamen ini."
+              : `Belum ada bagan kategori ${filterKategori === "single" ? "Single" : "Double"} untuk turnamen ini.`}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {filteredData.map((bagan) => (
+            <div
+              key={bagan.id}
+              className="group bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:border-amber-300/60 hover:shadow-sm transition-all duration-200 cursor-pointer"
+              onClick={() => handleViewDetail(bagan.id)}
+            >
+              <div className="flex items-center justify-between p-4 sm:p-5">
+                {/* Kiri: Icon + Info */}
+                <div className="flex items-center gap-3.5 min-w-0">
+                  {/* Avatar Bagan */}
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs border ${
+                      bagan.kategori === "double"
+                        ? "bg-gradient-to-br from-sky-500 to-blue-600 border-sky-400/30"
+                        : "bg-gradient-to-br from-amber-500 to-yellow-600 border-amber-400/30"
+                    } text-white`}
+                  >
+                    {bagan.kategori === "double" ? (
+                      <Users2 size={18} />
+                    ) : (
+                      <User size={18} />
+                    )}
+                  </div>
+
+                  {/* Nama & Detail */}
+                  <div className="min-w-0">
+                    <h2 className="text-sm sm:text-base font-bold text-slate-900 group-hover:text-amber-600 transition-colors truncate">
+                      {bagan.nama}
+                    </h2>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <Users size={11} className="text-slate-400" />
+                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
+                        {bagan.jumlahPeserta} Peserta
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Kanan: Tombol Aksi */}
+                <div
+                  className="flex items-center gap-2 ml-3 shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteBagan(bagan)}
+                      className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200/60 transition-all"
+                      title="Hapus Bagan"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleViewDetail(bagan.id)}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
+                    title="Lihat Bagan"
+                  >
+                    <Eye size={14} />
+                    <span className="hidden sm:inline">Lihat</span>
+                  </button>
+
+                  <ChevronRight
+                    size={16}
+                    className="text-slate-300 sm:hidden"
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* --- MODAL KONFIRMASI HAPUS --- */}
+      {confirmDelete.show && (
+        <AlertMessage
+          type="warning"
+          message={
+            <div className="space-y-3 text-left w-full">
+              <p className="text-sm text-slate-600 text-center">
+                Untuk menghapus bagan ini, ketik nama bagan dengan tepat:
+              </p>
+              <div className="bg-slate-100 px-4 py-2.5 rounded-xl text-center font-black text-sm tracking-wide text-slate-800">
+                {confirmDelete.baganName}
+              </div>
+              <input
+                type="text"
+                value={confirmInput}
+                onChange={(e) => setConfirmInput(e.target.value)}
+                placeholder="Ketik nama bagan di sini..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 outline-none text-sm font-medium transition-all"
+              />
+              {confirmInput !== "" && !isExactMatch && (
+                <p className="text-xs text-rose-600 font-semibold">
+                  Nama tidak cocok. Perhatikan huruf besar, kecil, dan spasi.
+                </p>
+              )}
+            </div>
+          }
+          onClose={() => {
+            setConfirmDelete({ show: false, baganId: null, baganName: "" });
+            setConfirmInput("");
+          }}
+        >
+          <div className="flex flex-col sm:flex-row gap-3 w-full mt-6">
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmDelete({ show: false, baganId: null, baganName: "" });
+                setConfirmInput("");
+              }}
+              className="flex-1 order-2 sm:order-1 px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider transition-all"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              onClick={confirmDeleteBagan}
+              disabled={!isExactMatch}
+              className={`flex-1 order-1 sm:order-2 px-5 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${
+                isExactMatch
+                  ? "bg-rose-600 hover:bg-rose-700 text-white shadow-xs active:scale-95"
+                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
+              }`}
+            >
+              Ya, Hapus
+            </button>
+          </div>
+        </AlertMessage>
+      )}
     </div>
-  </AlertMessage>
-)}
-
-
-</div>
   );
 }
