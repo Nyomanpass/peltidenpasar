@@ -65,12 +65,12 @@ export const getDoubleTeams = async (req, res) => {
         { 
           model: Peserta, 
           as: "Player1", 
-          attributes: ["id", "namaLengkap", "tanggalLahir"] 
+          attributes: ["id", "namaLengkap", "tanggalLahir", "nomorWhatsapp", "nik", "asalSekolah"] 
         },
         { 
           model: Peserta, 
           as: "Player2", 
-          attributes: ["id", "namaLengkap", "tanggalLahir"] 
+          attributes: ["id", "namaLengkap", "tanggalLahir", "nomorWhatsapp", "nik", "asalSekolah"] 
         },
         { 
           model: KelompokUmur, 

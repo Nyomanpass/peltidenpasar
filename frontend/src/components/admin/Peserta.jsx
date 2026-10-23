@@ -30,6 +30,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
   const [error, setError] = useState("");
   const [localSearch, setLocalSearch] = useState("");
   const [confirmDelete, setConfirmDelete] = useState({ show: false, pesertaId: null });
+  const [isExporting, setIsExporting] = useState(false);
 
   const role = localStorage.getItem("role");
   const currentTournamentName = localStorage.getItem("selectedTournamentName");
@@ -91,6 +92,22 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
       setError("Gagal menghapus peserta");
     } finally {
       setConfirmDelete({ show: false, pesertaId: null });
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      await exportPesertaToExcel({
+        tournamentId: tournamentId || localStorage.getItem("selectedTournament"),
+        tournamentName: currentTournamentName,
+        kelompokUmurList: kelompokUmur,
+      });
+      setSuccess("Data seluruh peserta (Tunggal & Ganda) berhasil diexport");
+    } catch {
+      setError("Gagal mengexport data peserta");
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -204,16 +221,21 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                 </div>
               )}
 
-              {/* Export Button */}
+              {/* Export Button (Single & Double) */}
               {(role === "admin" || role === "panitia") && (
                 <button
                   type="button"
-                  onClick={() => exportPesertaToExcel(kelompokUmur, currentTournamentName)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
-                  title="Unduh data peserta ke Excel"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-75 disabled:cursor-wait"
+                  title="Unduh seluruh data peserta (Tunggal & Ganda) ke Excel"
                 >
-                  <FileSpreadsheet size={15} />
-                  <span>Export</span>
+                  {isExporting ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileSpreadsheet size={15} />
+                  )}
+                  <span>{isExporting ? "Mengunduh..." : "Export Excel"}</span>
                 </button>
               )}
 

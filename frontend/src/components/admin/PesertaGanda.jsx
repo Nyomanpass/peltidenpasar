@@ -13,8 +13,10 @@ import {
   Trash2,
   Users,
   Trophy,
+  FileSpreadsheet,
 } from "lucide-react";
 import AlertMessage from "../AlertMessage";
+import { exportPesertaToExcel } from "../../utils/exportPesertaExcel";
 
 function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
   const location = useLocation();
@@ -38,6 +40,7 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
 
   const [alert, setAlert] = useState({ show: false, type: "success", message: "" });
   const [confirmDelete, setConfirmDelete] = useState({ show: false, teamId: null });
+  const [isExporting, setIsExporting] = useState(false);
 
   const role = localStorage.getItem("role");
   const isAdmin = role === "admin" || role === "panitia";
@@ -161,6 +164,31 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      await exportPesertaToExcel({
+        tournamentId: currentTournamentId,
+        tournamentName: currentTournamentName,
+        kelompokUmurList: kelompokUmur,
+        doubleTeamsList: doubleTeams,
+      });
+      setAlert({
+        show: true,
+        type: "success",
+        message: "Data seluruh peserta (Tunggal & Ganda) berhasil diexport",
+      });
+    } catch {
+      setAlert({
+        show: true,
+        type: "error",
+        message: "Gagal mengexport data peserta",
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-center">
@@ -252,6 +280,24 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
                 >
                   <UserPlus size={15} />
                   <span>Buat Tim Ganda</span>
+                </button>
+              )}
+
+              {/* Tombol Export Excel (Single & Double) */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-75 disabled:cursor-wait"
+                  title="Unduh seluruh data peserta (Tunggal & Ganda) ke Excel"
+                >
+                  {isExporting ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileSpreadsheet size={15} />
+                  )}
+                  <span>{isExporting ? "Mengunduh..." : "Export Excel"}</span>
                 </button>
               )}
 
