@@ -164,33 +164,32 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
       {/* --- PAGE HEADER (tanpa card/box) --- */}
       {searchTermFromProps === undefined && (
         <>
-          {/* Baris 1: Badge turnamen (mobile) + Badge jumlah + Judul besar */}
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Badge Turnamen: HANYA di mobile */}
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 sm:hidden">
-                <Trophy size={13} className="text-amber-500" />
-                <span className="truncate max-w-[220px]">
-                  {currentTournamentName || "Belum Memilih Turnamen"}
+          {/* Header Row: Judul & Deskripsi (kiri) sejajar dengan Search & Export (kanan) */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            {/* Sisi Kiri: Badge + Judul + Deskripsi */}
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                {/* Badge Turnamen: HANYA di mobile */}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 sm:hidden">
+                  <Trophy size={13} className="text-amber-500" />
+                  <span className="truncate max-w-[220px]">
+                    {currentTournamentName || "Belum Memilih Turnamen"}
+                  </span>
                 </span>
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                <Users size={13} className="text-slate-500" />
-                <span>{totalPeserta} Peserta Terdaftar</span>
-              </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                  <Users size={13} className="text-slate-500" />
+                  <span>{totalPeserta} Peserta Terdaftar</span>
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Manajemen Peserta
+              </h1>
+              <p className="mt-1 text-xs sm:text-sm text-slate-500">
+                Kelola dan verifikasi data atlet peserta turnamen.
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Manajemen Peserta
-            </h1>
-          </div>
 
-          {/* Baris 2: Deskripsi (kiri) sejajar dengan tombol + search (kanan) */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className="text-xs sm:text-sm text-slate-500">
-              Kelola dan verifikasi data atlet peserta turnamen.
-            </p>
-
-            {/* Search + Export */}
+            {/* Sisi Kanan: Search + Export */}
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <div className="relative flex-1 sm:w-56">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
@@ -363,17 +362,12 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="hidden sm:inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                        {filteredPeserta.length} Atlet
-                      </span>
-                      <div
-                        className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-transform duration-200 ${
-                          isCollapsed ? "" : "rotate-180"
-                        }`}
-                      >
-                        <ChevronDown size={18} />
-                      </div>
+                    <div
+                      className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-transform duration-200 ${
+                        isCollapsed ? "" : "rotate-180"
+                      }`}
+                    >
+                      <ChevronDown size={18} />
                     </div>
                   </button>
 

@@ -205,97 +205,90 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
 
   return (
     <div className="w-full space-y-4">
-      {/* --- HEADER CARD --- */}
+      {/* --- PAGE HEADER (tanpa card/box) --- */}
       {searchTermFromProps === undefined && (
         <>
-          {/* CARD: Judul, Badge, Tombol, Search */}
-          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-
-              {/* Kiri: Judul & Badge */}
-              <div className="space-y-2 min-w-0">
-                {/* Badge Turnamen: HANYA tampil di mobile */}
-                <div className="flex flex-wrap items-center gap-2 sm:hidden">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
-                    <Trophy size={13} className="text-amber-500" />
-                    <span className="truncate max-w-[220px]">
-                      {currentTournamentName || "Belum Memilih Turnamen"}
-                    </span>
+          {/* Header Row: Judul & Deskripsi (kiri) sejajar dengan Search & Kontrol (kanan) */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+            {/* Sisi Kiri: Badge + Judul + Deskripsi */}
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                {/* Badge Turnamen: HANYA di mobile */}
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 sm:hidden">
+                  <Trophy size={13} className="text-amber-500" />
+                  <span className="truncate max-w-[220px]">
+                    {currentTournamentName || "Belum Memilih Turnamen"}
                   </span>
-                </div>
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                  <Users2 size={13} className="text-slate-500" />
+                  <span>{totalTimGanda} Pasangan Terdaftar</span>
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Manajemen Peserta
+              </h1>
+              <p className="mt-1 text-xs sm:text-sm text-slate-500">
+                Kelola dan pasangkan atlet peserta kategori ganda.
+              </p>
+            </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                    <Users2 size={13} className="text-slate-500" />
-                    <span>{totalTimGanda} Pasangan Terdaftar</span>
-                  </span>
-                </div>
-
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  Manajemen Peserta
-                </h1>
-                <p className="text-xs sm:text-sm text-slate-500">
-                  Kelola dan pasangkan atlet peserta kategori ganda.
-                </p>
+            {/* Sisi Kanan: Search + Buat Tim + Export */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              {/* Search Bar */}
+              <div className="relative flex-1 sm:w-48">
+                <Search
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                  size={15}
+                />
+                <input
+                  type="text"
+                  placeholder="Cari nama pemain..."
+                  value={localSearch}
+                  onChange={(e) => setLocalSearch(e.target.value)}
+                  className="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 focus:border-amber-500 rounded-xl outline-none text-xs sm:text-sm font-medium transition-all shadow-xs focus:ring-2 focus:ring-amber-500/20"
+                />
+                {localSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setLocalSearch("")}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-md"
+                    title="Hapus pencarian"
+                  >
+                    <X size={13} />
+                  </button>
+                )}
               </div>
 
-              {/* Kanan: Search + Buat Tim + Export (horizontal, 1 baris) */}
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                {/* Search Bar */}
-                <div className="relative flex-1 sm:w-48">
-                  <Search
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    size={15}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Cari nama pemain..."
-                    value={localSearch}
-                    onChange={(e) => setLocalSearch(e.target.value)}
-                    className="w-full pl-9 pr-8 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-amber-500 rounded-xl outline-none text-xs sm:text-sm font-medium transition-all shadow-xs focus:ring-2 focus:ring-amber-500/20"
-                  />
-                  {localSearch && (
-                    <button
-                      type="button"
-                      onClick={() => setLocalSearch("")}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-md"
-                      title="Hapus pencarian"
-                    >
-                      <X size={13} />
-                    </button>
+              {/* Tombol Buat Tim Ganda (admin only) */}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(true)}
+                  className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
+                >
+                  <UserPlus size={15} />
+                  <span className="hidden sm:inline">Buat Tim</span>
+                </button>
+              )}
+
+              {/* Tombol Export Excel (admin & panitia) */}
+              {(isAdmin || role === "panitia") && (
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-75 disabled:cursor-wait"
+                  title="Unduh seluruh data peserta (Tunggal & Ganda) ke Excel"
+                >
+                  {isExporting ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileSpreadsheet size={15} />
                   )}
-                </div>
-
-                {/* Tombol Buat Tim Ganda (admin only) */}
-                {isAdmin && (
-                  <button
-                    type="button"
-                    onClick={() => setIsModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
-                  >
-                    <UserPlus size={15} />
-                    <span className="hidden sm:inline">Buat Tim</span>
-                  </button>
-                )}
-
-                {/* Tombol Export Excel (admin & panitia) */}
-                {(isAdmin || role === "panitia") && (
-                  <button
-                    type="button"
-                    onClick={handleExport}
-                    disabled={isExporting}
-                    className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-75 disabled:cursor-wait"
-                    title="Unduh seluruh data peserta (Tunggal & Ganda) ke Excel"
-                  >
-                    {isExporting ? (
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <FileSpreadsheet size={15} />
-                    )}
-                    <span className="hidden sm:inline">{isExporting ? "Mengunduh..." : "Export Excel"}</span>
-                  </button>
-                )}
-              </div>
+                  <span className="hidden sm:inline">{isExporting ? "Mengunduh..." : "Export Excel"}</span>
+                </button>
+              )}
             </div>
           </div>
 
@@ -398,17 +391,12 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="hidden sm:inline-flex px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                      {teamsInCategory.length} Tim
-                    </span>
-                    <div
-                      className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-transform duration-200 ${
-                        isCollapsed ? "" : "rotate-180"
-                      }`}
-                    >
-                      <ChevronDown size={18} />
-                    </div>
+                  <div
+                    className={`p-1.5 rounded-lg text-slate-400 hover:text-slate-600 transition-transform duration-200 ${
+                      isCollapsed ? "" : "rotate-180"
+                    }`}
+                  >
+                    <ChevronDown size={18} />
                   </div>
                 </button>
 
