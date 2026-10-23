@@ -204,131 +204,134 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
   }
 
   return (
-    <div className="w-full space-y-6">
-      {/* --- STANDAR PAGE HEADER (Konsisten dengan Single) --- */}
+    <div className="w-full space-y-4">
+      {/* --- HEADER CARD --- */}
       {searchTermFromProps === undefined && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            {/* Title & Metadata */}
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
-                  <Trophy size={13} className="text-amber-500" />
-                  <span className="truncate max-w-[200px] sm:max-w-xs">
-                    {currentTournamentName || "Belum Memilih Turnamen"}
-                  </span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                  <Users2 size={13} className="text-slate-500" />
-                  <span>{totalTimGanda} Pasangan Terdaftar</span>
-                </span>
-              </div>
+        <>
+          {/* CARD: Judul, Badge, Tombol, Search */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
 
-              <div>
+              {/* Kiri: Judul & Badge */}
+              <div className="space-y-2 min-w-0">
+                {/* Badge Turnamen: HANYA tampil di mobile */}
+                <div className="flex flex-wrap items-center gap-2 sm:hidden">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
+                    <Trophy size={13} className="text-amber-500" />
+                    <span className="truncate max-w-[220px]">
+                      {currentTournamentName || "Belum Memilih Turnamen"}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                    <Users2 size={13} className="text-slate-500" />
+                    <span>{totalTimGanda} Pasangan Terdaftar</span>
+                  </span>
+                </div>
+
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                   Manajemen Peserta
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Kelola dan pasangkan atlet peserta kategori ganda dalam turnamen.
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Kelola dan pasangkan atlet peserta kategori ganda.
                 </p>
               </div>
-            </div>
 
-            {/* Action Controls */}
-            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-              {/* Segmented Control: Single vs Double */}
-              {isAdminOrWasit && (
-                <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200/80">
-                  <Link
-                    to={`${basePath}/peserta`}
-                    className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
-                      isActive(`${basePath}/peserta`)
-                        ? "bg-white text-slate-900 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <User
-                      size={14}
-                      className={isActive(`${basePath}/peserta`) ? "text-amber-500" : ""}
-                    />
-                    <span>Single</span>
-                  </Link>
-
-                  <Link
-                    to={`${basePath}/peserta-ganda`}
-                    className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
-                      isActive(`${basePath}/peserta-ganda`)
-                        ? "bg-white text-slate-900 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <Users2
-                      size={14}
-                      className={isActive(`${basePath}/peserta-ganda`) ? "text-amber-500" : ""}
-                    />
-                    <span>Double</span>
-                  </Link>
-                </div>
-              )}
-
-              {/* Tombol Buat Tim Ganda */}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
-                >
-                  <UserPlus size={15} />
-                  <span>Buat Tim Ganda</span>
-                </button>
-              )}
-
-              {/* Tombol Export Excel (Single & Double) */}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={handleExport}
-                  disabled={isExporting}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-75 disabled:cursor-wait"
-                  title="Unduh seluruh data peserta (Tunggal & Ganda) ke Excel"
-                >
-                  {isExporting ? (
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <FileSpreadsheet size={15} />
+              {/* Kanan: Search + Buat Tim + Export (horizontal, 1 baris) */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {/* Search Bar */}
+                <div className="relative flex-1 sm:w-48">
+                  <Search
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    size={15}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cari nama pemain..."
+                    value={localSearch}
+                    onChange={(e) => setLocalSearch(e.target.value)}
+                    className="w-full pl-9 pr-8 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-amber-500 rounded-xl outline-none text-xs sm:text-sm font-medium transition-all shadow-xs focus:ring-2 focus:ring-amber-500/20"
+                  />
+                  {localSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setLocalSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-md"
+                      title="Hapus pencarian"
+                    >
+                      <X size={13} />
+                    </button>
                   )}
-                  <span>{isExporting ? "Mengunduh..." : "Export Excel"}</span>
-                </button>
-              )}
+                </div>
 
-              {/* Search Bar */}
-              <div className="relative flex-1 sm:w-64">
-                <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                  size={15}
-                />
-                <input
-                  type="text"
-                  placeholder="Cari nama pemain..."
-                  value={localSearch}
-                  onChange={(e) => setLocalSearch(e.target.value)}
-                  className="w-full pl-9 pr-8 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-amber-500 rounded-xl outline-none text-xs sm:text-sm font-medium transition-all shadow-xs focus:ring-2 focus:ring-amber-500/20"
-                />
-                {localSearch && (
+                {/* Tombol Buat Tim Ganda (admin only) */}
+                {isAdmin && (
                   <button
                     type="button"
-                    onClick={() => setLocalSearch("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-md"
-                    title="Hapus pencarian"
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
                   >
-                    <X size={13} />
+                    <UserPlus size={15} />
+                    <span className="hidden sm:inline">Buat Tim</span>
+                  </button>
+                )}
+
+                {/* Tombol Export Excel (admin & panitia) */}
+                {(isAdmin || role === "panitia") && (
+                  <button
+                    type="button"
+                    onClick={handleExport}
+                    disabled={isExporting}
+                    className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-75 disabled:cursor-wait"
+                    title="Unduh seluruh data peserta (Tunggal & Ganda) ke Excel"
+                  >
+                    {isExporting ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <FileSpreadsheet size={15} />
+                    )}
+                    <span className="hidden sm:inline">{isExporting ? "Mengunduh..." : "Export Excel"}</span>
                   </button>
                 )}
               </div>
             </div>
           </div>
-        </div>
+
+          {/* TAB SWITCHER: IDENTIK dengan Peserta.jsx — centered di antara header card dan list */}
+          {isAdminOrWasit && (
+            <div className="flex justify-center">
+              <div className="inline-flex p-1 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+                <Link
+                  to={`${basePath}/peserta`}
+                  className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+                    isActive(`${basePath}/peserta`)
+                      ? "bg-amber-500 text-white shadow-xs"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                  }`}
+                >
+                  <User size={14} />
+                  <span>Single</span>
+                </Link>
+
+                <Link
+                  to={`${basePath}/peserta-ganda`}
+                  className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+                    isActive(`${basePath}/peserta-ganda`)
+                      ? "bg-amber-500 text-white shadow-xs"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                  }`}
+                >
+                  <Users2 size={14} />
+                  <span>Double</span>
+                </Link>
+              </div>
+            </div>
+          )}
+        </>
       )}
+
 
       {/* --- NOTIFIKASI TOAST --- */}
       {alert.show && (

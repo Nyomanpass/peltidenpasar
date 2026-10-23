@@ -160,112 +160,107 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
   }
 
   return (
-    <div className="w-full space-y-6">
-      {/* --- STANDAR PAGE HEADER --- */}
+    <div className="w-full space-y-4">
+      {/* --- PAGE HEADER (tanpa card/box) --- */}
       {searchTermFromProps === undefined && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-            {/* Title & Metadata */}
-            <div className="space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60">
-                  <Trophy size={13} className="text-amber-500" />
-                  <span className="truncate max-w-[200px] sm:max-w-xs">
-                    {currentTournamentName || "Belum Memilih Turnamen"}
-                  </span>
+        <>
+          {/* Baris 1: Badge turnamen (mobile) + Badge jumlah + Judul besar */}
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Badge Turnamen: HANYA di mobile */}
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 sm:hidden">
+                <Trophy size={13} className="text-amber-500" />
+                <span className="truncate max-w-[220px]">
+                  {currentTournamentName || "Belum Memilih Turnamen"}
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-                  <Users size={13} className="text-slate-500" />
-                  <span>{totalPeserta} Peserta Terdaftar</span>
-                </span>
-              </div>
-
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                  Manajemen Peserta
-                </h1>
-                <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                  Kelola dan verifikasi data atlet peserta turnamen tenis tunggal maupun ganda.
-                </p>
-              </div>
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+                <Users size={13} className="text-slate-500" />
+                <span>{totalPeserta} Peserta Terdaftar</span>
+              </span>
             </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Manajemen Peserta
+            </h1>
+          </div>
 
-            {/* Action Bar (Switch Single/Double, Export, Search) */}
-            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3">
-              {/* Segmented Control: Single vs Double */}
-              {(role === "admin" || role === "wasit" || role === "panitia") && (
-                <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200/80">
-                  <Link
-                    to={`${basePath}/peserta`}
-                    className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
-                      isActive(`${basePath}/peserta`)
-                        ? "bg-white text-slate-900 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <User size={14} className={isActive(`${basePath}/peserta`) ? "text-amber-500" : ""} />
-                    <span>Single</span>
-                  </Link>
+          {/* Baris 2: Deskripsi (kiri) sejajar dengan tombol + search (kanan) */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-xs sm:text-sm text-slate-500">
+              Kelola dan verifikasi data atlet peserta turnamen.
+            </p>
 
-                  <Link
-                    to={`${basePath}/peserta-ganda`}
-                    className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
-                      isActive(`${basePath}/peserta-ganda`)
-                        ? "bg-white text-slate-900 shadow-xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <Users2 size={14} className={isActive(`${basePath}/peserta-ganda`) ? "text-amber-500" : ""} />
-                    <span>Double</span>
-                  </Link>
-                </div>
-              )}
-
-              {/* Export Button (Single & Double) */}
-              {(role === "admin" || role === "panitia") && (
-                <button
-                  type="button"
-                  onClick={handleExport}
-                  disabled={isExporting}
-                  className="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-75 disabled:cursor-wait"
-                  title="Unduh seluruh data peserta (Tunggal & Ganda) ke Excel"
-                >
-                  {isExporting ? (
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <FileSpreadsheet size={15} />
-                  )}
-                  <span>{isExporting ? "Mengunduh..." : "Export Excel"}</span>
-                </button>
-              )}
-
-              {/* Search Bar */}
-              <div className="relative flex-1 sm:w-64">
-                <Search
-                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                  size={15}
-                />
+            {/* Search + Export */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-56">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
                 <input
                   type="text"
                   placeholder="Cari nama peserta..."
                   value={localSearch}
                   onChange={(e) => setLocalSearch(e.target.value)}
-                  className="w-full pl-9 pr-8 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-amber-500 rounded-xl outline-none text-xs sm:text-sm font-medium transition-all shadow-xs focus:ring-2 focus:ring-amber-500/20"
+                  className="w-full pl-9 pr-8 py-2.5 bg-white border border-slate-200 focus:border-amber-500 rounded-xl outline-none text-xs sm:text-sm font-medium transition-all shadow-xs focus:ring-2 focus:ring-amber-500/20"
                 />
                 {localSearch && (
                   <button
                     type="button"
                     onClick={() => setLocalSearch("")}
                     className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-md"
-                    title="Hapus pencarian"
                   >
                     <X size={13} />
                   </button>
                 )}
               </div>
+
+              {(role === "admin" || role === "panitia") && (
+                <button
+                  type="button"
+                  onClick={handleExport}
+                  disabled={isExporting}
+                  className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-75 disabled:cursor-wait"
+                  title="Unduh seluruh data peserta ke Excel"
+                >
+                  {isExporting ? (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <FileSpreadsheet size={15} />
+                  )}
+                  <span className="hidden sm:inline">{isExporting ? "Mengunduh..." : "Export Excel"}</span>
+                </button>
+              )}
             </div>
           </div>
-        </div>
+
+          {/* TAB SWITCHER: centered */}
+          {(role === "admin" || role === "wasit" || role === "panitia") && (
+            <div className="flex justify-center">
+              <div className="inline-flex p-1 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+                <Link
+                  to={`${basePath}/peserta`}
+                  className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+                    isActive(`${basePath}/peserta`)
+                      ? "bg-amber-500 text-white shadow-xs"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                  }`}
+                >
+                  <User size={14} />
+                  <span>Single</span>
+                </Link>
+                <Link
+                  to={`${basePath}/peserta-ganda`}
+                  className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+                    isActive(`${basePath}/peserta-ganda`)
+                      ? "bg-amber-500 text-white shadow-xs"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                  }`}
+                >
+                  <Users2 size={14} />
+                  <span>Double</span>
+                </Link>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* --- NOTIFIKASI TOAST --- */}
