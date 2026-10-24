@@ -880,7 +880,7 @@ if (isRoundRobin) {
                   mobileBreakpoint={0} 
                   renderSeedComponent={(props) => {
                     const seed = props.seed;
-                    const isRound0 = props.roundIndex === 0;
+                    const isKualifikasiRound = rounds[props.roundIndex]?.title === "Kualifikasi" || !!seed.isPrelim;
 
                     // 1. Placeholder transparan di Kualifikasi (supaya posisi match kualifikasi sejajar presisi dengan babak 1)
                     if (seed.isPlaceholder) {
@@ -1114,7 +1114,7 @@ if (isRoundRobin) {
                           {/* Pembatas tengah persis antara kedua peserta/tim */}
                           <div className="relative" style={{ height: "6px" }}>
                             {/* GARIS ALUR PENGHUBUNG DARI KUALIFIKASI KE BABAK UTAMA */}
-                            {isRound0 && (
+                            {isKualifikasiRound && (
                               <div
                                 className="pointer-events-none"
                                 style={{
@@ -1177,7 +1177,7 @@ if (isRoundRobin) {
                     };
 
                     // Untuk Babak Kualifikasi: gunakan container bersih tanpa garis cabang pohon bawaan
-                    if (isRound0) {
+                    if (isKualifikasiRound) {
                       return (
                         <div
                           key={seed.id}
