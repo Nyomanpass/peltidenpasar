@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../api';
-import { ChevronLeft, Trophy, RotateCcw, RefreshCw, Play, Pause, Sun, Moon, MoreVertical, Flame, Clock, Zap } from 'lucide-react';
+import { ChevronLeft, Trophy, RotateCcw, RefreshCw, Play, Pause, Sun, Moon, MoreVertical, Flame, Clock, Zap, Lock } from 'lucide-react';
 import AlertMessage from '../components/AlertMessage';
 
 const RefereeForm = ({ match, onFinish, onBack }) => {
@@ -234,6 +234,9 @@ const handleResetMatch = async () => {
 
 
 const handlePoint = async (player) => {
+  // 🔒 Lapis 0: Proteksi - Hanya boleh tambah poin saat pertandingan aktif berjalan
+  if (!isTimerRunning) return;
+
   // 🔒 Lapis 2: Debounce 300ms
   const now = Date.now();
   if (now - lastClickRef.current < 300) return;
@@ -603,6 +606,11 @@ if (isGameEnd) {
               }`}
             />
             <span>{formatTime(displayedDuration)}</span>
+            {!isTimerRunning && (
+              <span className="text-[10px] font-sans font-black tracking-wider uppercase px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10">
+                {displayedDuration > 0 ? "JEDA" : "READY"}
+              </span>
+            )}
           </div>
         </div>
 
@@ -1042,18 +1050,40 @@ if (isGameEnd) {
 
         {/* SECTION 3: TACTILE SCORING BUTTONS (P1 vs P2) */}
         <div className="flex flex-col gap-2.5 sm:gap-3 shrink-0">
+          
+          {/* BANNER STATUS KUNCI SKOR KETIKA MATCH BELUM MULAI ATAU DIJEDA */}
+          {!isTimerRunning && (
+            <div className={`flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl border text-center transition-all animate-in fade-in duration-200 ${
+              isDarkMode 
+                ? "bg-amber-950/30 border-amber-800/40 text-amber-300" 
+                : "bg-amber-50 border-amber-200 text-amber-800"
+            }`}>
+              <Lock size={14} className="shrink-0 text-amber-500" />
+              <span className="text-[11px] sm:text-xs font-bold">
+                {matchDuration === 0
+                  ? "Poin Terkunci: Tekan 'Mulai Pertandingan' di bawah untuk mulai input skor"
+                  : "Poin Terkunci: Pertandingan dijeda. Tekan 'Lanjutkan Pertandingan' untuk input skor"}
+              </span>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-2.5 sm:gap-4">
             
             {/* BUTTON ADD POINT P1 */}
             <button
               onClick={() => handlePoint(1)}
-              disabled={isProcessingPoint}
-              className={`group relative h-24 sm:h-28 md:h-32 rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white shadow-xl shadow-blue-900/30 active:scale-[0.97] transition-all flex flex-col items-center justify-center p-2 border-t border-white/25 ${
-                isProcessingPoint ? "opacity-50 pointer-events-none" : ""
+              disabled={isProcessingPoint || !isTimerRunning}
+              className={`group relative h-24 sm:h-28 md:h-32 rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white transition-all flex flex-col items-center justify-center p-2 border-t border-white/25 ${
+                !isTimerRunning
+                  ? "opacity-40 grayscale-[25%] cursor-not-allowed pointer-events-none shadow-none"
+                  : isProcessingPoint
+                    ? "opacity-60 pointer-events-none shadow-md"
+                    : "shadow-xl shadow-blue-900/30 active:scale-[0.97] hover:brightness-105"
               }`}
             >
               <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity" />
-              <span className="relative text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-blue-200 truncate max-w-[90%] mb-1">
+              <span className="relative text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-blue-200 truncate max-w-[90%] mb-1 flex items-center gap-1">
+                {!isTimerRunning && <Lock size={11} className="text-blue-200/90 inline shrink-0" />}
                 + POIN {formatName(match.peserta1?.namaLengkap || match.doubleTeam1?.namaTim || "P1").split(" ")[0]}
               </span>
               <div className="relative flex items-center gap-1.5 sm:gap-2">
@@ -1066,13 +1096,18 @@ if (isGameEnd) {
             {/* BUTTON ADD POINT P2 */}
             <button
               onClick={() => handlePoint(2)}
-              disabled={isProcessingPoint}
-              className={`group relative h-24 sm:h-28 md:h-32 rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-br from-rose-600 via-rose-700 to-red-800 text-white shadow-xl shadow-rose-900/30 active:scale-[0.97] transition-all flex flex-col items-center justify-center p-2 border-t border-white/25 ${
-                isProcessingPoint ? "opacity-50 pointer-events-none" : ""
+              disabled={isProcessingPoint || !isTimerRunning}
+              className={`group relative h-24 sm:h-28 md:h-32 rounded-2xl sm:rounded-3xl overflow-hidden bg-gradient-to-br from-rose-600 via-rose-700 to-red-800 text-white transition-all flex flex-col items-center justify-center p-2 border-t border-white/25 ${
+                !isTimerRunning
+                  ? "opacity-40 grayscale-[25%] cursor-not-allowed pointer-events-none shadow-none"
+                  : isProcessingPoint
+                    ? "opacity-60 pointer-events-none shadow-md"
+                    : "shadow-xl shadow-rose-900/30 active:scale-[0.97] hover:brightness-105"
               }`}
             >
               <div className="absolute inset-0 bg-white/10 opacity-0 group-active:opacity-100 transition-opacity" />
-              <span className="relative text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-rose-200 truncate max-w-[90%] mb-1">
+              <span className="relative text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-rose-200 truncate max-w-[90%] mb-1 flex items-center gap-1">
+                {!isTimerRunning && <Lock size={11} className="text-rose-200/90 inline shrink-0" />}
                 + POIN {formatName(match.peserta2?.namaLengkap || match.doubleTeam2?.namaTim || "P2").split(" ")[0]}
               </span>
               <div className="relative flex items-center gap-1.5 sm:gap-2">
@@ -1109,6 +1144,7 @@ if (isGameEnd) {
           {isServeEnabled && (
             <div className="grid grid-cols-2 gap-2.5 animate-in fade-in duration-200">
               <button
+                disabled={!isTimerRunning}
                 onClick={() => {
                   if (serveCount === 2) {
                     setServeCount(1);
@@ -1118,23 +1154,28 @@ if (isGameEnd) {
                   }
                 }}
                 className={`py-2.5 px-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all active:scale-95 ${
-                  isDarkMode
-                    ? "bg-slate-900 border-slate-800 text-amber-400 hover:bg-slate-800"
-                    : "bg-white border-slate-200 text-amber-700 hover:bg-slate-50 shadow-xs"
+                  !isTimerRunning
+                    ? "opacity-40 cursor-not-allowed pointer-events-none " + (isDarkMode ? "bg-slate-900 border-slate-800 text-slate-500" : "bg-slate-100 border-slate-200 text-slate-400")
+                    : isDarkMode
+                      ? "bg-slate-900 border-slate-800 text-amber-400 hover:bg-slate-800"
+                      : "bg-white border-slate-200 text-amber-700 hover:bg-slate-50 shadow-xs"
                 }`}
               >
                 Fault (Serve)
               </button>
 
               <button
+                disabled={!isTimerRunning}
                 onClick={() => {
                   setServer(server === 1 ? 2 : 1);
                   setServeCount(2);
                 }}
                 className={`py-2.5 px-3 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all active:scale-95 ${
-                  isDarkMode
-                    ? "bg-slate-900 border-slate-800 text-sky-400 hover:bg-slate-800"
-                    : "bg-white border-slate-200 text-sky-700 hover:bg-slate-50 shadow-xs"
+                  !isTimerRunning
+                    ? "opacity-40 cursor-not-allowed pointer-events-none " + (isDarkMode ? "bg-slate-900 border-slate-800 text-slate-500" : "bg-slate-100 border-slate-200 text-slate-400")
+                    : isDarkMode
+                      ? "bg-slate-900 border-slate-800 text-sky-400 hover:bg-slate-800"
+                      : "bg-white border-slate-200 text-sky-700 hover:bg-slate-50 shadow-xs"
                 }`}
               >
                 Ganti Server
