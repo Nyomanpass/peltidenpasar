@@ -213,7 +213,7 @@ export default function BaganPage({ onSelectBagan }) {
               setSelectedKelompok("");
             }}
           >
-            <option value="single">Single (Perseorangan)</option>
+            <option value="single">Single (Tunggal)</option>
             <option value="double">Double (Ganda)</option>
           </select>
 

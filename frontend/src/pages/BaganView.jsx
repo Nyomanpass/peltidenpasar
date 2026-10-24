@@ -464,7 +464,14 @@ const revealSlots = (matches, newBagan) => {
 
 
   if (!bagan) {
-    return <div className="p-6 text-center text-gray-500">⏳ Loading...</div>;
+    return (
+      <div className="w-full flex items-center justify-center py-20">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-4 border-amber-500 border-t-transparent animate-spin" />
+          <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest">Memuat Bagan...</p>
+        </div>
+      </div>
+    );
   }
   
   // Konversi Matches ke format react-brackets
@@ -629,161 +636,217 @@ if (isRoundRobin) {
   return (
     <div className="min-h-screen w-full">
       <div className="max-full mx-auto mb-10">
-        <h1 className="text-xl md:text-4xl font-extrabold mb-9 text-center text-gray-800">
-          {bagan.nama}
-        </h1>
-      
-      {(role === "admin" || role === "panitia") && (
-        <div className="flex flex-col items-center gap-4 mb-10">
-          <div className="flex justify-center gap-4">
-            {/* Tombol Undian: HANYA tampil jika BELUM dikunci DAN BUKAN Round Robin */}
-            {!bagan.isLocked && !isRoundRobin && (
-              <button
-                onClick={() => setModalType("seeding")}
-                className="px-8 py-3 bg-purple-700 text-white font-bold rounded-xl shadow-lg hover:bg-purple-800 transition-all"
-                disabled={isSeedingLoading}
-              >
-                Lakukan Pengundian
-              </button>
-            )}
 
-            {/* Tombol Kunci: HANYA tampil jika BELUM dikunci */}
-            {!bagan.isLocked && (
-              <button
-                onClick={() => setShowLockConfirm(true)}
-                className="px-8 py-3 bg-red-600 text-white font-bold rounded-xl"
-              >
-                Kunci Bagan 🔒
-              </button>
-
-            )}
-
-            {/* Tombol Export PDF: Selalu Tampil */}
-            <button
-              onClick={handleExportPDF}
-              className="px-8 py-3 bg-green-600 text-white font-bold rounded-xl shadow-lg hover:bg-green-700 transition-all"
-            >
-              Export PDF
-            </button>
+        {/* ===== PAGE HEADER ===== */}
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
+          {/* Kiri: Info & Judul */}
+          <div>
+            <div className="flex flex-wrap items-center gap-2 mb-1.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                {isRoundRobin ? "Round Robin" : "Eliminasi"}
+              </span>
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+                isDouble
+                  ? "bg-sky-50 text-sky-700 border border-sky-200/60"
+                  : "bg-amber-50 text-amber-700 border border-amber-200/60"
+              }`}>
+                {isDouble ? "Ganda" : "Tunggal"}
+              </span>
+              {bagan.isLocked && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200/60">
+                  🔒 Dikunci
+                </span>
+              )}
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              {bagan.nama}
+            </h1>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500">
+              {bagan.Tournament?.name || "PELTI Denpasar"} · {bagan.KelompokUmur?.nama || ""}
+            </p>
           </div>
 
-          {/* Label Status: Tampil jika SUDAH dikunci */}
-          {bagan.isLocked && (
-            <div className="mt-4 px-6 py-2 bg-amber-100 text-amber-700 font-bold rounded-full border border-amber-200 flex items-center gap-2">
-              🔒 Bagan Telah Disepakati & Dikunci (Permanen)
+          {/* Kanan: Tombol Aksi */}
+          {(role === "admin" || role === "panitia") && (
+            <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+              {/* Tombol Undian */}
+              {!bagan.isLocked && !isRoundRobin && (
+                <button
+                  onClick={() => setModalType("seeding")}
+                  disabled={isSeedingLoading}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-600 hover:bg-slate-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Pengundian
+                </button>
+              )}
+
+              {/* Tombol Kunci */}
+              {!bagan.isLocked && (
+                <button
+                  onClick={() => setShowLockConfirm(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
+                >
+                   Kunci Bagan
+                </button>
+              )}
+
+              {/* Tombol Export PDF */}
+              <button
+                onClick={handleExportPDF}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
+              >
+                Export PDF
+              </button>
             </div>
           )}
         </div>
-      )}
 
-        {/* Bracket */}
-        <div 
-          id="bracket-container" 
-          className="w-full bg-white overflow-x-auto rounded-3xl" 
+        {/* ===== BRACKET / ROUND ROBIN CONTAINER ===== */}
+        <div
+          id="bracket-container"
+          className="w-full rounded-2xl"
+          style={{ background: "#ffffff", border: "1px solid #e2e8f0", boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}
         >
           {isRoundRobin ? (
             /* TAMPILAN ROUND ROBIN (TABEL) */
-            <div className="space-y-6">
-
-  <div className="w-full overflow-x-auto rounded-2xl md:border md:border-gray-200 md:shadow-md">
-    
-    <table className="min-w-[780px] w-full border-separate border-spacing-y-2 text-sm md:text-base">
-      
-      <thead>
-        <tr className="bg-gray-100 text-gray-700">
-          <th className="px-4 py-4 text-left">Match</th>
-          <th className="px-4 py-4 text-left">Peserta 1</th>
-          <th className="px-4 py-4 text-center">VS</th>
-          <th className="px-4 py-4 text-left">Peserta 2</th>
-          <th className="px-4 py-4 text-center">Skor</th>
-          {(role === "admin" || role === "panitia") && (
-            <th className="px-4 py-4 text-center">Aksi</th>
-          )}
-        </tr>
-      </thead>
-
-      <tbody>
-        {bagan.Matches.map((m, index) => (
-          <tr
-            key={m.id}
-            className="bg-white hover:bg-blue-50 transition-all rounded-xl shadow-sm"
-          >
-            <td className="px-4 py-5 font-semibold text-gray-500">
-              #{index + 1}
-            </td>
-
-            <td
-              className={`px-4 py-5 font-semibold text-md ${
-                (isDouble
-                  ? m.winnerDoubleId === m.doubleTeam1Id
-                  : m.winnerId === m.peserta1Id)
-                  ? "text-blue-600"
-                  : "text-gray-800"
-              }`}
-            >
-              {isDouble
-                ? (m.doubleTeam1?.namaTim ||
-                  (m.doubleTeam1Id ? "TBD" : "BYE"))
-                : (m.peserta1?.namaLengkap ||
-                  (m.peserta1Id ? "TBD" : "BYE"))}
-            </td>
-
-            <td className="px-4 py-5 text-center text-gray-400 font-bold text-md">
-              VS
-            </td>
-
-            <td
-              className={`px-4 py-5 font-semibold text-md ${
-                (isDouble
-                  ? m.winnerDoubleId === m.doubleTeam2Id
-                  : m.winnerId === m.peserta2Id)
-                  ? "text-blue-600"
-                  : "text-gray-800"
-              }`}
-            >
-              {isDouble
-                ? (m.doubleTeam2?.namaTim ||
-                  (m.doubleTeam2Id ? "TBD" : "BYE"))
-                : (m.peserta2?.namaLengkap ||
-                  (m.peserta2Id ? "TBD" : "BYE"))}
-            </td>
-
-            <td className="px-4 py-5 text-center">
-              <span className="bg-gray-100 px-4 py-2 rounded-lg font-bold text-sm shadow-sm">
-                {formatSetScore(m)}
-              </span>
-            </td>
-
-            {(role === "admin" || role === "panitia") && (
-              <td className="px-4 py-5 text-center">
-                {(
-                  (!isDouble && !m.winnerId) ||
-                  (isDouble && !m.winnerDoubleId)
-                ) ? (
-                  <button
-                    onClick={() => {
-                      setSelectedMatch(m);
-                      setModalType("winner");
+            <div className="p-0">
+              {juaraRR && (
+                <div
+                  style={{
+                    background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%)",
+                    borderBottom: "1px solid #d97706",
+                    padding: "14px 20px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    gap: "10px",
+                  }}
+                >
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <span style={{ fontSize: "24px" }}>🏆</span>
+                    <div>
+                      <p style={{ fontSize: "11px", fontWeight: "800", color: "#78350f", letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                        Juara Round Robin
+                      </p>
+                      <p style={{ fontSize: "16px", fontWeight: "900", color: "#451a03" }}>
+                        {isDouble
+                          ? (juaraRR.namaTim || `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`)
+                          : juaraRR?.namaLengkap}
+                      </p>
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      background: "linear-gradient(135deg, #b45309 0%, #78350f 100%)",
+                      color: "#ffffff",
+                      padding: "4px 12px",
+                      borderRadius: "9999px",
+                      fontSize: "11px",
+                      fontWeight: "900",
+                      letterSpacing: "0.06em",
+                      textTransform: "uppercase",
+                      boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                     }}
-                    className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full font-semibold hover:bg-blue-200 transition"
                   >
-                    Input Skor
-                  </button>
-                ) : (
-                  <span className="text-sm text-gray-400 italic">
-                    Selesai
+                    🏆 JUARA 1
                   </span>
-                )}
-              </td>
-            )}
-          </tr>
-        ))}
-      </tbody>
+                </div>
+              )}
+              <div className="w-full overflow-x-auto">
+                <table className="min-w-[680px] w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200/80">
+                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-12">#</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Peserta 1</th>
+                      <th className="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider w-12">VS</th>
+                      <th className="px-4 py-3.5 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Peserta 2</th>
+                      <th className="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Skor</th>
+                      {(role === "admin" || role === "panitia") && (
+                        <th className="px-4 py-3.5 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Aksi</th>
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {bagan.Matches.map((m, index) => {
+                      const isP1Juara = isDouble ? (juaraRR && m.doubleTeam1Id === juaraRR.id) : (juaraRR && m.peserta1Id === juaraRR.id);
+                      const isP2Juara = isDouble ? (juaraRR && m.doubleTeam2Id === juaraRR.id) : (juaraRR && m.peserta2Id === juaraRR.id);
+                      const isWinnerP1 = isDouble ? (m.winnerDoubleId === m.doubleTeam1Id) : (m.winnerId === m.peserta1Id);
+                      const isWinnerP2 = isDouble ? (m.winnerDoubleId === m.doubleTeam2Id) : (m.winnerId === m.peserta2Id);
 
-    </table>
-  </div>
+                      return (
+                      <tr key={m.id} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="px-4 py-4 text-xs font-bold text-slate-400">#{index + 1}</td>
 
-</div>
+                        <td className={`px-4 py-4 font-semibold text-sm ${
+                          isWinnerP1 ? "text-amber-600" : "text-slate-800"
+                        }`}>
+                          <div className="flex items-center gap-2">
+                            <span>
+                              {isDouble
+                                ? (m.doubleTeam1?.namaTim || (m.doubleTeam1Id ? "TBD" : "BYE"))
+                                : (m.peserta1?.namaLengkap || (m.peserta1Id ? "TBD" : "BYE"))}
+                            </span>
+                            {isP1Juara && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold tracking-wider uppercase shadow-xs">
+                                🏆 Juara
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-4 text-center text-[10px] font-extrabold text-slate-400 tracking-widest">VS</td>
+
+                        <td className={`px-4 py-4 font-semibold text-sm ${
+                          isWinnerP2 ? "text-amber-600" : "text-slate-800"
+                        }`}>
+                          <div className="flex items-center gap-2">
+                            <span>
+                              {isDouble
+                                ? (m.doubleTeam2?.namaTim || (m.doubleTeam2Id ? "TBD" : "BYE"))
+                                : (m.peserta2?.namaLengkap || (m.peserta2Id ? "TBD" : "BYE"))}
+                            </span>
+                            {isP2Juara && (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold tracking-wider uppercase shadow-xs">
+                                🏆 Juara
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        <td className="px-4 py-4 text-center">
+                          {formatSetScore(m) ? (
+                            <span className="inline-flex items-center px-3 py-1 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs">
+                              {formatSetScore(m)}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-slate-300 font-medium">—</span>
+                          )}
+                        </td>
+
+                        {(role === "admin" || role === "panitia") && (
+                          <td className="px-4 py-4 text-center">
+                            {((!isDouble && !m.winnerId) || (isDouble && !m.winnerDoubleId)) ? (
+                              <button
+                                onClick={() => { setSelectedMatch(m); setModalType("winner"); }}
+                                className="inline-flex items-center px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider transition-all active:scale-95"
+                              >
+                                Input Skor
+                              </button>
+                            ) : (
+                              <span className="inline-flex items-center px-3 py-1 rounded-lg bg-emerald-50 text-emerald-600 font-bold text-xs border border-emerald-200/60">
+                                Selesai
+                              </span>
+                            )}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
           ) : (
            
@@ -854,32 +917,202 @@ if (isRoundRobin) {
                     if (!match) return null;
                     const isDouble = bagan.kategori === "double";
 
+                    const isFinalRound = props.roundIndex === rounds.length - 1 || match.round === finalRound;
+
+                    const isWinner1 = isDouble
+                      ? (!!match.winnerDoubleId && match.winnerDoubleId === match.doubleTeam1Id)
+                      : (!!match.winnerId && match.winnerId === match.peserta1Id);
+
+                    const isWinner2 = isDouble
+                      ? (!!match.winnerDoubleId && match.winnerDoubleId === match.doubleTeam2Id)
+                      : (!!match.winnerId && match.winnerId === match.peserta2Id);
+
+                    const isFinished = isWinner1 || isWinner2;
+
+                    const isJuara1 = isFinalRound && isWinner1;
+                    const isJuara2 = isFinalRound && isWinner2;
+                    const hasJuaraInThisMatch = isJuara1 || isJuara2;
+
+                    const isRunnerUp1 = isFinalRound && isWinner2;
+                    const isRunnerUp2 = isFinalRound && isWinner1;
+
+                    const name1 = isDouble 
+                      ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
+                      : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"));
+
+                    const name2 = isDouble 
+                      ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
+                      : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"));
+
+                    const getSlotInfo = (isJuara, isRunnerUp, isWinner) => {
+                      if (isJuara) {
+                        return {
+                          style: {
+                            background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fcd34d 100%)",
+                            color: "#451a03",
+                            border: "2px solid #b45309",
+                            boxShadow: "0 4px 12px rgba(217, 119, 6, 0.35)",
+                            fontWeight: "800",
+                          },
+                          badge: (
+                            <span
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "3px",
+                                background: "linear-gradient(135deg, #b45309 0%, #78350f 100%)",
+                                color: "#ffffff",
+                                padding: "2px 8px",
+                                borderRadius: "9999px",
+                                fontSize: "10px",
+                                fontWeight: "900",
+                                letterSpacing: "0.06em",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+                                textTransform: "uppercase",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <span>🏆</span>
+                              <span>JUARA</span>
+                            </span>
+                          ),
+                          icon: null,
+                          isJuara: true,
+                        };
+                      }
+
+                      if (isRunnerUp) {
+                        return {
+                          style: {
+                            background: "#f1f5f9",
+                            color: "#475569",
+                            border: "1.5px solid #cbd5e1",
+                            fontWeight: "600",
+                          },
+                          badge: null,
+                          icon: null,
+                          isJuara: false,
+                        };
+                      }
+
+                      if (isWinner) {
+                        return {
+                          style: {
+                            background: "#fef9c3",
+                            color: "#78350f",
+                            border: "2px solid #f59e0b",
+                            fontWeight: "700",
+                          },
+                          badge: null,
+                          icon: null,
+                          isJuara: false,
+                        };
+                      }
+
+                      if (isFinished) {
+                        return {
+                          style: {
+                            background: "#f8fafc",
+                            color: "#94a3b8",
+                            border: "1px solid #e2e8f0",
+                            fontWeight: "500",
+                          },
+                          badge: null,
+                          icon: null,
+                          isJuara: false,
+                        };
+                      }
+
+                      return {
+                        style: {
+                          background: "#ffffff",
+                          color: "#1e293b",
+                          border: "1px solid #e2e8f0",
+                          fontWeight: "600",
+                        },
+                        badge: null,
+                        icon: null,
+                        isJuara: false,
+                      };
+                    };
+
+                    const slot1 = getSlotInfo(isJuara1, isRunnerUp1, isWinner1);
+                    const slot2 = getSlotInfo(isJuara2, isRunnerUp2, isWinner2);
+
                     const cardContent = (
                       <SeedItem>
-                        <div className="relative" style={{ backgroundColor: "#ffffff" }}>
-                          {/* TAMPILAN ASLI KAMU (GAYA LAMA) */}
+                        <div
+                          className="relative"
+                          style={{
+                            backgroundColor: hasJuaraInThisMatch ? "#fffbeb" : "#ffffff",
+                            padding: hasJuaraInThisMatch ? "3px" : "0px",
+                            borderRadius: "12px",
+                            border: hasJuaraInThisMatch ? "2px solid #f59e0b" : "none",
+                            boxShadow: hasJuaraInThisMatch ? "0 0 16px rgba(245, 158, 11, 0.35)" : "none",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          {/* Skor Pertandingan */}
                           {formatSetScore(match) && (
-                            <div className="absolute -top-3 -right-3 z-10">
-                              <span style={{ color: "#000000" }} className="font-bold text-md px-2 py-0.5">
+                            <div
+                              style={{
+                                position: "absolute",
+                                top: "-10px",
+                                right: "6px",
+                                zIndex: 10,
+                              }}
+                            >
+                              <span
+                                style={{
+                                  background: "#0f172a",
+                                  color: "#ffffff",
+                                  fontSize: "11px",
+                                  fontWeight: "800",
+                                  padding: "2px 8px",
+                                  borderRadius: "6px",
+                                  letterSpacing: "0.03em",
+                                  boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
+                                  display: "inline-block",
+                                }}
+                              >
                                 {formatSetScore(match)}
                               </span>
                             </div>
                           )}
 
+                          {/* Slot Peserta 1 */}
                           <SeedTeam
-                            className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
-                              ${(isDouble ? match.winnerDoubleId === match.doubleTeam1Id : match.winnerId === match.peserta1Id)
-                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                              }`}
+                            style={{
+                              ...slot1.style,
+                              minWidth: "220px",
+                              padding: "8px 12px",
+                              borderRadius: "8px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: "8px",
+                              boxSizing: "border-box",
+                            }}
                           >
-                            {isDouble 
-                              ? (match.doubleTeam1?.namaTim || (match.doubleTeam1Id ? "TBD" : "BYE"))
-                              : (match.peserta1?.namaLengkap || (match.peserta1Id ? "TBD" : "BYE"))}
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <span
+                                style={{
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  fontSize: slot1.isJuara ? "14px" : "13px",
+                                  display: "block",
+                                }}
+                                title={name1}
+                              >
+                                {name1}
+                              </span>
+                            </div>
+                            {slot1.badge}
                           </SeedTeam>
 
                           {/* Pembatas tengah persis antara kedua peserta/tim */}
-                          <div className="relative h-2">
+                          <div className="relative" style={{ height: "6px" }}>
                             {/* GARIS ALUR PENGHUBUNG DARI KUALIFIKASI KE BABAK UTAMA */}
                             {isRound0 && (
                               <div
@@ -898,16 +1131,35 @@ if (isRoundRobin) {
                             )}
                           </div>
 
+                          {/* Slot Peserta 2 */}
                           <SeedTeam
-                            className={`rounded-lg min-w-[220px] px-3 py-2 text-start text-lg font-medium border-2 
-                              ${(isDouble ? match.winnerDoubleId === match.doubleTeam2Id : match.winnerId === match.peserta2Id)
-                                ? "bg-[#fef3c7] text-[#78350f] border-[#fcd34d]"
-                                : "bg-[#f3f4f6] text-[#1f2937] border-[#e5e7eb]"
-                              }`}
+                            style={{
+                              ...slot2.style,
+                              minWidth: "220px",
+                              padding: "8px 12px",
+                              borderRadius: "8px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: "8px",
+                              boxSizing: "border-box",
+                            }}
                           >
-                            {isDouble 
-                              ? (match.doubleTeam2?.namaTim || (match.doubleTeam2Id ? "TBD" : "BYE"))
-                              : (match.peserta2?.namaLengkap || (match.peserta2Id ? "TBD" : "BYE"))}
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <span
+                                style={{
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  fontSize: slot2.isJuara ? "14px" : "13px",
+                                  display: "block",
+                                }}
+                                title={name2}
+                              >
+                                {name2}
+                              </span>
+                            </div>
+                            {slot2.badge}
                           </SeedTeam>
                         </div>
                       </SeedItem>
@@ -1206,163 +1458,80 @@ if (isRoundRobin) {
 
 
 
-        {/* Hanya tampil jika BUKAN Round Robin */}
+        {/* ===== KETERANGAN PENEMPATAN (hanya non-RR) ===== */}
         {!isRoundRobin && (
-        <div
-          id="keterangan-container"
-          className="mt-12 md:mt-16 border-t border-gray-200 
-                    pt-8 md:pt-12 
-                    px-4 
-                    bg-white"
-        >
+          <div
+            id="keterangan-container"
+            className="mt-6 bg-white rounded-2xl border border-slate-200/80 shadow-xs p-5 sm:p-6"
+          >
+            {/* Title */}
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
+              <Info size={16} className="text-slate-400" />
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-tight">
+                Keterangan Penempatan (Seeding &amp; Plotting)
+              </h3>
+            </div>
 
-          {/* Title */}
-          <h3 className="text-lg sm:text-xl md:text-2xl 
-                        font-bold text-gray-800 
-                        mb-6 md:mb-8 
-                        flex items-center gap-2">
-            <Info size={20} className="text-blue-500" />
-            Keterangan Penempatan (Seeding & Plotting)
-          </h3>
+            {/* Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-          {/* Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-10">
-
-            {/* Kolom Seed */}
-            <div className="space-y-4">
-              <p className="text-xs sm:text-sm 
-                            font-extrabold text-gray-400 
-                            uppercase tracking-widest 
-                            flex items-center gap-2">
-                <Star size={16} className="fill-yellow-400 text-yellow-400" />
-                Peserta Unggulan (Seeded)
-              </p>
-
+              {/* Kolom Seed */}
               <div className="space-y-3">
-                {(() => {
-                  const seededFinal = [];
-                  const seenIds = new Set();
-
-                  bagan.Matches.filter(m => m.round === 1).forEach((m) => {
-                    const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
-                    const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
-                    const id1 = isDouble ? m.doubleTeam1Id : m.peserta1Id;
-                    const id2 = isDouble ? m.doubleTeam2Id : m.peserta2Id;
-
-                    if (id1 && p1?.isSeeded && !seenIds.has(id1)) {
-                      seededFinal.push(p1);
-                      seenIds.add(id1);
-                    }
-                    if (id2 && p2?.isSeeded && !seenIds.has(id2)) {
-                      seededFinal.push(p2);
-                      seenIds.add(id2);
-                    }
-                  });
-
-                  if (seededFinal.length === 0) {
-                    return (
-                      <p className="text-sm text-gray-400 italic">
-                        Tidak ada peserta unggulan.
-                      </p>
-                    );
-                  }
-
-                  return seededFinal.map((p, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between items-center 
-                                p-3 md:p-4 
-                                bg-white 
-                                border border-yellow-200 
-                                rounded-xl 
-                                shadow-sm"
-                    >
-                      <span className="text-sm md:text-base 
-                                      font-semibold text-gray-800 break-words">
-                        {isDouble
-                          ? (p.namaTim || p.Player1?.namaLengkap)
-                          : p.namaLengkap}
-                      </span>
-
-                      <span className="text-[10px] md:text-xs 
-                                      bg-yellow-400 text-white 
-                                      px-2 py-1 
-                                      rounded-full 
-                                      font-bold">
-                        SEED
-                      </span>
-                    </div>
-                  ));
-                })()}
-              </div>
-            </div>
-
-            {/* Kolom Plotting */}
-            <div className="space-y-4">
-              <p className="text-xs sm:text-sm 
-                            font-extrabold text-gray-400 
-                            uppercase tracking-widest 
-                            flex items-center gap-2">
-                <Users size={16} className="text-blue-500" />
-                Penempatan Khusus (Non-Seed)
-              </p>
-
-              <div className="bg-gray-50 p-4 md:p-6 
-                              rounded-xl 
-                              border border-gray-100">
-                <p className="text-[11px] md:text-base 
-                              text-gray-600 
-                              leading-relaxed italic">
-                  Beberapa peserta telah dipisahkan posisinya secara manual 
-                  (Plotting) guna menghindari pertemuan dini antar rekan satu tim 
-                  atau instansi yang sama.
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Star size={13} className="fill-amber-400 text-amber-400" />
+                  Peserta Unggulan (Seeded)
                 </p>
+                <div className="space-y-2">
+                  {(() => {
+                    const seededFinal = [];
+                    const seenIds = new Set();
+                    bagan.Matches.filter(m => m.round === 1).forEach((m) => {
+                      const p1 = isDouble ? m.doubleTeam1 : m.peserta1;
+                      const p2 = isDouble ? m.doubleTeam2 : m.peserta2;
+                      const id1 = isDouble ? m.doubleTeam1Id : m.peserta1Id;
+                      const id2 = isDouble ? m.doubleTeam2Id : m.peserta2Id;
+                      if (id1 && p1?.isSeeded && !seenIds.has(id1)) { seededFinal.push(p1); seenIds.add(id1); }
+                      if (id2 && p2?.isSeeded && !seenIds.has(id2)) { seededFinal.push(p2); seenIds.add(id2); }
+                    });
+                    if (seededFinal.length === 0) {
+                      return <p className="text-xs text-slate-400 italic">Tidak ada peserta unggulan.</p>;
+                    }
+                    return seededFinal.map((p, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-3 bg-white border border-amber-200/60 rounded-xl shadow-xs">
+                        <span className="text-sm font-semibold text-slate-800 break-words">
+                          {isDouble ? (p.namaTim || p.Player1?.namaLengkap) : p.namaLengkap}
+                        </span>
+                        <span className="text-[10px] bg-amber-400 text-white px-2.5 py-1 rounded-full font-bold tracking-wider">
+                          SEED
+                        </span>
+                      </div>
+                    ));
+                  })()}
+                </div>
               </div>
-            </div>
 
-          </div>
-
-          {/* Footer */}
-          <div className="mt-10 md:mt-14 
-                          pt-6 border-t border-gray-100 
-                          flex flex-col sm:flex-row 
-                          justify-between items-center 
-                          gap-3 
-                          text-[10px] sm:text-xs 
-                          text-gray-400 
-                          font-medium uppercase tracking-widest">
-            <span>PELTI DENPASAR OFFICIAL SYSTEM</span>
-            <span>{new Date().toLocaleString('id-ID')}</span>
-          </div>
-
-        </div>
-
-        )}
-
-        {/* 🏆 Juara */}
-        {juara && (
-          <div className="mt-8 md:mt-12 text-center bg-white p-5 md:p-8 
-                rounded-xl md:rounded-2xl 
-                shadow-md md:shadow-lg 
-                border-2 border-yellow-400">
-
-              <h2 className="text-xl sm:text-2xl md:text-3xl 
-                            font-bold text-yellow-600">
-                🏆 Juara
-              </h2>
-
-              <p className="text-base sm:text-lg md:text-2xl 
-                            font-semibold text-gray-900 
-                            mt-2 md:mt-3 break-words">
-                {isRoundRobin
-                  ? (isDouble
-                      ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
-                      : juaraRR?.namaLengkap)
-                  : juara}
-              </p>
+              {/* Kolom Plotting */}
+              <div className="space-y-3">
+                <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <Users size={13} className="text-slate-400" />
+                  Penempatan Khusus (Non-Seed)
+                </p>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Beberapa peserta telah dipisahkan posisinya secara manual (Plotting)
+                    guna menghindari pertemuan dini antar rekan satu tim atau instansi yang sama.
+                  </p>
+                </div>
+              </div>
 
             </div>
 
+            {/* Footer */}
+            <div className="mt-5 pt-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-2 text-[10px] text-slate-400 font-medium uppercase tracking-widest">
+              <span>PELTI DENPASAR OFFICIAL SYSTEM</span>
+              <span>{new Date().toLocaleString('id-ID')}</span>
+            </div>
+          </div>
         )}
       </div>
 
@@ -1512,27 +1681,30 @@ if (isRoundRobin) {
 
 
 {showLockConfirm && (
-  <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999]">
-    <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 animate-in zoom-in">
-      
-      <h2 className="text-xl font-bold text-gray-800 mb-2">
-        Kunci Bagan?
-      </h2>
-      <p className="text-sm text-gray-500 mb-5">
-        Setelah dikunci, bagan tidak bisa diundi ulang atau diubah.
+  <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+    <div className="bg-white w-full max-w-sm rounded-2xl shadow-2xl border border-slate-200/60 p-6">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-200/60 text-lg">
+          🔒
+        </div>
+        <div>
+          <h2 className="text-sm font-bold text-slate-900">Kunci Bagan?</h2>
+          <p className="text-xs text-slate-500">Tindakan ini tidak dapat dibatalkan.</p>
+        </div>
+      </div>
+      <p className="text-xs text-slate-500 mb-5 leading-relaxed">
+        Setelah dikunci, bagan tidak bisa diundi ulang atau diubah. Pastikan pengundian sudah benar.
       </p>
-
-      <div className="flex gap-3 justify-end">
+      <div className="flex gap-2">
         <button
           onClick={() => setShowLockConfirm(false)}
-          className="px-4 py-2 rounded-xl bg-gray-200 text-gray-700 font-semibold hover:bg-gray-300"
+          className="flex-1 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider transition-all"
         >
           Batal
         </button>
-
         <button
           onClick={handleLockBagan}
-          className="px-4 py-2 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700"
+          className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider transition-all"
         >
           Ya, Kunci
         </button>
