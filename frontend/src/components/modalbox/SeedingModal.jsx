@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Trash2, Plus, Info, Trophy, Star, Users, X, AlertCircle } from "lucide-react"; 
+import { Trash2, Plus, Info, Trophy, Star, Users, X, AlertCircle, Sparkles } from "lucide-react"; 
 
 export default function SeedingModal({ pesertaList, onClose, onSaved }) {
   const [seededPeserta, setSeededPeserta] = useState([]);
@@ -71,127 +71,181 @@ export default function SeedingModal({ pesertaList, onClose, onSaved }) {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-gray-900/40 backdrop-blur-sm z-50 p-6">
-      <div className="bg-white rounded-2xl shadow-xl w-full h-[85vh] max-w-5xl flex flex-col overflow-hidden animate-in fade-in duration-300">
+    <div className="fixed inset-0 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm z-50 p-4 sm:p-6 animate-in fade-in duration-200">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
         
         {/* Header */}
-        <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-          <div className="flex items-center gap-4">
-            <div className="bg-[#D4A949]/10 p-2.5 rounded-xl">
-              <Trophy className="w-7 h-7 text-[#D4A949]" />
+        <div className="px-6 sm:px-8 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-200/60 flex items-center justify-center text-amber-600 shadow-xs">
+              <Trophy className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-gray-800 text-2xl tracking-tight">Plotting Peserta</h3>
-              <p className="text-gray-400 text-sm font-medium">
-                Batas Slot Maksimal: <span className="text-[#6E332C] font-bold">Slot 1 - {maxSlot}</span>
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-slate-900 text-lg sm:text-xl tracking-tight">Pengundian &amp; Plotting Bagan</h3>
+                <span className="hidden sm:inline-flex px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold">
+                  Kapasitas: Slot 1 - {maxSlot}
+                </span>
+              </div>
+              <p className="text-slate-500 text-xs font-medium mt-0.5">
+                Atur penempatan unggulan (Seed) dan plotting manual sebelum pengundian
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <X className="w-6 h-6 text-gray-400" />
+          <button 
+            onClick={onClose} 
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 p-8 overflow-y-auto bg-white">
-          {/* Aler Info Kapasitas */}
-          <div className="mb-6 flex items-center gap-3 p-4 bg-blue-50 border border-blue-100 rounded-xl text-blue-700 text-sm">
-            <AlertCircle size={18} />
-            <span>Sistem mendeteksi <strong>{pesertaList.length} Peserta</strong>, maka kapasitas bagan adalah <strong>{maxSlot} Slot</strong>.</span>
+        <div className="flex-1 p-6 sm:p-8 overflow-y-auto bg-white">
+          {/* Info Kapasitas */}
+          <div className="mb-6 flex items-start sm:items-center gap-3 p-4 bg-amber-50/70 border border-amber-200/80 rounded-2xl text-slate-700 text-xs">
+            <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5 sm:mt-0" />
+            <span className="leading-relaxed">
+              Sistem mendeteksi <strong>{pesertaList.length} Peserta</strong>, kapasitas bagan adalah <strong>{maxSlot} Slot</strong>. Peserta tanpa penempatan khusus akan diundi otomatis secara acak.
+            </span>
           </div>
 
           {seededPeserta.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-64 text-center">
-              <Users className="w-12 h-12 text-gray-200 mb-2" />
-              <p className="text-gray-400 font-medium">Belum ada pengaturan penempatan.</p>
-              <button onClick={addSlot} className="text-[#D4A949] font-bold hover:underline">Tambah peserta sekarang</button>
+            <div className="flex flex-col items-center justify-center py-12 px-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/40 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200/60 flex items-center justify-center text-slate-300 mb-3 shadow-xs">
+                <Users className="w-6 h-6" />
+              </div>
+              <p className="text-slate-700 font-bold text-sm">Belum ada penempatan khusus</p>
+              <p className="text-slate-400 text-xs max-w-sm mt-1 mb-4">
+                Semua posisi slot akan diundi secara acak oleh sistem. Klik tombol di bawah jika ingin menentukan Seed atau posisi tertentu.
+              </p>
+              <button 
+                onClick={addSlot} 
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider shadow-xs transition-all active:scale-95"
+              >
+                <Plus size={14} /> Tambah Slot Khusus
+              </button>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {seededPeserta.map((seeded, index) => {
                 const isInvalid = seeded.slot > maxSlot;
                 return (
-                  <div key={index} className={`flex items-center space-x-6 p-4 rounded-xl border transition-all ${seeded.isSeeded ? 'border-[#D4A949] bg-[#D4A949]/5' : 'border-gray-100'}`}>
-                    
+                  <div 
+                    key={index} 
+                    className={`flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 p-4 rounded-2xl border transition-all ${
+                      seeded.isSeeded 
+                        ? 'border-amber-300 bg-amber-50/40 shadow-xs' 
+                        : 'border-slate-200/80 bg-slate-50/40 hover:bg-white'
+                    }`}
+                  >
+                    {/* Index Indicator */}
+                    <div className="hidden sm:flex w-7 h-7 rounded-xl bg-white border border-slate-200 text-slate-400 font-bold text-xs items-center justify-center shrink-0">
+                      #{index + 1}
+                    </div>
+
                     {/* Select Peserta */}
-                    <div className="flex-[2]">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Peserta</label>
+                    <div className="flex-1">
+                      <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1 block">Peserta</label>
                       <select
-                        className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-gray-700 font-medium outline-none focus:border-[#D4A949]"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-800 text-sm font-semibold outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 transition-all"
                         value={seeded.id || ""}
                         onChange={(e) => handleChange(index, e.target.value)}
                       >
                         <option value="">Pilih Peserta...</option>
                         {pesertaList.map((p) => {
-                            // Cek apakah peserta ini sudah dipilih di baris LAIN
-                            const isAlreadyChosen = selectedIds.includes(p.id) && seeded.id !== p.id;
+                          const isAlreadyChosen = selectedIds.includes(p.id) && seeded.id !== p.id;
+                          if (isAlreadyChosen) return null;
 
-                            // Jika sudah dipilih, jangan tampilkan (return null atau skip)
-                            if (isAlreadyChosen) return null;
-
-                            return (
-                              <option key={p.id} value={p.id}>
-                                {p.namaTim || p.namaLengkap}
-                              </option>
-                            );
-                          })}
+                          return (
+                            <option key={p.id} value={p.id}>
+                              {p.namaTim || p.namaLengkap}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
                     
-                    {/* Input Slot - Dengan Batasan Max */}
-                    <div className="w-32">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block text-center">No. Slot</label>
-                      <input
-                        type="number"
-                        min="1"
-                        max={maxSlot}
-                        placeholder={`1-${maxSlot}`}
-                        className={`w-full bg-white border rounded-lg px-3 py-2 text-xl text-center font-bold outline-none transition-all
-                          ${isInvalid ? 'border-red-500 text-red-600 bg-red-50' : 'border-gray-200 text-[#6E332C] focus:border-[#D4A949]'}`}
-                        value={seeded.slot || ""}
-                        onChange={(e) => handleSlotChange(index, e.target.value)}
-                      />
+                    <div className="flex items-center gap-3">
+                      {/* Input Slot */}
+                      <div className="w-24 sm:w-28 shrink-0">
+                        <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1 block text-center">No. Slot</label>
+                        <input
+                          type="number"
+                          min="1"
+                          max={maxSlot}
+                          placeholder={`1-${maxSlot}`}
+                          className={`w-full bg-white border rounded-xl px-3 py-2 text-base text-center font-extrabold outline-none transition-all
+                            ${isInvalid 
+                              ? 'border-rose-400 text-rose-600 bg-rose-50 focus:ring-2 focus:ring-rose-500/20' 
+                              : 'border-slate-200 text-slate-900 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'}`}
+                          value={seeded.slot || ""}
+                          onChange={(e) => handleSlotChange(index, e.target.value)}
+                        />
+                      </div>
+
+                      {/* Tipe Toggle */}
+                      <div className="w-32 sm:w-36 shrink-0 flex flex-col items-center">
+                        <label className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-1 block">Tipe</label>
+                        <button
+                          type="button"
+                          onClick={() => toggleSeed(index)}
+                          className={`w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs uppercase tracking-wider border transition-all active:scale-95 ${
+                            seeded.isSeeded 
+                              ? 'bg-amber-500 border-amber-500 text-white shadow-xs' 
+                              : 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-600'
+                          }`}
+                        >
+                          <Star size={13} className={seeded.isSeeded ? 'fill-white' : ''} />
+                          {seeded.isSeeded ? "SEED" : "MANUAL"}
+                        </button>
+                      </div>
+
+                      {/* Remove Button */}
+                      <div className="flex flex-col items-center">
+                        <span className="text-[10px] font-extrabold text-transparent mb-1 block select-none">x</span>
+                        <button 
+                          onClick={() => removeSlot(index)} 
+                          className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors"
+                          title="Hapus baris"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
 
-                    {/* Tipe Toggle */}
-                    <div className="w-40 flex flex-col items-center">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Tipe</label>
-                      <button
-                        onClick={() => toggleSeed(index)}
-                        className={`w-full flex items-center justify-center gap-2 py-2 rounded-lg font-bold text-xs border transition-all ${
-                          seeded.isSeeded ? 'bg-[#D4A949] border-[#D4A949] text-white' : 'bg-gray-50 text-gray-400'
-                        }`}
-                      >
-                        <Star size={14} className={seeded.isSeeded ? 'fill-white' : ''} />
-                        {seeded.isSeeded ? "SEED" : "MANUAL"}
-                      </button>
-                    </div>
-
-                    {/* Remove */}
-                    <button onClick={() => removeSlot(index)} className="mt-4 p-2 text-gray-300 hover:text-red-500 transition-colors">
-                      <Trash2 size={20} />
-                    </button>
                   </div>
                 );
               })}
             </div>
           )}
           
-          <button onClick={addSlot} className="w-full mt-6 py-4 border-2 border-dashed border-gray-100 text-gray-400 rounded-xl hover:border-[#D4A949] hover:text-[#D4A949] font-bold flex items-center justify-center gap-2 transition-all">
-            <Plus size={20} /> Tambah Slot Baru
+          <button 
+            onClick={addSlot} 
+            className="w-full mt-4 py-3.5 border-2 border-dashed border-slate-200 hover:border-amber-400 hover:bg-amber-50/30 text-slate-500 hover:text-amber-700 rounded-2xl font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all active:scale-98"
+          >
+            <Plus size={16} /> Tambah Baris Penempatan
           </button>
         </div>
 
         {/* Footer */}
-        <div className="p-8 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-          <div className="flex items-center gap-3 text-xs text-gray-500 italic">
-            <Info size={16} className="text-blue-500" />
-            <span>Nomor slot tidak boleh lebih dari {maxSlot}.</span>
+        <div className="p-5 sm:p-6 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Info size={14} className="text-slate-400 shrink-0" />
+            <span>Slot yang kosong akan diundi acak secara transparan.</span>
           </div>
-          <div className="flex gap-4">
-            <button onClick={onClose} className="font-bold text-gray-400 hover:text-gray-600">Batal</button>
-            <button onClick={save} className="px-8 py-3 bg-[#6E332C] hover:bg-[#522520] text-white font-bold rounded-xl shadow-lg transition-all active:scale-95">
-              Simpan & Plotting
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button 
+              onClick={onClose} 
+              className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-200/60 font-bold text-xs uppercase tracking-wider transition-all"
+            >
+              Batal
+            </button>
+            <button 
+              onClick={save} 
+              className="flex-1 sm:flex-none px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-xs hover:shadow-sm transition-all"
+            >
+              Simpan &amp; Mulai Undian
             </button>
           </div>  
         </div>

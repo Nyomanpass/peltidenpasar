@@ -1560,122 +1560,110 @@ if (isRoundRobin) {
         />
       )}
 
-      {/* Loading Modal Pop-up */}
-{isSeedingLoading && (
-  <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-md">
+      {/* Loading Modal Pop-up (Live Draw Ceremony) */}
+      {isSeedingLoading && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4 sm:p-6 animate-in fade-in duration-300">
+          <div className="relative bg-white/95 backdrop-blur-2xl rounded-3xl p-6 sm:p-10 w-full max-w-xl text-center shadow-2xl border border-amber-200/60 overflow-hidden">
+            
+            {/* Glow Ambient Light */}
+            <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-80 h-80 bg-amber-400/15 rounded-full blur-3xl pointer-events-none" />
 
-    <div className="relative bg-white/95 backdrop-blur-xl rounded-[2.5rem] px-20 py-16 w-[900px] text-center shadow-[0_30px_100px_rgba(0,0,0,0.6)] border border-yellow-400/40 overflow-hidden">
-
-      {/* Glow Background */}
-     
-
-      {/* HEADER */}
-      <div className="mb-10 relative z-10">
-        <h2 className="text-4xl font-extrabold text-yellow-500 tracking-wide">
-          LIVE DRAW CEREMONY
-        </h2>
-        <p className="text-gray-500 mt-3 text-lg tracking-wide">
-          Sistem Pengundian Resmi & Transparan
-        </p>
-      </div>
-
-      {/* 🔄 ROLLING MODE */}
-      {drawStage === "rolling" && (
-        <div className="relative z-10">
-
-          {/* Logo + Spinner */}
-          <div className="relative w-40 h-40 mx-auto mb-12">
-            <div className="absolute inset-0 rounded-full border-[6px] border-yellow-400/30"></div>
-            <div className="absolute inset-0 rounded-full border-[6px] border-yellow-500 border-t-transparent animate-spin"></div>
-
-            <div className="absolute inset-6 rounded-full bg-white flex items-center justify-center shadow-inner">
-              <img
-                src="/logo.png"
-                alt="Logo"
-                className="w-20 h-20 object-contain"
-              />
-            </div>
-          </div>
-
-          {/* VERTICAL MATCH DISPLAY */}
-          <div className="flex flex-col items-center justify-center transition-all duration-300">
-
-            {/* Peserta 1 */}
-            <div className="text-4xl font-bold text-gray-800">
-              {rollingName?.split(" VS ")[0]}
-            </div>
-
-            {/* VS */}
-            <div className="my-8 relative">
-              <div className="absolute inset-0 blur-xl bg-yellow-400 opacity-40 rounded-full"></div>
-              <div className="relative px-10 py-2 rounded-full 
-                              bg-gradient-to-r from-yellow-500 to-orange-500 
-                              text-white font-extrabold text-2xl shadow-xl tracking-widest">
-                VS
+            {/* HEADER */}
+            <div className="mb-6 relative z-10">
+              <div className="inline-flex items-center px-3.5 py-1 rounded-full bg-amber-50 border border-amber-200/80 text-amber-700 text-[11px] font-extrabold uppercase tracking-widest mb-2 shadow-xs">
+                LIVE DRAW CEREMONY
               </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                Pengundian Bagan Resmi
+              </h2>
+              <p className="text-slate-500 mt-1 text-xs sm:text-sm font-medium">
+                Sistem Pengundian Acak Resmi &amp; Transparan
+              </p>
             </div>
 
-            {/* Peserta 2 */}
-            <div className="text-4xl font-bold text-gray-800">
-              {rollingName?.split(" VS ")[1]}
+            {/* 🔄 ROLLING MODE */}
+            {drawStage === "rolling" && (
+              <div className="relative z-10">
+                {/* Logo + Spinner */}
+                <div className="relative w-28 h-28 mx-auto my-6">
+                  <div className="absolute inset-0 rounded-full border-4 border-amber-200/40"></div>
+                  <div className="absolute inset-0 rounded-full border-4 border-amber-500 border-t-transparent animate-spin"></div>
+                  <div className="absolute inset-3 rounded-full bg-white flex items-center justify-center shadow-inner">
+                    <img
+                      src="/logo.png"
+                      alt="Logo"
+                      className="w-12 h-12 object-contain"
+                    />
+                  </div>
+                </div>
+
+                {/* MATCH DISPLAY CARD */}
+                <div className="bg-amber-50/40 border border-amber-200/80 rounded-2xl p-5 shadow-xs transition-all">
+                  {/* Peserta 1 */}
+                  <div className="text-lg sm:text-xl font-extrabold text-slate-800 truncate">
+                    {rollingName?.split(" VS ")[0] || "..."}
+                  </div>
+
+                  {/* VS */}
+                  <div className="my-2.5 flex items-center justify-center">
+                    <span className="px-5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs shadow-xs tracking-widest uppercase">
+                      VS
+                    </span>
+                  </div>
+
+                  {/* Peserta 2 */}
+                  <div className="text-lg sm:text-xl font-extrabold text-slate-800 truncate">
+                    {rollingName?.split(" VS ")[1] || "..."}
+                  </div>
+                </div>
+
+                <div className="mt-6 flex items-center justify-center gap-2 text-xs font-extrabold text-amber-600 uppercase tracking-widest">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                  <span>Mengacak Posisi Peserta...</span>
+                </div>
+              </div>
+            )}
+
+            {/* 🎯 SLOT MODE */}
+            {drawStage === "slots" && currentSlotInfo && (
+              <div className="relative z-10">
+                <div className="inline-flex items-center px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-black uppercase tracking-wider shadow-xs mb-5">
+                  SLOT {currentSlotInfo.slot}
+                </div>
+
+                <div className="bg-amber-50/40 border border-amber-200/80 rounded-2xl p-5 shadow-xs transition-all">
+                  {/* Peserta 1 */}
+                  <div className="text-lg sm:text-xl font-extrabold text-slate-900 truncate">
+                    {currentSlotInfo.p1}
+                  </div>
+
+                  {/* VS */}
+                  <div className="my-2.5 flex items-center justify-center">
+                    <span className="px-5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs shadow-xs tracking-widest uppercase">
+                      VS
+                    </span>
+                  </div>
+
+                  {/* Peserta 2 */}
+                  <div className="text-lg sm:text-xl font-extrabold text-slate-900 truncate">
+                    {currentSlotInfo.p2}
+                  </div>
+                </div>
+
+                <p className="mt-6 text-xs font-extrabold text-amber-600 uppercase tracking-widest">
+                  Slot Telah Ditentukan
+                </p>
+              </div>
+            )}
+
+            {/* FOOTER */}
+            <div className="mt-8 pt-4 border-t border-slate-100 text-[10px] text-slate-400 tracking-[0.3em] uppercase font-bold relative z-10">
+              PELTI DENPASAR OFFICIAL SYSTEM
             </div>
 
           </div>
-
-          <p className="mt-10 text-gray-400 tracking-[0.3em] uppercase text-sm">
-            Mengacak Peserta...
-          </p>
-
         </div>
       )}
-
-      {/* 🎯 SLOT MODE */}
-      {drawStage === "slots" && currentSlotInfo && (
-        <div className="relative z-10">
-
-          <h3 className="text-2xl font-bold text-gray-600 mb-8 tracking-widest">
-            SLOT {currentSlotInfo.slot}
-          </h3>
-
-          <div className="flex flex-col items-center justify-center">
-
-            {/* Peserta 1 */}
-            <div className="text-4xl font-extrabold text-gray-800">
-              {currentSlotInfo.p1}
-            </div>
-
-            {/* VS */}
-            <div className="my-8 relative">
-              <div className="absolute inset-0 blur-xl bg-yellow-400 opacity-40 rounded-full"></div>
-              <div className="relative px-10 py-2 rounded-full 
-                              bg-gradient-to-r from-yellow-500 to-orange-500 
-                              text-white font-extrabold text-2xl shadow-xl tracking-widest">
-                VS
-              </div>
-            </div>
-
-            {/* Peserta 2 */}
-            <div className="text-4xl font-extrabold text-gray-800">
-              {currentSlotInfo.p2}
-            </div>
-
-          </div>
-
-          <p className="mt-10 text-gray-400 tracking-[0.3em] uppercase text-sm">
-            Slot Telah Ditentukan
-          </p>
-
-        </div>
-      )}
-
-      {/* FOOTER */}
-      <div className="mt-16 text-xs text-gray-400 tracking-[0.4em] uppercase relative z-10">
-        PELTI DENPASAR OFFICIAL SYSTEM
-      </div>
-
-    </div>
-  </div>
-)}
 
 
 
