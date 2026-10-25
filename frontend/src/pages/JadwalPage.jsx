@@ -417,12 +417,6 @@ const groupedJadwal = [...jadwal]
 {/* ===== PAGE HEADER ===== */}
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6">
         <div>
-          <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/60 shadow-xs">
-              <Trophy size={13} className="text-amber-600" />
-              {selectedTournamentName || "PELTI Denpasar"}
-            </span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
             Jadwal Pertandingan
           </h1>
