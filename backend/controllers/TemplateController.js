@@ -323,8 +323,6 @@ export const downloadSertifikat = async (req, res) => {
     // 🔥 GENERATE PDF
     // =========================
     const browser = await puppeteer.launch({
-      executablePath:
-        "/root/.cache/puppeteer/chrome/linux-147.0.7727.57/chrome-linux64/chrome",
       args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
 
