@@ -2,11 +2,10 @@ import React, { useState, useEffect } from "react";
 import api from "../api";
 import jsPDF from "jspdf";
 import { useLocation } from "react-router-dom";
-
-
 import { 
   Trophy, Calendar, Search, 
-  ChevronRight, Clock, Users, User, Tag, Layers
+  ChevronRight, Clock, Users, User, Tag, Layers,
+  Filter, RotateCcw, X, FileText, Award
 } from "lucide-react";
 
 function SkorPage() {
@@ -16,7 +15,7 @@ function SkorPage() {
   const location = useLocation();
   const highlightMatchId = location.state?.matchId;
   
-  // State Filter (Kategori Dihapus)
+  // State Filter
   const [searchTerm, setSearchTerm] = useState("");
   const [filterKU, setFilterKU] = useState("Semua");
   const [filterType, setFilterType] = useState("Semua");
@@ -27,278 +26,241 @@ function SkorPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeMatchInfo, setActiveMatchInfo] = useState(null);
 
-// Fungsi fetch dipisah agar bisa dipanggil berulang kali
+  // Fungsi fetch dipisah agar bisa dipanggil berulang kali
+  const fetchHistory = async () => {
+    try {
+      setIsLoading(true);
+      const tournamentId = localStorage.getItem("selectedTournament");
+      if (!tournamentId) {
+        setMatchHistory([]);
+        setIsLoading(false);
+        return;
+      }
 
+      const response = await api.get("/matches", {
+        params: { tournamentId: tournamentId, status: "selesai" }
+      });
 
- // Fungsi fetch dipisah agar bisa dipanggil berulang kali
-const fetchHistory = async () => {
-  try {
-    setIsLoading(true);
-    const tournamentId = localStorage.getItem("selectedTournament");
-    if (!tournamentId) {
-      setMatchHistory([]);
-      setIsLoading(false);
-      return;
-    }
+      const matches = response.data;
+      setMatchHistory(matches);
 
-    const response = await api.get("/matches", {
-      params: { tournamentId: tournamentId, status: "selesai" }
-    });
+      const newTiebreakSummary = {};
 
-    const matches = response.data;
-    setMatchHistory(matches);
+      for (const match of matches) {
+        const gameLimit = match.scoreRule?.gamePerSet || 6;
+        const totalSetPlayed = match.score1 + match.score2;
 
-    const newTiebreakSummary = {};
-
-    for (const match of matches) {
-      // Penentuan Trigger Tiebreak: 
-      // Jika set sampai 6, TB di 6-6. Jika set sampai 8 (Pro Set), TB di 7-7 atau 8-8 tergantung rules.
-      // Kita asumsikan standar: TB selalu terjadi jika skor akhir selisih 1 dan mencapai batas gamePerSet.
-      const gameLimit = match.scoreRule?.gamePerSet || 6;
-
-      const totalSetPlayed = match.score1 + match.score2;
-
-      const needsTiebreak =
-        // Tiebreak normal (7-6)
-        [1, 2].some((sNum) => {
-          const s1 = parseInt(match[`set${sNum}P1`]);
-          const s2 = parseInt(match[`set${sNum}P2`]);
-
-          return (
-            !isNaN(s1) &&
-            !isNaN(s2) &&
-            Math.abs(s1 - s2) === 1 &&
-            (s1 >= gameLimit || s2 >= gameLimit)
-          );
-        })
-        ||
-        // 🔥 Tambahan: jika match sampai Set 3 → pasti super tiebreak
-        totalSetPlayed === 3;
-
-      if (needsTiebreak) {
-        try {
-          const logRes = await api.get(`/match-logs/${match.id}`);
-          if (logRes.data?.length > 0) {
-            const sortedLogs = [...logRes.data].sort((a, b) => a.id - b.id);
-            const tbData = {};
-
-            [1, 2, 3].forEach((sNum) => {
-              // Ambil Tiebreak untuk set ini
-              const s1 = parseInt(match[`set${sNum}P1`]);
+        const needsTiebreak =
+          [1, 2].some((sNum) => {
+            const s1 = parseInt(match[`set${sNum}P1`]);
             const s2 = parseInt(match[`set${sNum}P2`]);
 
-            // Panggil fungsi dengan mengirimkan skor akhir s1 dan s2
-            const result = getTiebreakFromLogs(sortedLogs, sNum, s1, s2);
-              if (result) tbData[`set${sNum}`] = result;
-            });
-            newTiebreakSummary[match.id] = tbData;
+            return (
+              !isNaN(s1) &&
+              !isNaN(s2) &&
+              Math.abs(s1 - s2) === 1 &&
+              (s1 >= gameLimit || s2 >= gameLimit)
+            );
+          }) || totalSetPlayed === 3;
+
+        if (needsTiebreak) {
+          try {
+            const logRes = await api.get(`/match-logs/${match.id}`);
+            if (logRes.data?.length > 0) {
+              const sortedLogs = [...logRes.data].sort((a, b) => a.id - b.id);
+              const tbData = {};
+
+              [1, 2, 3].forEach((sNum) => {
+                const s1 = parseInt(match[`set${sNum}P1`]);
+                const s2 = parseInt(match[`set${sNum}P2`]);
+                const result = getTiebreakFromLogs(sortedLogs, sNum, s1, s2);
+                if (result) tbData[`set${sNum}`] = result;
+              });
+              newTiebreakSummary[match.id] = tbData;
+            }
+          } catch (err) {
+            console.error(`Gagal ambil tiebreak:`, err);
           }
-        } catch (err) {
-          console.error(`Gagal ambil tiebreak:`, err);
         }
       }
+      setTiebreakSummary(newTiebreakSummary);
+    } catch (err) {
+      console.error("Gagal mengambil riwayat:", err);
+    } finally {
+      setIsLoading(false);
     }
-    setTiebreakSummary(newTiebreakSummary);
-  } catch (err) {
-    console.error("Gagal mengambil riwayat:", err);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
-
-const handleExportPDFLog = () => {
-  const doc = new jsPDF({
-    orientation: "p",
-    unit: "pt",
-    format: "a4"
-  });
-
-  const match = activeMatchInfo;
-  const isDouble = !!match.doubleTeam1Id;
-  const p1Name = isDouble ? match.doubleTeam1?.namaTim : match.peserta1?.namaLengkap;
-  const p2Name = isDouble ? match.doubleTeam2?.namaTim : match.peserta2?.namaLengkap;
-  const tournamentName = localStorage.getItem("selectedTournamentName") || "PELTI DENPASAR";
-
-  // --- 1. HEADER UTAMA ---
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(20, 50, 100);
-  doc.text(tournamentName.toUpperCase(), 297, 50, { align: "center" });
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 100, 100);
-  doc.text("LAPORAN RESMI HASIL PERTANDINGAN", 297, 68, { align: "center" });
-
-  doc.setDrawColor(220, 220, 220);
-  doc.line(40, 80, 555, 80);
-
-  // --- 2. INFO PERTANDINGAN ---
-  doc.setFontSize(9);
-  doc.setTextColor(80, 80, 80);
-  doc.text(`Bagan: ${match.bagan?.nama || "-"}`, 40, 100);
-  doc.text(`Kategori: ${isDouble ? "Ganda" : "Tunggal"} (${match.bagan?.KelompokUmur?.nama || "Umum"})`, 40, 115);
-  doc.text(`Waktu: ${new Date(match.updatedAt).toLocaleString("id-ID")}`, 40, 130);
-
-  // --- 3. BOX SKOR UTAMA DENGAN DYNAMIC WRAPPING ---
-  const boxWidth = 515;
-  const boxX = 40;
-  const boxY = 145;
-  const centerX = 297;
-
-  // Persiapkan Nama Peserta (Gunakan wrapping agar tidak keluar jalur)
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(30, 41, 59);
-
-  const fullMatchTitle = `${p1Name} VS ${p2Name}`;
-  // Split teks jika lebih lebar dari 480pt
-  const splitTitle = doc.splitTextToSize(fullMatchTitle, 480);
-  
-  // Hitung tinggi berdasarkan jumlah baris teks nama
-  const lineSpacing = 15;
-  const titleHeight = splitTitle.length * lineSpacing;
-  const dynamicBoxHeight = 55 + titleHeight; // 55pt extra untuk skor dan padding
-
-  // Gambar Box Utama
-  doc.setFillColor(248, 250, 252);
-  doc.setDrawColor(230, 235, 240);
-  doc.roundedRect(boxX, boxY, boxWidth, dynamicBoxHeight, 10, 10, "FD");
-
-  // Tampilkan Nama yang sudah di-wrap
-  doc.text(splitTitle, centerX, boxY + 20, { align: "center" });
-
-  // Skor Utama (Y-nya relatif terhadap tinggi teks nama)
-  const scoreY = boxY + 20 + titleHeight + 5;
-  doc.setFontSize(22);
-  doc.setTextColor(37, 99, 235);
-  doc.text(`${match.score1} - ${match.score2}`, centerX, scoreY, { align: "center" });
-
-  // Rekap Per Set (8-5, 8-3, dst)
-  const rekapSet = [];
-  [1, 2, 3].forEach(sNum => {
-    const s1 = match[`set${sNum}P1`];
-    const s2 = match[`set${sNum}P2`];
-    if (s1 !== null && s2 !== null && (s1 > 0 || s2 > 0)) {
-      rekapSet.push(`${s1}-${s2}`);
-    }
-  });
-
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(100, 116, 139);
-  doc.text(`(${rekapSet.join(", ")})`, centerX, scoreY + 18, { align: "center" });
-
-  // --- 4. DETAIL POIN PER SET (TABEL MANUAL) ---
-  // yPos sekarang dinamis mengikuti tinggi box
-  let yPos = boxY + dynamicBoxHeight + 30;
-
-  const sets = selectedLog.reduce((acc, log) => {
-    if (!acc[log.setKe]) acc[log.setKe] = [];
-    acc[log.setKe].push(log);
-    return acc;
-  }, {});
-
-  Object.keys(sets).forEach((setKe) => {
-    // Cek jika halaman hampir habis
-    if (yPos > 700) { doc.addPage(); yPos = 50; }
-
-    // Header Set
-    doc.setFillColor(30, 41, 59);
-    doc.rect(40, yPos, 515, 20, "F");
-    doc.setFontSize(10);
-    doc.setTextColor(255, 255, 255);
-    doc.text(`DETAIL POIN - SET ${setKe}`, centerX, yPos + 14, { align: "center" });
-    
-    yPos += 20;
-
-    // Table Header
-    doc.setFillColor(241, 245, 249);
-    doc.rect(40, yPos, 515, 18, "F");
-    doc.setTextColor(71, 85, 105);
-    doc.setFontSize(8);
-    doc.text("#", 55, yPos + 12);
-    doc.text("SKOR POIN", 100, yPos + 12);
-    doc.text("GAME", 200, yPos + 12);
-    doc.text("KETERANGAN", 300, yPos + 12);
-    
-    yPos += 18;
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(0, 0, 0);
-
-    sets[setKe].forEach((log, index) => {
-      // Cek Page Break
-      if (yPos > 780) { doc.addPage(); yPos = 50; }
-
-      doc.text(`${index + 1}`, 55, yPos + 14);
-      doc.setFont("helvetica", "bold");
-      doc.text(`${log.skorP1} - ${log.skorP2}`, 100, yPos + 14);
-      doc.setFont("helvetica", "normal");
-      doc.text(`${log.gameP1} - ${log.gameP2}`, 200, yPos + 14);
-      
-      // Keterangan Point (Beri Font Kecil agar aman)
-      doc.setFontSize(7);
-      doc.text(log.keterangan || "Point Exchange", 300, yPos + 14);
-      doc.setFontSize(8);
-      
-      doc.setDrawColor(240, 240, 240);
-      doc.line(40, yPos + 18, 555, yPos + 18);
-      yPos += 18;
+  const handleExportPDFLog = () => {
+    if (!activeMatchInfo) return;
+    const doc = new jsPDF({
+      orientation: "p",
+      unit: "pt",
+      format: "a4"
     });
 
-    yPos += 25; // Jarak antar set
-  });
+    const match = activeMatchInfo;
+    const isDouble = !!match.doubleTeam1Id;
+    const p1Name = isDouble ? match.doubleTeam1?.namaTim : match.peserta1?.namaLengkap;
+    const p2Name = isDouble ? match.doubleTeam2?.namaTim : match.peserta2?.namaLengkap;
+    const tournamentName = localStorage.getItem("selectedTournamentName") || "PELTI DENPASAR";
 
-  // Footer Page
-  doc.setFontSize(7);
-  doc.setTextColor(180);
-  doc.text("Dokumen ini dihasilkan secara otomatis oleh Sistem Skor Pertandingan.", 297, 820, { align: "center" });
+    // --- 1. HEADER UTAMA ---
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(20, 50, 100);
+    doc.text(tournamentName.toUpperCase(), 297, 50, { align: "center" });
 
-  doc.save(`Skor_${p1Name.replace(/\s+/g, '_')}_vs_${p2Name.replace(/\s+/g, '_')}.pdf`);
-};
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(100, 100, 100);
+    doc.text("LAPORAN RESMI HASIL PERTANDINGAN", 297, 68, { align: "center" });
 
+    doc.setDrawColor(220, 220, 220);
+    doc.line(40, 80, 555, 80);
+
+    // --- 2. INFO PERTANDINGAN ---
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Bagan: ${match.bagan?.nama || "-"}`, 40, 100);
+    doc.text(`Kategori: ${isDouble ? "Ganda" : "Tunggal"} (${match.bagan?.KelompokUmur?.nama || "Umum"})`, 40, 115);
+    doc.text(`Waktu: ${new Date(match.updatedAt).toLocaleString("id-ID")}`, 40, 130);
+
+    // --- 3. BOX SKOR UTAMA DENGAN DYNAMIC WRAPPING ---
+    const boxWidth = 515;
+    const boxX = 40;
+    const boxY = 145;
+    const centerX = 297;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(30, 41, 59);
+
+    const fullMatchTitle = `${p1Name} VS ${p2Name}`;
+    const splitTitle = doc.splitTextToSize(fullMatchTitle, 480);
+    
+    const lineSpacing = 15;
+    const titleHeight = splitTitle.length * lineSpacing;
+    const dynamicBoxHeight = 55 + titleHeight;
+
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(230, 235, 240);
+    doc.roundedRect(boxX, boxY, boxWidth, dynamicBoxHeight, 10, 10, "FD");
+
+    doc.text(splitTitle, centerX, boxY + 20, { align: "center" });
+
+    const scoreY = boxY + 20 + titleHeight + 5;
+    doc.setFontSize(22);
+    doc.setTextColor(37, 99, 235);
+    doc.text(`${match.score1} - ${match.score2}`, centerX, scoreY, { align: "center" });
+
+    const rekapSet = [];
+    [1, 2, 3].forEach(sNum => {
+      const s1 = match[`set${sNum}P1`];
+      const s2 = match[`set${sNum}P2`];
+      if (s1 !== null && s2 !== null && (s1 > 0 || s2 > 0)) {
+        rekapSet.push(`${s1}-${s2}`);
+      }
+    });
+
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(100, 116, 139);
+    doc.text(`(${rekapSet.join(", ")})`, centerX, scoreY + 18, { align: "center" });
+
+    // --- 4. DETAIL POIN PER SET ---
+    let yPos = boxY + dynamicBoxHeight + 30;
+
+    const sets = selectedLog.reduce((acc, log) => {
+      if (!acc[log.setKe]) acc[log.setKe] = [];
+      acc[log.setKe].push(log);
+      return acc;
+    }, {});
+
+    Object.keys(sets).forEach((setKe) => {
+      if (yPos > 700) { doc.addPage(); yPos = 50; }
+
+      doc.setFillColor(30, 41, 59);
+      doc.rect(40, yPos, 515, 20, "F");
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text(`DETAIL POIN - SET ${setKe}`, centerX, yPos + 14, { align: "center" });
+      
+      yPos += 20;
+
+      doc.setFillColor(241, 245, 249);
+      doc.rect(40, yPos, 515, 18, "F");
+      doc.setTextColor(71, 85, 105);
+      doc.setFontSize(8);
+      doc.text("#", 55, yPos + 12);
+      doc.text("SKOR POIN", 100, yPos + 12);
+      doc.text("GAME", 200, yPos + 12);
+      doc.text("KETERANGAN", 300, yPos + 12);
+      
+      yPos += 18;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+
+      sets[setKe].forEach((log, index) => {
+        if (yPos > 780) { doc.addPage(); yPos = 50; }
+
+        doc.text(`${index + 1}`, 55, yPos + 14);
+        doc.setFont("helvetica", "bold");
+        doc.text(`${log.skorP1} - ${log.skorP2}`, 100, yPos + 14);
+        doc.setFont("helvetica", "normal");
+        doc.text(`${log.gameP1} - ${log.gameP2}`, 200, yPos + 14);
+        
+        doc.setFontSize(7);
+        doc.text(log.keterangan || "Point Exchange", 300, yPos + 14);
+        doc.setFontSize(8);
+        
+        doc.setDrawColor(240, 240, 240);
+        doc.line(40, yPos + 18, 555, yPos + 18);
+        yPos += 18;
+      });
+
+      yPos += 25;
+    });
+
+    doc.setFontSize(7);
+    doc.setTextColor(180);
+    doc.text("Dokumen ini dihasilkan secara otomatis oleh Sistem Informasi PELTI Kota Denpasar.", 297, 820, { align: "center" });
+
+    doc.save(`Skor_${(p1Name || "Peserta1").replace(/\s+/g, '_')}_vs_${(p2Name || "Peserta2").replace(/\s+/g, '_')}.pdf`);
+  };
 
   useEffect(() => {
-    // 1. Jalankan pertama kali saat halaman dibuka
     fetchHistory();
 
-    // 2. Buat fungsi listener untuk mendeteksi perubahan turnamen
     const handleTournamentChange = () => {
-      console.log("Turnamen berubah, memuat ulang skor...");
       fetchHistory();
     };
 
-    // 3. Pasang pendengar (listener) event
     window.addEventListener("tournament-changed", handleTournamentChange);
 
-    // 4. Bersihkan pendengar saat pindah halaman (cleanup)
     return () => {
       window.removeEventListener("tournament-changed", handleTournamentChange);
     };
-  }, []); // Kosongkan dependency agar tidak loop
+  }, []);
 
   // --- PREPARASI OPSI FILTER ---
   const listKU = ["Semua", ...new Set(matchHistory.map(m => m.bagan?.KelompokUmur?.nama).filter(Boolean))];
 
- // --- AMBIL TANGGAL UNIK DARI DATA YANG ADA ---
   const listDates = ["Semua", ...new Set(matchHistory
     .map(m => {
-      // Kita ambil dari updatedAt karena itu tanggal skor diselesaikan
       if (!m.updatedAt) return null;
       const d = new Date(m.updatedAt);
       return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
     })
-    .filter(Boolean) // Membuang nilai null atau Invalid
+    .filter(Boolean)
   )].sort((a, b) => {
     if (a === "Semua") return -1;
     if (b === "Semua") return 1;
-    return new Date(b) - new Date(a); // Urutkan: Tanggal terbaru muncul paling atas
+    return new Date(b) - new Date(a);
   });
 
   // --- LOGIKA FILTER UTAMA ---
   const filteredMatches = matchHistory.filter((m) => {
-
     const p1Exists = m.peserta1Id || m.doubleTeam1Id;
     const p2Exists = m.peserta2Id || m.doubleTeam2Id;
 
@@ -336,31 +298,25 @@ const handleExportPDFLog = () => {
       const response = await api.get(`/match-logs/${match.id}`);
 
       if (response.data?.length > 0) {
-
-        // 🔥 SORTING PALING AMAN
         const sortedLogs = response.data.sort((a, b) => {
           if (a.setKe !== b.setKe) {
-            return a.setKe - b.setKe;   // urut berdasarkan set dulu
+            return a.setKe - b.setKe;
           }
-          return a.id - b.id;           // lalu urut berdasarkan id
+          return a.id - b.id;
         });
 
         const tbData = {};
-      [1, 2, 3].forEach(sNum => {
-        // AMBIL SKOR AKHIR DARI OBJECT match
-        const s1 = parseInt(match[`set${sNum}P1`]);
-        const s2 = parseInt(match[`set${sNum}P2`]);
-        
-        // KIRIM s1 dan s2 ke fungsi
-        const result = getTiebreakFromLogs(sortedLogs, sNum, s1, s2);
-        if (result) tbData[`set${sNum}`] = result;
-      });
+        [1, 2, 3].forEach(sNum => {
+          const s1 = parseInt(match[`set${sNum}P1`]);
+          const s2 = parseInt(match[`set${sNum}P2`]);
+          const result = getTiebreakFromLogs(sortedLogs, sNum, s1, s2);
+          if (result) tbData[`set${sNum}`] = result;
+        });
 
-       setTiebreakSummary(prev => ({ ...prev, [match.id]: tbData }));
+        setTiebreakSummary(prev => ({ ...prev, [match.id]: tbData }));
         setSelectedLog(sortedLogs);
         setActiveMatchInfo(match);
         setIsModalOpen(true);
-
       } else {
         alert("Log poin belum tersedia.");
       }
@@ -369,512 +325,622 @@ const handleExportPDFLog = () => {
     }
   };
 
-
   const formatDuration = (seconds = 0) => {
-  const hrs = Math.floor(seconds / 3600);
-  const mins = Math.floor((seconds % 3600) / 60);
-  const secs = seconds % 60;
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
 
-  return [
-    hrs.toString().padStart(2, "0"),
-    mins.toString().padStart(2, "0"),
-    secs.toString().padStart(2, "0"),
-  ].join(":");
-};
+    return [
+      hrs.toString().padStart(2, "0"),
+      mins.toString().padStart(2, "0"),
+      secs.toString().padStart(2, "0"),
+    ].join(":");
+  };
 
-const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
-  const setLogs = allLogs
-    .filter(log => log.setKe === setNum)
-    .sort((a, b) => a.id - b.id);
+  const getTiebreakFromLogs = (allLogs, setNum, finalS1, finalS2) => {
+    const setLogs = allLogs
+      .filter(log => log.setKe === setNum)
+      .sort((a, b) => a.id - b.id);
 
-  if (setLogs.length === 0) return null;
+    if (setLogs.length === 0) return null;
 
-  const isSuperTiebreak =
-    setNum === 3 &&
-    setLogs.every(
-      log => Number(log.gameP1) === 0 && Number(log.gameP2) === 0
-    );
+    const isSuperTiebreak =
+      setNum === 3 &&
+      setLogs.every(
+        log => Number(log.gameP1) === 0 && Number(log.gameP2) === 0
+      );
 
-   if (isSuperTiebreak) {
-    const lastLog = setLogs[setLogs.length - 1];
-
-    return {
-      p1: Number(lastLog.skorP1),
-      p2: Number(lastLog.skorP2),
-    };
-  }
-
-
-  // 🔥 Cari index saat game berubah (match ended)
-  let tbEndIndex = -1;
-
-  for (let i = 0; i < setLogs.length - 1; i++) {
-    const current = setLogs[i];
-    const next = setLogs[i + 1];
-
-    // Jika game berubah (7-7 → 7-8 misalnya)
-    if (
-      current.gameP1 !== next.gameP1 ||
-      current.gameP2 !== next.gameP2
-    ) {
-      tbEndIndex = i;
+    if (isSuperTiebreak) {
+      const lastLog = setLogs[setLogs.length - 1];
+      return {
+        p1: Number(lastLog.skorP1),
+        p2: Number(lastLog.skorP2),
+      };
     }
-  }
 
-  if (tbEndIndex === -1) return null;
+    let tbEndIndex = -1;
 
-  const lastTbLog = setLogs[tbEndIndex];
+    for (let i = 0; i < setLogs.length - 1; i++) {
+      const current = setLogs[i];
+      const next = setLogs[i + 1];
 
-  let p1 = Number(lastTbLog.skorP1);
-  let p2 = Number(lastTbLog.skorP2);
+      if (
+        current.gameP1 !== next.gameP1 ||
+        current.gameP2 !== next.gameP2
+      ) {
+        tbEndIndex = i;
+      }
+    }
 
-  // Tambah 1 ke pemenang set
-  if (finalS1 > finalS2) {
-    p1 += 1;
-  } else {
-    p2 += 1;
-  }
+    if (tbEndIndex === -1) return null;
 
-  return { p1, p2 };
-};
+    const lastTbLog = setLogs[tbEndIndex];
+    let p1 = Number(lastTbLog.skorP1);
+    let p2 = Number(lastTbLog.skorP2);
+
+    if (finalS1 > finalS2) {
+      p1 += 1;
+    } else {
+      p2 += 1;
+    }
+
+    return { p1, p2 };
+  };
+
+  const isAnyFilterActive = searchTerm !== "" || filterKU !== "Semua" || filterType !== "Semua" || filterDate !== "Semua";
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-16">
       
-      <div className="mx-auto mb-10">
-        <div className="mb-6 border-gray-100">
-            <div className="text-center md:text-left">
-                <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight leading-tight">
-                    Skor Pertandingan
-                </h1>
-                <div className="inline-flex items-center gap-2 mt-1 px-3 py-1 bg-yellow-50 rounded-full border border-yellow-100 md:bg-transparent md:border-none md:px-0">
-                    <p className="text-[10px] md:text-sm text-yellow-700 md:text-yellow-600 font-bold uppercase tracking-widest">
-                        Tournament: {localStorage.getItem("selectedTournamentName") || "Belum Memilih"}
-                    </p>
-                </div>
-            </div>
-        </div>
-
-
-        {/* Panel Filter Grid - Sekarang 4 Kolom */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 bg-white p-4 md:p-6 rounded-2xl md:rounded-[2rem] border border-slate-100">
-  {/* Filter Cari */}
-  <div className="relative">
-    <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase mb-1.5 md:mb-2 block ml-1 tracking-wider">
-      Cari Pemain / Tim
-    </label>
-    <div className="relative">
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={13} />
-      <input 
-        type="text" 
-        className="w-full pl-9 pr-4 py-2.5 md:py-2 bg-slate-50 border border-transparent focus:border-blue-500 rounded-xl text-[11px] md:text-xs font-medium outline-none transition-all" 
-        placeholder="Ketik nama..." 
-        value={searchTerm} 
-        onChange={(e) => setSearchTerm(e.target.value)} 
-      />
-    </div>
-  </div>
-
-  {/* Filter Kelompok Umur */}
-  <div>
-    <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase mb-1.5 md:mb-2 block ml-1 tracking-wider">
-      Kelompok Umur
-    </label>
-    <select 
-      className="w-full px-3 py-2.5 md:py-2 bg-slate-50 border border-transparent focus:border-blue-500 rounded-xl text-[11px] md:text-xs font-bold outline-none cursor-pointer appearance-none transition-all" 
-      value={filterKU} 
-      onChange={(e) => setFilterKU(e.target.value)}
-    >
-      {listKU.map(ku => <option key={ku} value={ku}>{ku}</option>)}
-    </select>
-  </div>
-
-  {/* Filter Format */}
-  <div>
-    <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase mb-1.5 md:mb-2 block ml-1 tracking-wider">
-      Format
-    </label>
-    <select 
-      className="w-full px-3 py-2.5 md:py-2 bg-slate-50 border border-transparent focus:border-blue-500 rounded-xl text-[11px] md:text-xs font-bold outline-none cursor-pointer appearance-none transition-all" 
-      value={filterType} 
-      onChange={(e) => setFilterType(e.target.value)}
-    >
-      <option value="Semua">Semua Format</option>
-      <option value="Tunggal">Tunggal</option>
-      <option value="Ganda">Ganda</option>
-    </select>
-  </div>
-
-  {/* Filter Tanggal */}
-  <div>
-    <label className="text-[8px] md:text-[9px] font-black text-slate-400 uppercase mb-1.5 md:mb-2 block ml-1 tracking-wider">
-      Tanggal
-    </label>
-    <select 
-      className="w-full px-3 py-2.5 md:py-2 bg-slate-50 border border-transparent focus:border-blue-500 rounded-xl text-[11px] md:text-xs font-bold outline-none cursor-pointer appearance-none transition-all" 
-      value={filterDate} 
-      onChange={(e) => setFilterDate(e.target.value)}
-    >
-      {listDates.map((dateString) => (
-        <option key={dateString} value={dateString}>
-          {dateString === "Semua" 
-            ? "Semua Tanggal" 
-            : new Date(dateString).toLocaleDateString('id-ID', { 
-                day: 'numeric', 
-                month: 'short', 
-                year: 'numeric' 
-              })
-          }
-        </option>
-      ))}
-    </select>
-  </div>
-</div>
+      {/* ===== HEADER AREA ===== */}
+      <div className="mb-6">
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          Skor Pertandingan
+        </h1>
+        <p className="text-slate-500 text-xs sm:text-sm font-medium mt-0.5">
+          Riwayat skor resmi, rekap per set, dan rincian alur poin pertandingan
+        </p>
       </div>
 
-      <div className="mx-auto space-y-4 md:space-y-6">
-  {isLoading ? (
-    <div className="text-center py-20 font-black text-slate-300 animate-pulse uppercase tracking-[0.3em] text-xs">
-      Memuat Riwayat...
-    </div>
-  ) : filteredMatches.length === 0 ? (
-    <div className="bg-white py-20 rounded-[2rem] text-center border-2 border-dashed border-slate-200 text-slate-400 font-bold uppercase text-[10px]">
-      Data tidak ditemukan
-    </div>
-  ) : (
-    filteredMatches.map((match) => {
-      const isDouble = !!match.doubleTeam1Id;
-      const p1Name = isDouble ? match.doubleTeam1?.namaTim : match.peserta1?.namaLengkap;
-      const p2Name = isDouble ? match.doubleTeam2?.namaTim : match.peserta2?.namaLengkap;
-      
-      const isP1Winner = isDouble ? (match.winnerDoubleId === match.doubleTeam1Id) : (match.winnerId === match.peserta1Id);
-      const isP2Winner = isDouble ? (match.winnerDoubleId === match.doubleTeam2Id) : (match.winnerId === match.peserta2Id);
+      {/* ===== PANEL FILTER ===== */}
+      <div className="mb-6 p-4 sm:p-5 bg-white rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex items-center justify-between mb-3.5 pb-2.5 border-b border-slate-100">
+          <div className="flex items-center gap-2 text-xs font-extrabold text-slate-800 uppercase tracking-wider">
+            <Filter size={14} className="text-amber-500" />
+            <span>Filter Pertandingan</span>
+          </div>
+          {isAnyFilterActive && (
+            <button
+              onClick={() => {
+                setSearchTerm("");
+                setFilterKU("Semua");
+                setFilterType("Semua");
+                setFilterDate("Semua");
+              }}
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-amber-600 hover:text-amber-700 transition-colors"
+            >
+              <RotateCcw size={12} /> Reset Filter
+            </button>
+          )}
+        </div>
 
-      return (
-        <div key={match.id} className="bg-white rounded-[2rem] md:rounded-[2.5rem] border border-slate-300 shadow-md transition-all duration-300 overflow-hidden group">
-          <div className="p-5 md:p-8">
-            {/* Badge Row - Dibuat lebih rapat di mobile */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 md:mb-8">
-              <div className="flex flex-wrap gap-1.5">
-                <span className="px-2 py-0.5 bg-yellow-600 text-white text-[8px] md:text-[9px] font-black rounded-md uppercase tracking-wider flex items-center gap-1">
-                  <Tag size={10} /> {match.bagan?.nama || "Match"}
-                </span>
-                  {/* Badge Kategori - Biru untuk Tunggal, Ungu untuk Ganda */}
-                <span className={`shrink-0 px-2 py-0.5 max-w-max rounded text-[8px] md:text-[10px] font-black uppercase tracking-wider border flex items-center gap-1 ${
-                    isDouble 
-                    ? 'bg-purple-50 text-purple-600 border-purple-100' 
-                    : 'bg-blue-50 text-blue-600 border-blue-100'
-                }`}>
-                    {isDouble ? <Users size={10}/> : <User size={10}/>}
-                    {isDouble ? 'Single' : 'Double'}
-                </span>
-              </div>
-              <div className="text-[9px] md:text-[10px] font-black text-slate-300 uppercase tracking-tight">
-                Match {match.slot} • Round {match.round}
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Filter Cari */}
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
+              Cari Pemain / Tim
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+              <input 
+                type="text" 
+                className="w-full pl-9 pr-8 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all placeholder:text-slate-400 placeholder:font-normal" 
+                placeholder="Ketik nama peserta / tim..." 
+                value={searchTerm} 
+                onChange={(e) => setSearchTerm(e.target.value)} 
+              />
+              {searchTerm && (
+                <button 
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
+          </div>
 
-            {/* Score Display - Grid diubah total untuk Mobile */}
-           <div className="grid grid-cols-1 md:grid-cols-3 items-center py-10 gap-6 md:gap-10">
+          {/* Filter Kelompok Umur */}
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
+              Kelompok Umur
+            </label>
+            <select 
+              className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all cursor-pointer" 
+              value={filterKU} 
+              onChange={(e) => setFilterKU(e.target.value)}
+            >
+              {listKU.map(ku => (
+                <option key={ku} value={ku}>
+                  {ku === "Semua" ? "Semua Kelompok Umur" : ku}
+                </option>
+              ))}
+            </select>
+          </div>
 
-              {/* ================= NAMA KIRI ================= */}
-              <div
-                className={`w-full text-center md:text-start ${
-                  isP1Winner
-                    ? "text-slate-900"
-                    : "text-slate-400 opacity-90"
+          {/* Filter Format */}
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
+              Format Kategori
+            </label>
+            <select 
+              className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all cursor-pointer" 
+              value={filterType} 
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <option value="Semua">Semua Format</option>
+              <option value="Tunggal">Tunggal (Single)</option>
+              <option value="Ganda">Ganda (Double)</option>
+            </select>
+          </div>
+
+          {/* Filter Tanggal */}
+          <div>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
+              Tanggal Pertandingan
+            </label>
+            <select 
+              className="w-full px-3 py-2 bg-slate-50 hover:bg-slate-100/70 focus:bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all cursor-pointer" 
+              value={filterDate} 
+              onChange={(e) => setFilterDate(e.target.value)}
+            >
+              {listDates.map((dateString) => (
+                <option key={dateString} value={dateString}>
+                  {dateString === "Semua" 
+                    ? "Semua Tanggal" 
+                    : new Date(dateString).toLocaleDateString('id-ID', { 
+                        weekday: 'short',
+                        day: 'numeric', 
+                        month: 'short', 
+                        year: 'numeric' 
+                      })
+                  }
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* ===== LIST HASIL PERTANDINGAN ===== */}
+      <div className="space-y-4">
+        {isLoading ? (
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center shadow-xs">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 mb-3 animate-spin">
+              <Trophy size={22} />
+            </div>
+            <p className="font-extrabold text-slate-700 text-sm">Memuat Riwayat Skor...</p>
+            <p className="text-slate-400 text-xs mt-1">Mengambil data pertandingan selesai dan rekap poin tiebreak</p>
+          </div>
+        ) : filteredMatches.length === 0 ? (
+          <div className="bg-white py-16 px-4 rounded-2xl text-center border-2 border-dashed border-slate-200 shadow-xs">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 mb-3">
+              <Search size={22} />
+            </div>
+            <h3 className="font-extrabold text-slate-800 text-sm">Tidak Ada Pertandingan Ditemukan</h3>
+            <p className="text-slate-400 text-xs mt-1 max-w-sm mx-auto">
+              {isAnyFilterActive 
+                ? "Tidak ada data skor yang cocok dengan filter yang Anda tentukan. Coba ubah atau reset filter."
+                : "Belum ada pertandingan yang selesai pada turnamen yang dipilih."}
+            </p>
+            {isAnyFilterActive && (
+              <button
+                onClick={() => {
+                  setSearchTerm("");
+                  setFilterKU("Semua");
+                  setFilterType("Semua");
+                  setFilterDate("Semua");
+                }}
+                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all"
+              >
+                <RotateCcw size={12} /> Reset Filter
+              </button>
+            )}
+          </div>
+        ) : (
+          filteredMatches.map((match) => {
+            const isDouble = !!match.doubleTeam1Id;
+            const p1Name = isDouble ? match.doubleTeam1?.namaTim : match.peserta1?.namaLengkap;
+            const p2Name = isDouble ? match.doubleTeam2?.namaTim : match.peserta2?.namaLengkap;
+            
+            const isP1Winner = isDouble ? (match.winnerDoubleId === match.doubleTeam1Id) : (match.winnerId === match.peserta1Id);
+            const isP2Winner = isDouble ? (match.winnerDoubleId === match.doubleTeam2Id) : (match.winnerId === match.peserta2Id);
+
+            return (
+              <div 
+                key={match.id} 
+                className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden shadow-xs hover:shadow-md ${
+                  highlightMatchId === match.id 
+                    ? 'border-amber-400 ring-2 ring-amber-400/30' 
+                    : 'border-slate-200/90'
                 }`}
               >
-                <h4 className="text-sm md:text-lg font-black leading-tight uppercase tracking-tight">
-                  {p1Name}
-                </h4>
+                {/* Header Kartu */}
+                <div className="px-5 py-3.5 bg-slate-50/70 border-b border-slate-100 flex flex-wrap items-center justify-between gap-2.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    {/* Badge Bagan */}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 text-amber-800 border border-amber-500/20 text-[10px] font-black rounded-lg uppercase tracking-wider">
+                      <Tag size={11} className="text-amber-600" />
+                      {match.bagan?.nama || "Match"}
+                    </span>
 
-                
+                    {/* Badge Kategori */}
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider border ${
+                      isDouble 
+                        ? 'bg-purple-50 text-purple-700 border-purple-200/70' 
+                        : 'bg-blue-50 text-blue-700 border-blue-200/70'
+                    }`}>
+                      {isDouble ? <Users size={11}/> : <User size={11}/>}
+                      {isDouble ? 'Ganda' : 'Tunggal'}
+                    </span>
 
-                {isP1Winner && (
-                  <span className="inline-block mt-1 bg-yellow-400 text-white text-[7px] md:text-[8px] font-black px-2 py-0.5 rounded-full uppercase">
-                    Winner
-                  </span>
-                )}
-              </div>
-
-              {/* ================= SCORE TENGAH ================= */}
-              <div className="flex items-center justify-center gap-4">
-                {[1, 2, 3].map((sNum) => {
-                  const s1 = parseInt(match[`set${sNum}P1`]);
-                  const s2 = parseInt(match[`set${sNum}P2`]);
-
-                 if (isNaN(s1) || isNaN(s2)) return null;
-
-            
-                  if (sNum === 3) {
-                    const totalSetPlayed = match.score1 + match.score2;
-                    if (totalSetPlayed < 3) {
-                      return null;
-                    }
-                  }
-
-                  if (s1 === 0 && s2 === 0 && sNum === 2) {
-                    return null;
-                  }
-                                
-                  const gameLimit = match.scoreRule?.gamePerSet || 6;
-                  const isTiebreakGame =
-                    Math.abs(s1 - s2) === 1 &&
-                    (s1 >= gameLimit || s2 >= gameLimit);
-
-                  const tbPoint =
-                    tiebreakSummary[match.id]?.[`set${sNum}`];
-
-                  return (
-                    <div
-                      key={sNum}
-                      className="flex flex-col items-center bg-slate-900 px-4 py-3 rounded-2xl min-w-[90px] border border-slate-800 shadow-lg"
-                    >
-                      <span className="text-[7px] md:text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">
-                        SET {sNum}
+                    {/* Kelompok Umur */}
+                    {match.bagan?.KelompokUmur?.nama && (
+                      <span className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200/60 text-[10px] font-bold">
+                        {match.bagan.KelompokUmur.nama}
                       </span>
+                    )}
+                  </div>
 
-                      <div className="flex items-center justify-center gap-2 font-black text-white text-xl md:text-2xl">
+                  <div className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                    Match {match.slot} • Round {match.round}
+                  </div>
+                </div>
 
-                       {/* Player 1 */}
-                        <div className="relative inline-flex">
-                          <span>
-                            {sNum === 3 && tbPoint
-                              ? tbPoint.p1
-                              : s1}
+                {/* Main Card: Matchup & Scoreboard */}
+                <div className="p-5 sm:p-7">
+                  <div className="grid grid-cols-1 md:grid-cols-12 items-center gap-5 sm:gap-6">
+
+                    {/* Sisi Peserta 1 */}
+                    <div className={`md:col-span-4 flex flex-col items-center md:items-start text-center md:text-left ${
+                      isP1Winner ? "text-slate-900" : "text-slate-500 opacity-80"
+                    }`}>
+                      <div className="flex items-center gap-2 flex-wrap justify-center md:justify-start">
+                        <h4 className="text-base sm:text-lg font-black tracking-tight leading-snug">
+                          {p1Name || "Peserta 1"}
+                        </h4>
+                        {isP1Winner && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                            <Award size={11} className="text-amber-600" /> Winner
                           </span>
-
-                          {sNum !== 3 && isTiebreakGame && tbPoint && (
-                            <span className="absolute -top-1.5 -right-2.5 text-[10px] md:text-[11px] text-orange-400 font-bold">
-                              {tbPoint.p1}
-                            </span>
-                          )}
-                        </div>
-
-                        <span className="text-slate-700 mx-1">-</span>
-
-                        {/* Player 2 */}
-                        <div className="relative inline-flex">
-                          <span>
-                            {sNum === 3 && tbPoint
-                              ? tbPoint.p2
-                              : s2}
-                          </span>
-
-                          {sNum !== 3 && isTiebreakGame && tbPoint && (
-                            <span className="absolute -top-1.5 -right-2.5 text-[10px] md:text-[11px] text-orange-400 font-bold">
-                              {tbPoint.p2}
-                            </span>
-                          )}
-                        </div>
+                        )}
                       </div>
 
-                      {isTiebreakGame && !tbPoint && (
-                        <div className="mt-1 flex gap-1">
-                          <div className="w-1 h-1 bg-orange-400/40 rounded-full animate-pulse"></div>
-                          <div className="w-1 h-1 bg-orange-400/40 rounded-full animate-pulse [animation-delay:0.2s]"></div>
-                        </div>
+                      {/* Detail Anggota Tim Ganda */}
+                      {isDouble && match.doubleTeam1 && (
+                        <p className="text-xs text-slate-500 font-medium mt-1">
+                          {match.doubleTeam1.Player1?.namaLengkap} &amp; {match.doubleTeam1.Player2?.namaLengkap}
+                        </p>
                       )}
                     </div>
-                  );
-                })}
-              </div>
 
-              {/* ================= NAMA KANAN ================= */}
-              <div
-                className={`w-full text-center md:text-end ${
-                  isP2Winner
-                    ? "text-slate-900"
-                    : "text-slate-400 opacity-90"
-                }`}
-              >
-                <h4 className="text-sm md:text-lg font-black leading-tight uppercase tracking-tight ">
-                  {p2Name}
-                </h4>
+                    {/* Scoreboard Tengah */}
+                    <div className="md:col-span-4 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+                      {[1, 2, 3].map((sNum) => {
+                        const s1 = parseInt(match[`set${sNum}P1`]);
+                        const s2 = parseInt(match[`set${sNum}P2`]);
 
+                        if (isNaN(s1) || isNaN(s2)) return null;
 
-                {isP2Winner && (
-                  <span className="inline-block mt-1 bg-yellow-400 text-white text-[7px] md:text-[8px] font-black px-2 py-0.5 rounded-full uppercase">
-                    Winner
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
+                        if (sNum === 3) {
+                          const totalSetPlayed = match.score1 + match.score2;
+                          if (totalSetPlayed < 3) return null;
+                        }
 
-          {/* Footer Card */}
-          <div className="bg-slate-50/50 px-5 py-3 md:px-8 md:py-4 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
-            <div className="flex flex-wrap items-center gap-3 md:gap-5 text-[12px] font-semibold text-slate-700">
+                        if (s1 === 0 && s2 === 0 && sNum === 2) return null;
 
-          {/* Tanggal */}
-            <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-xl">
-              <Calendar size={14} />
-              <span>
-                {new Date(match.updatedAt).toLocaleDateString('id-ID', {
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric'
-                })}
-              </span>
-            </div>
+                        const gameLimit = match.scoreRule?.gamePerSet || 6;
+                        const isTiebreakGame = Math.abs(s1 - s2) === 1 && (s1 >= gameLimit || s2 >= gameLimit);
+                        const tbPoint = tiebreakSummary[match.id]?.[`set${sNum}`];
 
-            {/* Jam */}
-            <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-xl">
-              <Clock size={14} />
-              <span>
-                {formatDuration(match.durasi)}
-              </span>
-            </div>
+                        return (
+                          <div
+                            key={sNum}
+                            className="flex flex-col items-center bg-slate-900 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-2xl min-w-[88px] sm:min-w-[92px] border border-slate-800 shadow-sm"
+                          >
+                            <span className="text-[8px] text-amber-400 font-extrabold uppercase tracking-widest mb-0.5 sm:mb-1">
+                              {sNum === 3 ? "SUPER TB" : `SET ${sNum}`}
+                            </span>
 
-            {/* Wasit */}
-            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl
-              ${match.referee 
-                ? "bg-emerald-50 text-emerald-700" 
-                : "bg-slate-100 text-slate-500"
-              }`}>
-              <User size={14} />
-              <span>
-                Wasit: {match.referee?.name || "Belum ada"}
-              </span>
-            </div>
+                            <div className="flex items-center justify-center gap-1.5 font-mono font-black text-white text-xl sm:text-2xl">
+                              {/* Skor P1 */}
+                              <div className="relative inline-flex items-center">
+                                <span className={s1 > s2 ? "text-amber-300" : "text-white"}>
+                                  {sNum === 3 && tbPoint ? tbPoint.p1 : s1}
+                                </span>
+                                {sNum !== 3 && isTiebreakGame && tbPoint && (
+                                  <span className="absolute -top-1 -right-3 text-[10px] text-amber-400 font-bold">
+                                    ({tbPoint.p1})
+                                  </span>
+                                )}
+                              </div>
 
-            {/* Rules Skor */}
-            <div className="flex items-center gap-2 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-xl">
-              <Layers size={14} />
-              <span>
-                Rules: {match.scoreRule?.name || "Default"}
-              </span>
-            </div>
+                              <span className="text-slate-600 font-normal px-0.5">-</span>
 
-            </div>
-            <button 
-              onClick={() => handleLihatLog(match)}
-              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-200 text-blue-600 active:bg-blue-600 active:text-white rounded-xl text-[9px] font-black uppercase transition-all shadow-sm"
-            >
-              Detail Poin <ChevronRight size={12} />
-            </button>
-          </div>
-        </div>
-      );
-    })
-  )}
-</div>
+                              {/* Skor P2 */}
+                              <div className="relative inline-flex items-center">
+                                <span className={s2 > s1 ? "text-amber-300" : "text-white"}>
+                                  {sNum === 3 && tbPoint ? tbPoint.p2 : s2}
+                                </span>
+                                {sNum !== 3 && isTiebreakGame && tbPoint && (
+                                  <span className="absolute -top-1 -right-3 text-[10px] text-amber-400 font-bold">
+                                    ({tbPoint.p2})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
 
-      {/* --- MODAL LOG (Tanpa Perubahan) --- */}
-    {isModalOpen && (
-  <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/80 backdrop-blur-md">
-    <div className="bg-white rounded-t-[2rem] sm:rounded-[2.5rem] w-full max-w-3xl h-[90vh] sm:h-auto sm:max-h-[85vh] overflow-hidden flex flex-col shadow-2xl">
-      
-    {/* HEADER MODAL */}
-    <div className="p-5 md:p-8 border-b bg-slate-50/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-      <div className="flex items-center gap-3">
-        {/* Ikon Dekorasi untuk Mobile agar lebih hidup */}
-        <div className="p-2.5 bg-red-50 rounded-2xl sm:hidden">
-          <Trophy size={18} className="text-red-600" />
-        </div>
-        <div>
-          <h3 className="font-black text-slate-900 uppercase tracking-tighter text-base md:text-lg">Detail Poin</h3>
-          <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-            {activeMatchInfo?.bagan?.nama} • Slot {activeMatchInfo?.slot}
-          </p>
-        </div>
-      </div>
+                            {isTiebreakGame && !tbPoint && (
+                              <div className="mt-1 flex gap-1">
+                                <div className="w-1.5 h-1.5 bg-amber-400/60 rounded-full animate-pulse"></div>
+                                <div className="w-1.5 h-1.5 bg-amber-400/60 rounded-full animate-pulse [animation-delay:0.2s]"></div>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
 
-      <div className="flex items-center gap-2 w-full sm:w-auto">
-        {/* TOMBOL EXPORT PDF - Sekarang Warna Merah & Full Width di Mobile */}
-        <button 
-          onClick={handleExportPDFLog}
-          className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-xl font-black text-[10px] md:text-xs uppercase shadow-lg shadow-red-200 hover:bg-red-700 active:scale-95 transition-all"
-        >
-          <Trophy size={14} /> Export PDF
-        </button>
+                    {/* Sisi Peserta 2 */}
+                    <div className={`md:col-span-4 flex flex-col items-center md:items-end text-center md:text-right ${
+                      isP2Winner ? "text-slate-900" : "text-slate-500 opacity-80"
+                    }`}>
+                      <div className="flex items-center gap-2 flex-wrap justify-center md:justify-end">
+                        {isP2Winner && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 text-[10px] font-black uppercase tracking-wider shadow-2xs">
+                            <Award size={11} className="text-amber-600" /> Winner
+                          </span>
+                        )}
+                        <h4 className="text-base sm:text-lg font-black tracking-tight leading-snug">
+                          {p2Name || "Peserta 2"}
+                        </h4>
+                      </div>
 
-        {/* TOMBOL TUTUP */}
-        <button 
-          onClick={() => setIsModalOpen(false)} 
-          className="flex-none p-2.5 sm:px-4 sm:py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-all font-black text-[10px] md:text-xs uppercase"
-        >
-          <span className="hidden sm:inline">Tutup</span>
-          {/* Ikon silang hanya muncul di mobile untuk hemat ruang */}
-          <span className="sm:hidden text-lg">✕</span>
-        </button>
-      </div>
-    </div>
+                      {/* Detail Anggota Tim Ganda */}
+                      {isDouble && match.doubleTeam2 && (
+                        <p className="text-xs text-slate-500 font-medium mt-1">
+                          {match.doubleTeam2.Player1?.namaLengkap} &amp; {match.doubleTeam2.Player2?.namaLengkap}
+                        </p>
+                      )}
+                    </div>
 
-      {/* BODY MODAL */}
-      <div className="flex-1 overflow-y-auto p-5 md:p-8 space-y-8 md:space-y-10">
-        {Object.values(
-          [...selectedLog].reduce((acc, log) => {
-            if (!acc[log.setKe]) acc[log.setKe] = { set: log.setKe, data: [] };
-            acc[log.setKe].data.push(log);
-            return acc;
-          }, {})
-        ).map((group) => (
-          <div key={group.set}>
-            {/* Set Divider */}
-            <div className="flex items-center gap-4 mb-4">
-              <span className="px-3 py-1 bg-slate-900 text-white text-[9px] md:text-[10px] font-black rounded-lg">SET {group.set}</span>
-              <div className="h-[1px] flex-1 bg-slate-100"></div>
-            </div>
+                  </div>
+                </div>
 
-            {/* Desktop Table View (Hidden on Mobile) */}
-            <div className="hidden md:block border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-[9px] font-black text-slate-400 uppercase">
-                  <tr>
-                    <th className="px-4 py-3 text-center w-12">#</th>
-                    <th className="px-4 py-3">Skor Poin</th>
-                    <th className="px-4 py-3 text-center">Rekap Game</th>
-                    <th className="px-4 py-3">Keterangan</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50">
-                  {group.data.map((log, idx) => (
-                    <tr key={idx} className="hover:bg-blue-50/30">
-                      <td className="px-4 py-4 text-center font-bold text-slate-300">{idx + 1}</td>
-                      <td className="px-4 py-4">
-                        <div className="flex items-center gap-2">
-                          <span className={`w-8 h-8 flex items-center justify-center rounded-lg font-mono font-black ${log.skorP1 > log.skorP2 ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-400'}`}>{log.skorP1}</span>
-                          <span className="text-slate-200">:</span>
-                          <span className={`w-8 h-8 flex items-center justify-center rounded-lg font-mono font-black ${log.skorP2 > log.skorP1 ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-400'}`}>{log.skorP2}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-center font-black text-slate-800 bg-slate-50/50">{log.gameP1} - {log.gameP2}</td>
-                      <td className="px-4 py-4 italic text-slate-500 font-medium">{log.keterangan || "Point Exchange"}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                {/* Footer Kartu */}
+                <div className="bg-slate-50/70 px-5 py-3 sm:px-7 sm:py-3.5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-semibold text-slate-600">
+                    {/* Tanggal */}
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 text-slate-700 shadow-2xs">
+                      <Calendar size={13} className="text-blue-500" />
+                      <span>
+                        {new Date(match.updatedAt).toLocaleDateString('id-ID', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
 
-            {/* Mobile Card View (Hidden on Desktop) */}
-            <div className="md:hidden space-y-2">
-              {group.data.map((log, idx) => (
-                <div key={idx} className="bg-slate-50/50 p-3 rounded-xl border border-slate-100 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-slate-300 w-4">#{idx + 1}</span>
-                    <div className="flex items-center gap-1.5 font-mono font-black text-sm">
-                      <span className={log.skorP1 > log.skorP2 ? 'text-blue-600' : 'text-slate-400'}>{log.skorP1}</span>
-                      <span className="text-slate-300">:</span>
-                      <span className={log.skorP2 > log.skorP1 ? 'text-red-600' : 'text-slate-400'}>{log.skorP2}</span>
+                    {/* Jam / Durasi */}
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 text-slate-700 shadow-2xs">
+                      <Clock size={13} className="text-indigo-500" />
+                      <span>{formatDuration(match.durasi)}</span>
+                    </div>
+
+                    {/* Wasit */}
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 text-slate-700 shadow-2xs">
+                      <User size={13} className={match.referee ? "text-emerald-500" : "text-slate-400"} />
+                      <span>Wasit: {match.referee?.name || "Belum ada"}</span>
+                    </div>
+
+                    {/* Rules Skor */}
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200/80 text-slate-700 shadow-2xs">
+                      <Layers size={13} className="text-amber-500" />
+                      <span>Rules: {match.scoreRule?.name || "Default"}</span>
                     </div>
                   </div>
-                  <div className="flex-1 text-[10px] text-slate-500 italic truncate ml-2">
-                    {log.keterangan || "Poin"}
+
+                  <button 
+                    onClick={() => handleLihatLog(match)}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-amber-600 active:scale-95 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
+                  >
+                    <span>Detail Poin</span>
+                    <ChevronRight size={13} />
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ===== MODAL DETAIL POIN LOG ===== */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-2xl sm:rounded-3xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-slate-200">
+            
+            {/* Header Modal */}
+            <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-50 rounded-xl border border-amber-200/60 text-amber-600 shadow-2xs">
+                  <Trophy size={18} />
+                </div>
+                <div>
+                  <h3 className="font-black text-slate-900 text-base sm:text-lg tracking-tight">
+                    Rincian Alur Poin
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                    {activeMatchInfo?.bagan?.nama} • Match #{activeMatchInfo?.slot} (Round {activeMatchInfo?.round})
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Tombol Export PDF */}
+                <button 
+                  onClick={handleExportPDFLog}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-xs transition-all"
+                  title="Unduh laporan skor PDF"
+                >
+                  <FileText size={14} />
+                  <span className="hidden sm:inline">Export PDF</span>
+                </button>
+
+                {/* Tombol Tutup */}
+                <button 
+                  onClick={() => setIsModalOpen(false)} 
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-xl transition-all"
+                  aria-label="Tutup modal"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Match Summary Box di dalam Modal */}
+            {activeMatchInfo && (
+              <div className="px-5 sm:px-6 pt-4 pb-2 bg-white">
+                <div className="p-3.5 rounded-2xl bg-slate-900 text-white flex items-center justify-between gap-4 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-extrabold text-amber-400 uppercase tracking-widest">
+                      Pertandingan Resmi
+                    </div>
+                    <div className="text-sm sm:text-base font-black truncate mt-0.5">
+                      {activeMatchInfo.doubleTeam1Id 
+                        ? activeMatchInfo.doubleTeam1?.namaTim 
+                        : activeMatchInfo.peserta1?.namaLengkap} 
+                      <span className="text-amber-400 font-normal mx-2">vs</span>
+                      {activeMatchInfo.doubleTeam1Id 
+                        ? activeMatchInfo.doubleTeam2?.namaTim 
+                        : activeMatchInfo.peserta2?.namaLengkap}
+                    </div>
                   </div>
-                  <div className="bg-white px-2 py-1 rounded-lg border border-slate-100 font-black text-[10px] text-slate-800">
-                    {log.gameP1}-{log.gameP2}
+
+                  <div className="flex items-center gap-2">
+                    <span className="px-3 py-1 rounded-xl bg-slate-800 text-amber-300 font-mono font-black text-sm sm:text-base border border-slate-700">
+                      {activeMatchInfo.score1} - {activeMatchInfo.score2}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Body Modal: Point Logs */}
+            <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
+              {Object.values(
+                [...selectedLog].reduce((acc, log) => {
+                  if (!acc[log.setKe]) acc[log.setKe] = { set: log.setKe, data: [] };
+                  acc[log.setKe].data.push(log);
+                  return acc;
+                }, {})
+              ).map((group) => (
+                <div key={group.set}>
+                  {/* Set Header */}
+                  <div className="flex items-center gap-3 mb-3">
+                    <span className="px-3 py-1 bg-slate-900 text-amber-300 text-xs font-black rounded-lg">
+                      SET {group.set}
+                    </span>
+                    <div className="h-[1px] flex-1 bg-slate-200"></div>
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50/80 border-b border-slate-200/80 text-[10px] font-black text-slate-500 uppercase tracking-wider">
+                        <tr>
+                          <th className="px-4 py-3 text-center w-12">#</th>
+                          <th className="px-4 py-3">Skor Poin</th>
+                          <th className="px-4 py-3 text-center">Rekap Game</th>
+                          <th className="px-4 py-3">Keterangan</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {group.data.map((log, idx) => (
+                          <tr key={idx} className="hover:bg-amber-50/30 transition-colors">
+                            <td className="px-4 py-3 text-center font-bold text-slate-400">
+                              {idx + 1}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className={`px-2 py-1 rounded-md font-mono font-black text-xs ${
+                                  log.skorP1 > log.skorP2 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                  {log.skorP1}
+                                </span>
+                                <span className="text-slate-300 font-bold">:</span>
+                                <span className={`px-2 py-1 rounded-md font-mono font-black text-xs ${
+                                  log.skorP2 > log.skorP1 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                  {log.skorP2}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center font-black text-slate-800 bg-slate-50/40">
+                              {log.gameP1} - {log.gameP2}
+                            </td>
+                            <td className="px-4 py-3 text-slate-600 font-medium text-xs">
+                              <span className="inline-block px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-semibold">
+                                {log.keterangan || "Point Exchange"}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-2">
+                    {group.data.map((log, idx) => (
+                      <div key={idx} className="bg-slate-50/80 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between gap-3 shadow-2xs">
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-[10px] font-black text-slate-400 w-4">#{idx + 1}</span>
+                          <div className="flex items-center gap-1.5 font-mono font-black text-xs">
+                            <span className={log.skorP1 > log.skorP2 ? 'text-amber-700 font-black' : 'text-slate-600'}>
+                              {log.skorP1}
+                            </span>
+                            <span className="text-slate-300">:</span>
+                            <span className={log.skorP2 > log.skorP1 ? 'text-amber-700 font-black' : 'text-slate-600'}>
+                              {log.skorP2}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex-1 text-[11px] text-slate-600 font-medium truncate ml-1">
+                          {log.keterangan || "Point Exchange"}
+                        </div>
+                        <div className="bg-white px-2.5 py-1 rounded-lg border border-slate-200 font-black text-[11px] text-slate-800 shadow-2xs">
+                          {log.gameP1} - {log.gameP2}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
+
+            {/* Footer Modal */}
+            <div className="p-4 px-6 border-t border-slate-100 bg-slate-50 flex justify-end">
+              <button 
+                onClick={() => setIsModalOpen(false)} 
+                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl transition-all font-bold text-xs uppercase tracking-wider"
+              >
+                Tutup
+              </button>
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
-  </div>
-)}
+        </div>
+      )}
     </div>
   );
 }
