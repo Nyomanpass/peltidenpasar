@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { exportBaganPdf } from "../utils/exportBaganPdf";
 import api from "../api"; // Mengimpor instans axios dari file api.js
 import { Info, Star, Users } from "lucide-react";
 import AlertMessage from "../components/AlertMessage";
@@ -214,97 +213,6 @@ const formatSetScore = (m) => {
   }, [bagan]);
 
   
-const handleExportPDF = async () => {
-  const bracketEl = document.getElementById(
-    isRoundRobin ? "roundrobin-pdf" : "bracket-container"
-  );
-  const ketPdfEl = document.getElementById("keterangan-pdf");
-
-  if (!bracketEl || !bagan) return;
-
-  try {
-
-
-    await new Promise(r => setTimeout(r, 200));
-
-    if (isRoundRobin) {
-      bracketEl.style.display = "block";
-      bracketEl.style.position = "absolute";
-      bracketEl.style.left = "-9999px"; // supaya tidak terlihat user
-    }
-
-    const canvas = await html2canvas(bracketEl, {
-      scale: 2,
-      useCORS: true,
-      backgroundColor: "#ffffff"
-    });
-
-    const img = canvas.toDataURL("image/jpeg", 0.85); // JPEG quality 85% — jauh lebih kecil, teks tetap terbaca
-
-    const pdf = new jsPDF({
-      orientation: canvas.width > canvas.height ? "l" : "p",
-      unit: "px",
-      format: [canvas.width + 40, canvas.height + 140],
-      compress: true, // aktifkan flate compression di level PDF
-    });
-
-    const pageWidth = pdf.internal.pageSize.getWidth();
-
-    pdf.setFontSize(28);
-    pdf.text(
-      (bagan.Tournament?.name || "PELTI DENPASAR").toUpperCase(),
-      pageWidth / 2,
-      40,
-      { align: "center" }
-    );
-
-    pdf.setFontSize(18);
-    pdf.text(bagan.nama, pageWidth / 2, 70, { align: "center" });
-
-    pdf.addImage(img, "JPEG", 20, 100, canvas.width, canvas.height);
-
-    if (ketPdfEl && !isRoundRobin) {
-      ketPdfEl.style.display = "block";
-      await new Promise(r => setTimeout(r, 200));
-
-      const ketCanvas = await html2canvas(ketPdfEl, {
-        scale: 2,
-        backgroundColor: "#ffffff"
-      });
-
-      pdf.addPage();
-      pdf.addImage(
-        ketCanvas.toDataURL("image/jpeg", 0.85),
-        "JPEG",
-        20,
-        40,
-        ketCanvas.width,
-        ketCanvas.height
-      );
-
-      ketPdfEl.style.display = "none";
-    }
-
-    pdf.save(`Bagan-${bagan.nama}.pdf`);
-
-    if (isRoundRobin) {
-      bracketEl.style.display = "none";
-      bracketEl.style.position = "";
-      bracketEl.style.left = "";
-    }
-
-
-
-  } catch (err) {
-    console.error(err);
-    alert("Export gagal. Coba reload halaman.");
-  }
-};
-
-
-
-
-
 const handleLockBagan = async () => {
   try {
     setIsLoading(true);
@@ -619,19 +527,23 @@ if (isRoundRobin) {
     }
   }
 
-  const thStyle = {
-    border: "1px solid #d1d5db",
-    padding: "8px",
-    fontSize: 12,
-    textAlign: "left"
+  const handleExportPDF = async () => {
+    try {
+      await exportBaganPdf({
+        bagan,
+        rounds,
+        isRoundRobin,
+        isDouble,
+        finalRound,
+        juara,
+        juaraRR,
+        formatSetScore,
+      });
+    } catch (err) {
+      console.error(err);
+      alert("Export gagal. Coba reload halaman.");
+    }
   };
-
-  const tdStyle = {
-    border: "1px solid #e5e7eb",
-    padding: "8px",
-    fontSize: 12
-  };
-
 
   return (
     <div className="min-h-screen w-full">
@@ -1216,247 +1128,6 @@ if (isRoundRobin) {
           </div>
           )}
         </div>
-
-        {/* ===== KETERANGAN KHUSUS PDF (TANPA TAILWIND) ===== */}
-        <div
-          id="keterangan-pdf"
-          style={{
-            background: "#ffffff",
-            padding: "32px",
-            fontFamily: "Arial, Helvetica, sans-serif",
-            display: "none",
-            width: "100%"
-          }}
-        >
-
-          {/* JUDUL */}
-          <div style={{ marginBottom: 24 }}>
-            <h3 style={{ fontSize: 20, marginBottom: 6, color: "#1f2937" }}>
-              Keterangan Penempatan
-            </h3>
-            <p style={{ fontSize: 13, color: "#6b7280" }}>
-              Seeding & Plotting Peserta
-            </p>
-          </div>
-
-          {/* GRID 2 KOLOM */}
-          <div style={{ display: "flex", gap: 32 }}>
-            
-            {/* KOLOM SEED */}
-            <div
-              style={{
-                flex: 1,
-                border: "1px solid #fde68a",
-                background: "#fffbeb",
-                borderRadius: 12,
-                padding: 16
-              }}
-            >
-              <div style={{ marginBottom: 12 }}>
-                <strong style={{ color: "#92400e" }}>Peserta Unggulan (Seeded)</strong>
-              </div>
-
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {bagan.Matches.filter(m => m.round === 1)
-                  .flatMap(m => {
-                    const arr = [];
-                    if (m.peserta1?.isSeeded) arr.push(m.peserta1.namaLengkap);
-                    if (m.peserta2?.isSeeded) arr.push(m.peserta2.namaLengkap);
-                    return arr;
-                  })
-                  .map((n, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      position: "relative",          // 🔥 WAJIB
-                      display: "flex",
-                      alignItems: "center",
-                      padding: "8px 44px 8px 12px",   // kanan diperbesar
-                      background: "#ffffff",
-                      border: "1px solid #fde68a",
-                      borderRadius: 8,
-                      minHeight: 36
-                    }}
-                  >
-
-                     <span style={{ fontSize: 13, color: "#1f2937" }}>
-                      {n}
-                    </span>
-
-                    <span
-                      style={{
-                        position: "absolute",   // 🔥 LEPAS DARI BASELINE
-                        right: 12,
-                        top: "50%",
-                        transform: "translateY(-50%)", // 🔥 CENTER VERTIKAL FIX
-                        fontSize: 10,
-                        color: "#92400e",
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                        fontWeight: "bold",
-                        lineHeight: 1,
-                        height: 18,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center"
-                      }}
-                    >
-                      SEED
-                    </span>
-
-
-
-                    </div>
-                  ))}
-              </div>
-            </div>
-
-            {/* KOLOM PLOTTING */}
-            <div
-              style={{
-                flex: 1,
-                border: "1px solid #e5e7eb",
-                background: "#f9fafb",
-                borderRadius: 12,
-                padding: 16
-              }}
-            >
-              <strong style={{ color: "#1f2937" }}>Penempatan Khusus</strong>
-              <p style={{ fontSize: 13, color: "#4b5563", marginTop: 10, lineHeight: 1.5 }}>
-                Beberapa peserta ditempatkan secara manual untuk menghindari
-                pertemuan dini antar rekan satu tim atau instansi yang sama.
-              </p>
-            </div>
-          </div>
-
-          {/* FOOTER */}
-          <div
-            style={{
-              marginTop: 32,
-              paddingTop: 12,
-              borderTop: "1px solid #e5e7eb",
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: 10,
-              color: "#6b7280"
-            }}
-          >
-            <span>PELTI DENPASAR OFFICIAL SYSTEM</span>
-            <span>{new Date().toLocaleString("id-ID")}</span>
-          </div>
-
-          {(isRoundRobin ? juaraRR : juara) && (
-            <div
-              style={{
-                marginTop: 32,
-                padding: "24px",
-                borderRadius: 14,
-                border: "2px solid #facc15",
-                background: "#fffbeb",
-                textAlign: "center"
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 22,
-                  fontWeight: "bold",
-                  color: "#ca8a04",
-                  marginBottom: 6
-                }}
-              >
-                🏆 Juara
-              </div>
-
-              <div
-                style={{
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: "#111827",
-                  marginBottom: 10
-                }}
-              >
-                {isRoundRobin
-                ? (isDouble
-                    ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
-                    : juaraRR?.namaLengkap)
-                : juara}
-
-              </div>
-            </div>
-          )}
-
-        </div>
-
-        {/* ===== ROUND ROBIN PDF (KHUSUS EXPORT) ===== */}
-        <div
-          id="roundrobin-pdf"
-          style={{
-            background: "#ffffff",
-            padding: "32px",
-            fontFamily: "Arial, Helvetica, sans-serif",
-            display: "none",
-            width: "100%"
-          }}
-        >
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#f3f4f6" }}>
-                <th style={thStyle}>No</th>
-                <th style={thStyle}>Peserta 1</th>
-                <th style={thStyle}>VS</th>
-                <th style={thStyle}>Peserta 2</th>
-                <th style={thStyle}>Skor</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bagan.Matches.map((m, i) => (
-                <tr key={m.id}>
-                  <td style={tdStyle}>{i + 1}</td>
-                  <td style={tdStyle}>
-                    {isDouble
-                      ? m.doubleTeam1?.namaTim
-                      : m.peserta1?.namaLengkap}
-                  </td>
-                  <td style={tdStyle}>VS</td>
-                  <td style={tdStyle}>
-                    {isDouble
-                      ? m.doubleTeam2?.namaTim
-                      : m.peserta2?.namaLengkap}
-                  </td>
-                  <td style={tdStyle}>
-                   {formatSetScore(m)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {(isRoundRobin ? juaraRR : juara) && (
-            <div
-              style={{
-                marginTop: 32,
-                padding: 20,
-                border: "2px solid #facc15",
-                borderRadius: 12,
-                background: "#fffbeb",
-                textAlign: "center"
-              }}
-            >
-              <div style={{ fontSize: 20, fontWeight: "bold", color: "#ca8a04" }}>
-                🏆 Juara
-              </div>
-              <div style={{ fontSize: 16, marginTop: 6 }}>
-                {isRoundRobin
-                  ? (isDouble
-                      ? `${juaraRR?.Player1?.namaLengkap} / ${juaraRR?.Player2?.namaLengkap}`
-                      : juaraRR?.namaLengkap)
-                  : juara}
-              </div>
-            </div>
-          )}
-        </div>
-
-
 
         {/* ===== KETERANGAN PENEMPATAN (hanya non-RR) ===== */}
         {!isRoundRobin && (
