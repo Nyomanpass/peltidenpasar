@@ -168,15 +168,23 @@ const handleReject = async (id, message) => {
           {(role === "admin" || role === "panitia") && (
             <button
               onClick={() => setIsDrawerOpen(true)}
-              className="p-3 rounded-full text-gray-600 hover:bg-gray-100 transition-colors relative"
+              className={`p-2.5 rounded-xl transition-all duration-200 relative border ${
+                pendingUsers.length > 0
+                  ? "bg-amber-50/80 text-amber-700 border-amber-200/80 hover:bg-amber-100 hover:border-amber-300 shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-transparent"
+              } active:scale-95`}
               title="Notifikasi Verifikasi Peserta"
+              aria-label="Notifikasi Verifikasi Peserta"
             >
-              <Bell size={20} />
+              <Bell size={19} className={pendingUsers.length > 0 ? "text-amber-600" : ""} />
               {/* Badge Notifikasi Real-time */}
               {pendingUsers.length > 0 && (
-                  <span className="absolute top-2 right-2 flex items-center justify-center h-4 w-4 rounded-full bg-red-600 ring-2 ring-white text-xs text-white font-bold">
-                      {pendingUsers.length > 9 ? '9+' : pendingUsers.length}
+                <span className="absolute -top-1 -right-1 flex h-4.5 min-w-[18px] items-center justify-center">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex items-center justify-center h-4.5 min-w-[18px] px-1 rounded-full bg-rose-600 text-[10px] font-black text-white ring-2 ring-white shadow-xs">
+                    {pendingUsers.length > 9 ? "9+" : pendingUsers.length}
                   </span>
+                </span>
               )}
             </button>
           )}
@@ -185,11 +193,11 @@ const handleReject = async (id, message) => {
           {role === "admin" && (
             <Link
               to="/admin/settings"
-              className="p-3 rounded-full text-gray-600 hover:bg-gray-100 transition-colors"
+              className="p-2.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all border border-transparent active:scale-95"
               title="Pengaturan"
               aria-label="Pengaturan"
             >
-              <Settings size={20} />
+              <Settings size={19} />
             </Link>
           )}
 
@@ -199,23 +207,23 @@ const handleReject = async (id, message) => {
               onClick={handleDropdownToggle}
               aria-haspopup="menu"
               aria-expanded={isProfileDropdownOpen}
-              className="flex items-center gap-2 p-2 pl-4 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              className="flex items-center gap-2 p-1.5 pl-3 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200/60 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30"
             >
-              <span className="text-sm font-semibold text-gray-700 hidden sm:inline capitalize">
+              <span className="text-xs font-bold text-slate-700 hidden sm:inline capitalize">
                 {userName}
               </span>
-              <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold">
+              <div className="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-white font-black text-xs shadow-2xs">
                 {userName[0].toUpperCase()}
               </div>
             </button>
 
             {/* Dropdown Menu */}
             {isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-56 rounded-lg shadow-2xl bg-white border border-gray-100 z-50 overflow-hidden">
+              <div className="absolute right-0 mt-3 w-56 rounded-2xl shadow-2xl bg-white border border-slate-100 z-50 overflow-hidden">
                 
                 {/* Info Pengguna di Dropdown */}
-                <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-bold text-gray-800">
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/60">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
                       Akun {role}
                     </p>
                 </div>
@@ -224,19 +232,19 @@ const handleReject = async (id, message) => {
                   <li>
                     <button
                       onClick={handleGoToWebsite}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                     >
-                      <Globe size={18} className="text-blue-500"/> Kembali ke Website
+                      <Globe size={16} className="text-blue-500"/> Kembali ke Website
                     </button>
                   </li>
                   {role === "admin" && (
                     <li>
                       <Link
                         to="/admin/profile"
-                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                         onClick={() => setIsProfileDropdownOpen(false)}
                       >
-                        <User size={18} className="text-yellow-500"/>
+                        <User size={16} className="text-amber-500"/>
                         Profile
                       </Link>
                     </li>
@@ -245,9 +253,9 @@ const handleReject = async (id, message) => {
                   <li>
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50/50 border-t border-gray-100 mt-1"
+                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 border-t border-slate-100 mt-1 transition-colors"
                     >
-                      <LogOut size={18} /> Logout
+                      <LogOut size={16} /> Logout
                     </button>
                   </li>
                 </ul>
@@ -265,7 +273,8 @@ const handleReject = async (id, message) => {
           pendingUsers={pendingUsers}
           onVerify={handleVerify}
           onReject={handleReject}
-          onViewDetail={handleViewDetail} // Menambahkan handler detail
+          onViewDetail={handleViewDetail}
+          role={role}
         />
       )}
     </>
