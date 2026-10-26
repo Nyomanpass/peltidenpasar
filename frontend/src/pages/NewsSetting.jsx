@@ -1,23 +1,32 @@
-import { useState, useEffect } from "react";
-import { Trash2, Edit, Image, PlusCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+  Trash2,
+  Edit,
+  Image as ImageIcon,
+  Plus,
+  Save,
+  X,
+  Newspaper,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+} from "lucide-react";
 import api from "../api";
 import { format } from "date-fns";
-import { useRef } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import AlertMessage from "../components/AlertMessage";
 
-
 export default function NewsSetting() {
   const [newsList, setNewsList] = useState([]);
-  const [modalOpen, setModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
   const formRef = useRef(null);
   const [formData, setFormData] = useState({
     title: "",
     desc: "",
     image: null,
-    tanggalUpload: format(new Date(), "yyyy-MM-dd")
+    tanggalUpload: format(new Date(), "yyyy-MM-dd"),
   });
   const [editingId, setEditingId] = useState(null);
 
@@ -27,20 +36,21 @@ export default function NewsSetting() {
 
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null });
+  const [confirmDelete, setConfirmDelete] = useState({
+    show: false,
+    id: null,
+    title: "",
+  });
 
   const [formKey, setFormKey] = useState(0);
   const fileInputRef = useRef(null);
-
-
-
 
   const fetchNews = async () => {
     try {
       const res = await api.get("/news/get");
       setNewsList(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Gagal mengambil data news:", err);
     }
   };
 
@@ -58,15 +68,12 @@ export default function NewsSetting() {
 
     setEditingId(null);
 
-    // 🔥 Reset file input secara manual
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
 
-    // 🔥 Paksa React rebuild seluruh form
-    setFormKey(prev => prev + 1);
+    setFormKey((prev) => prev + 1);
   };
-
 
   const openForm = (news = null) => {
     if (news) {
@@ -79,16 +86,15 @@ export default function NewsSetting() {
           : format(new Date(), "yyyy-MM-dd"),
       });
       setEditingId(news.idNews);
-           setTimeout(() => {
-    formRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    });
-  }, 100);
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 100);
     } else {
       resetForm();
     }
-    setModalOpen(true);
   };
 
   const handleSubmit = async (e) => {
@@ -104,45 +110,40 @@ export default function NewsSetting() {
         await api.put(`/news/update/${editingId}`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        setSuccess("News berhasil diperbarui");
+        setSuccess("Berita berhasil diperbarui");
       } else {
         await api.post("/news/create", fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        setSuccess("News berhasil ditambahkan");
+        setSuccess("Berita berhasil ditambahkan");
       }
 
-     
       resetForm();
       fetchNews();
       setCurrentPage(1);
-
     } catch (err) {
       console.error(err);
+      setError("Gagal menyimpan berita");
     }
   };
 
-  const handleDelete = (id) => {
-    setConfirmDelete({ show: true, id });
+  const handleDelete = (news) => {
+    setConfirmDelete({ show: true, id: news.idNews, title: news.title });
   };
 
   const handleConfirmDelete = async () => {
     try {
       await api.delete(`/news/delete/${confirmDelete.id}`);
-      setSuccess("News berhasil dihapus");
+      setSuccess("Berita berhasil dihapus");
       fetchNews();
     } catch (err) {
-      setError("Gagal menghapus news");
+      setError("Gagal menghapus berita");
     } finally {
-      setConfirmDelete({ show: false, id: null });
+      setConfirmDelete({ show: false, id: null, title: "" });
     }
   };
 
-
-
-  // ======================
-  // PAGINATION (MAX 5)
-  // ======================
+  // Pagination Logic
   const totalPages = Math.ceil(newsList.length / itemsPerPage);
 
   const paginatedNews = newsList.slice(
@@ -160,7 +161,7 @@ export default function NewsSetting() {
   }
 
   const visiblePages = Array.from(
-    { length: endPage - startPage + 1 },
+    { length: Math.max(0, endPage - startPage + 1) },
     (_, i) => startPage + i
   );
 
@@ -191,10 +192,13 @@ export default function NewsSetting() {
     return div.textContent || div.innerText || "";
   };
 
-
+  const inputClass =
+    "w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-xl focus:border-amber-500 focus:ring-2 focus:ring-amber-500/10 outline-none transition-all placeholder:text-slate-400 text-slate-700 font-medium";
+  const labelClass =
+    "text-xs font-bold text-slate-600 uppercase tracking-wider mb-1.5 block";
 
   return (
-    <div className="bg-white shadow-2xl max-width-5xl rounded-2xl p-8 border border-gray-100">
+    <div className="bg-white p-5 sm:p-6 rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs space-y-6">
       {success && (
         <AlertMessage
           type="success"
@@ -211,23 +215,39 @@ export default function NewsSetting() {
         />
       )}
 
-      {/* Header */}
-      <h1 className="text-2xl font-bold mb-6 text-gray-800 border-b-2 border-yellow-500/50 pb-3 flex items-center gap-2">
-        <PlusCircle size={24} className="text-blue-600" /> Tambah / Kelola News
-      </h1>
+      {/* HEADER SECTION */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/60 shadow-2xs">
+            <Newspaper size={20} />
+          </div>
+          <div>
+            <h3 className="font-extrabold text-slate-900 text-base sm:text-lg">
+              Settings Berita & Artikel
+            </h3>
+            <p className="text-slate-400 text-xs font-medium">
+              Kelola artikel berita, tanggal terbit, dan konten informasi PELTI
+            </p>
+          </div>
+        </div>
 
-      {/* Form */}
+        <span className="inline-flex items-center self-start sm:self-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200/80">
+          {newsList.length} Berita Terbit
+        </span>
+      </div>
+
+      {/* FORM */}
       <form
         key={formKey}
         onSubmit={handleSubmit}
         ref={formRef}
-        className="mb-8 flex flex-col gap-4"
+        className="space-y-4"
       >
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">
-              Judul
+          {/* Judul */}
+          <div className="md:col-span-1">
+            <label className={labelClass}>
+              Judul Berita <span className="text-rose-500">*</span>
             </label>
             <input
               type="text"
@@ -235,14 +255,16 @@ export default function NewsSetting() {
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
-              className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
+              placeholder="Contoh: Kejuaraan Tenis Junior 2025"
+              className={inputClass}
               required
             />
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">
-              Tanggal Upload
+          {/* Tanggal Upload */}
+          <div className="md:col-span-1">
+            <label className={labelClass}>
+              Tanggal Upload <span className="text-rose-500">*</span>
             </label>
             <input
               type="date"
@@ -253,14 +275,15 @@ export default function NewsSetting() {
                   tanggalUpload: e.target.value,
                 })
               }
-              className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
+              className={`${inputClass} appearance-none`}
               required
             />
           </div>
 
-          <div className="flex flex-col">
-            <label className="text-sm font-semibold text-gray-700 mb-1">
-              Gambar
+          {/* Gambar */}
+          <div className="md:col-span-1">
+            <label className={labelClass}>
+              Gambar / Thumbnail {editingId && "(Biarkan kosong jika tetap)"}
             </label>
             <input
               ref={fileInputRef}
@@ -269,20 +292,17 @@ export default function NewsSetting() {
               onChange={(e) =>
                 setFormData({ ...formData, image: e.target.files[0] })
               }
-              className="border border-gray-300 px-4 py-3 rounded-xl focus:ring-2 focus:ring-yellow-500/70 focus:border-yellow-500 outline-none w-full shadow-sm"
+              className={`${inputClass} file:mr-3 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer`}
             />
           </div>
         </div>
 
-        <div className="flex flex-col mt-4">
-          <label className="text-sm font-semibold text-gray-700 mb-1">
-            Deskripsi
+        {/* Deskripsi (Quill Editor) */}
+        <div>
+          <label className={labelClass}>
+            Konten Berita <span className="text-rose-500">*</span>
           </label>
-
-          <div className="border border-gray-300 rounded-xl shadow-sm 
-                          focus-within:ring-2 focus-within:ring-yellow-500/70 
-                          focus-within:border-yellow-500 transition overflow-hidden">
-
+          <div className="border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-amber-500/10 focus-within:border-amber-500 transition-all">
             <ReactQuill
               theme="snow"
               value={formData.desc}
@@ -293,171 +313,229 @@ export default function NewsSetting() {
               formats={formats}
               className="bg-white"
             />
-
           </div>
         </div>
 
-
-        <div className="flex justify-end mt-4">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-2.5 pt-2">
+          {editingId && (
+            <button
+              type="button"
+              onClick={resetForm}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 font-bold text-xs uppercase tracking-wider transition-all active:scale-95"
+            >
+              <X size={14} /> Batal
+            </button>
+          )}
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 transition text-white px-6 py-3 rounded-xl shadow-lg font-semibold flex items-center gap-2"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all active:scale-95"
           >
-            {editingId ? <Edit size={18} /> : <PlusCircle size={18} />}
-            {editingId ? "Update" : "Tambah"}
+            {editingId ? <Save size={14} /> : <Plus size={14} />}
+            {editingId ? "Update Berita" : "Tambah Berita"}
           </button>
         </div>
       </form>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-200">
-        <table className="min-w-full text-sm">
-          <thead className="bg-gray-100 text-gray-700 uppercase tracking-wider">
-            <tr>
-              <th className="px-5 py-3 text-left">No</th>
-              <th className="px-5 py-3 text-left">Judul</th>
-              <th className="px-5 py-3 text-left">Deskripsi</th>
-              <th className="px-5 py-3 text-left">Gambar</th>
-              <th className="px-5 py-3 text-left">Tanggal Upload</th>
-              <th className="px-5 py-3 text-center">Aksi</th>
+      {/* TABLE */}
+      <div className="overflow-x-auto rounded-2xl border border-slate-200/80 shadow-2xs">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-extrabold uppercase tracking-wider text-slate-500">
+              <th className="px-4 py-3.5 w-12 text-center">No</th>
+              <th className="px-4 py-3.5">Judul</th>
+              <th className="px-4 py-3.5">Ringkasan Konten</th>
+              <th className="px-4 py-3.5 text-center w-24">Gambar</th>
+              <th className="px-4 py-3.5 w-32">Tanggal Upload</th>
+              <th className="px-4 py-3.5 text-center w-28">Aksi</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100 bg-white">
+          <tbody className="divide-y divide-slate-100 bg-white">
             {paginatedNews.map((n, idx) => (
-              <tr key={n.idNews} className="hover:bg-yellow-50/50 transition">
-                <td className="px-5 py-3 font-medium text-gray-700">
+              <tr
+                key={n.idNews}
+                className="hover:bg-slate-50/60 transition-colors group"
+              >
+                <td className="px-4 py-3 text-center font-semibold text-slate-400">
                   {(currentPage - 1) * itemsPerPage + idx + 1}
                 </td>
-                <td className="px-5 py-3 font-semibold text-gray-800">
+                <td className="px-4 py-3 font-bold text-slate-800 max-w-[200px] truncate">
                   {n.title}
                 </td>
-                <td className="px-5 py-3 text-gray-700">
-                  {stripHtml(n.desc).length > 100
-                    ? stripHtml(n.desc).slice(0, 100) + "..."
-                    : stripHtml(n.desc)}
+                <td className="px-4 py-3 text-slate-500 max-w-[280px]">
+                  <p className="line-clamp-2 leading-relaxed">
+                    {stripHtml(n.desc) || "-"}
+                  </p>
                 </td>
-
-                <td className="px-5 py-3">
+                <td className="px-4 py-3 text-center">
                   {n.image ? (
-                    <img
-                      src={n.image}
-                      alt="news"
-                      className="w-16 h-16 object-cover rounded"
-                    />
+                    <button
+                      type="button"
+                      onClick={() => setPreviewImage(n.image)}
+                      className="group/img relative inline-block rounded-lg overflow-hidden border border-slate-200 shadow-2xs hover:scale-105 transition-transform"
+                      title="Lihat Gambar Penuh"
+                    >
+                      <img
+                        src={n.image}
+                        alt={n.title}
+                        className="w-12 h-12 object-cover"
+                      />
+                    </button>
+                  ) : (
+                    <span className="text-slate-300">-</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-slate-500 font-medium">
+                  {n.tanggalUpload ? (
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar size={12} className="text-slate-400" />
+                      {format(new Date(n.tanggalUpload), "dd MMM yyyy")}
+                    </span>
                   ) : (
                     "-"
                   )}
                 </td>
-                <td className="px-5 py-3 text-gray-500">
-                  {n.tanggalUpload
-                    ? format(new Date(n.tanggalUpload), "dd MMM yyyy")
-                    : "-"}
-                </td>
-                <td className="px-5 py-3 flex gap-2 justify-center">
-                  <button
-                    onClick={() => openForm(n)}
-                    className="flex items-center gap-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded-lg shadow-md transition"
-                  >
-                    <Edit size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(n.idNews)}
-                    className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg shadow-md transition"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                  {n.image && (
+                <td className="px-4 py-3 text-center">
+                  <div className="flex items-center justify-center gap-1.5">
                     <button
-                      onClick={() => setPreviewImage(n.image)}
-                      className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg shadow-md transition"
+                      type="button"
+                      onClick={() => openForm(n)}
+                      className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg border border-transparent hover:border-amber-200/60 transition-all active:scale-95"
+                      title="Edit Berita"
                     >
-                      <Image size={16} />
+                      <Edit size={15} />
                     </button>
-                  )}
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(n)}
+                      className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-transparent hover:border-rose-200/60 transition-all active:scale-95"
+                      title="Hapus Berita"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                    {n.image && (
+                      <button
+                        type="button"
+                        onClick={() => setPreviewImage(n.image)}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg border border-transparent hover:border-blue-200/60 transition-all active:scale-95"
+                        title="Lihat Gambar"
+                      >
+                        <ImageIcon size={15} />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
+
+            {newsList.length === 0 && (
+              <tr>
+                <td
+                  colSpan="6"
+                  className="text-center py-10 px-4 text-slate-400 bg-white"
+                >
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="p-3 bg-slate-50 text-slate-300 rounded-2xl border border-slate-100">
+                      <Newspaper size={24} />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-500">
+                      Belum ada berita yang diterbitkan.
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* PAGINATION */}
       {totalPages > 1 && (
-        <div className="flex justify-center mt-4 gap-2">
+        <div className="flex items-center justify-center gap-1.5 pt-2">
           <button
+            type="button"
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
-            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none transition-all active:scale-95"
           >
-            Prev
+            <ChevronLeft size={14} /> Prev
           </button>
-
           {visiblePages.map((page) => (
             <button
               key={page}
+              type="button"
               onClick={() => setCurrentPage(page)}
-              className={`px-4 py-2 rounded hover:bg-gray-300 ${
+              className={`w-8 h-8 rounded-xl text-xs font-bold transition-all active:scale-95 ${
                 currentPage === page
-                  ? "bg-yellow-500 text-white"
-                  : "bg-gray-200"
+                  ? "bg-amber-500 text-white shadow-xs"
+                  : "bg-white border border-slate-200 text-slate-600 hover:bg-slate-100"
               }`}
             >
               {page}
             </button>
           ))}
-
           <button
-            onClick={() =>
-              setCurrentPage((p) => Math.min(p + 1, totalPages))
-            }
+            type="button"
+            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 disabled:opacity-50"
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none transition-all active:scale-95"
           >
-            Next
+            Next <ChevronRight size={14} />
           </button>
         </div>
       )}
 
-      {/* Modal Preview */}
+      {/* MODAL PREVIEW IMAGE */}
       {previewImage && (
         <div
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-70 z-50 p-4"
+          className="fixed inset-0 flex items-center justify-center bg-slate-900/80 backdrop-blur-xs z-50 p-4 animate-in fade-in duration-200"
           onClick={() => setPreviewImage(null)}
         >
-          <img
-            src={previewImage}
-            alt="Preview News"
-            className="max-h-[90vh] max-w-full object-contain rounded-lg"
+          <div
+            className="relative max-h-[90vh] max-w-2xl bg-white p-2 rounded-2xl shadow-2xl"
             onClick={(e) => e.stopPropagation()}
-          />
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewImage(null)}
+              className="absolute -top-3 -right-3 bg-slate-900 text-white p-1.5 rounded-full shadow-lg hover:bg-slate-800 transition active:scale-95"
+            >
+              <X size={16} />
+            </button>
+            <img
+              src={previewImage}
+              alt="Preview Berita"
+              className="max-h-[85vh] w-auto object-contain rounded-xl"
+            />
+          </div>
         </div>
       )}
+
+      {/* MODAL HAPUS */}
       {confirmDelete.show && (
         <AlertMessage
           type="warning"
-          message="Yakin ingin menghapus news ini? Data tidak bisa dikembalikan."
-          onClose={() => setConfirmDelete({ show: false, id: null })}
+          message={`Hapus berita "${confirmDelete.title}"? Data yang sudah dihapus tidak bisa dikembalikan.`}
+          onClose={() => setConfirmDelete({ show: false, id: null, title: "" })}
         >
           <div className="flex flex-col sm:flex-row gap-4 w-full mt-8">
-            
             <button
-              onClick={() => setConfirmDelete({ show: false, id: null })}
-              className="flex-1 px-6 py-3 rounded-xl bg-gray-100 text-gray-800 font-bold hover:bg-gray-200 transition"
+              onClick={() =>
+                setConfirmDelete({ show: false, id: null, title: "" })
+              }
+              className="flex-1 order-2 sm:order-1 min-h-[50px] px-6 py-3 rounded-2xl bg-slate-100 text-slate-800 font-black text-xs uppercase tracking-wider hover:bg-slate-200 active:scale-95 transition-all"
             >
               Batal
             </button>
-
             <button
               onClick={handleConfirmDelete}
-              className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition"
+              className="flex-1 order-1 sm:order-2 min-h-[50px] px-6 py-3 rounded-2xl bg-rose-600 text-white font-black text-xs uppercase tracking-wider shadow-lg hover:bg-rose-700 active:scale-95 transition-all"
             >
               Ya, Hapus
             </button>
-
           </div>
         </AlertMessage>
       )}
-
     </div>
   );
 }
