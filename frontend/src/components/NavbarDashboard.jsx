@@ -1,4 +1,4 @@
-import { Menu, LogOut, Bell, User, Settings, Globe } from "lucide-react";
+import { Menu, LogOut, Bell, User, Settings, Globe, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import VerificationDrawer from "./VerificationDrawer";
@@ -207,58 +207,65 @@ const handleReject = async (id, message) => {
               onClick={handleDropdownToggle}
               aria-haspopup="menu"
               aria-expanded={isProfileDropdownOpen}
-              className="flex items-center gap-2 p-1.5 pl-3 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200/60 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              className="flex items-center gap-2 p-1.5 pl-3 pr-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200/60 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30 active:scale-95"
             >
               <span className="text-xs font-bold text-slate-700 hidden sm:inline capitalize">
                 {userName}
               </span>
-              <div className="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-white font-black text-xs shadow-2xs">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-black text-xs shadow-2xs">
                 {userName[0].toUpperCase()}
               </div>
+              <ChevronDown
+                size={14}
+                className={`text-slate-400 transition-transform duration-200 ${
+                  isProfileDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
 
             {/* Dropdown Menu */}
             {isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-56 rounded-2xl shadow-2xl bg-white border border-slate-100 z-50 overflow-hidden">
-                
+              <div className="absolute right-0 mt-3 w-60 rounded-2xl shadow-xl bg-white border border-slate-200/80 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
                 {/* Info Pengguna di Dropdown */}
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/60">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Akun {role}
-                    </p>
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/70">
+                  <p className="text-xs font-extrabold text-slate-800 capitalize leading-snug">
+                    {userName}
+                  </p>
+                  <p className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">
+                    Akun {role}
+                  </p>
                 </div>
 
-                <ul className="py-1">
-                  <li>
-                    <button
-                      onClick={handleGoToWebsite}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                    >
-                      <Globe size={16} className="text-blue-500"/> Kembali ke Website
-                    </button>
-                  </li>
+                <div className="p-1.5 space-y-0.5">
                   {role === "admin" && (
-                    <li>
-                      <Link
-                        to="/admin/profile"
-                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
-                        onClick={() => setIsProfileDropdownOpen(false)}
-                      >
-                        <User size={16} className="text-amber-500"/>
-                        Profile
-                      </Link>
-                    </li>
+                    <Link
+                      to="/admin/profile"
+                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-bold text-slate-700 hover:text-amber-700 hover:bg-amber-50 rounded-xl transition-all"
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                    >
+                      <User size={15} className="text-amber-500" />
+                      Profil Admin
+                    </Link>
                   )}
 
-                  <li>
+                  <button
+                    onClick={handleGoToWebsite}
+                    className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-bold text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all"
+                  >
+                    <Globe size={15} className="text-blue-500" />
+                    Kembali ke Website
+                  </button>
+
+                  <div className="pt-1 mt-1 border-t border-slate-100">
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-rose-600 hover:bg-rose-50 border-t border-slate-100 mt-1 transition-colors"
+                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                     >
-                      <LogOut size={16} /> Logout
+                      <LogOut size={15} />
+                      Logout
                     </button>
-                  </li>
-                </ul>
+                  </div>
+                </div>
               </div>
             )}
           </div>
