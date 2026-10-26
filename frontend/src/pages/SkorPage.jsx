@@ -479,8 +479,8 @@ function SkorPage() {
               onChange={(e) => setFilterType(e.target.value)}
             >
               <option value="Semua">Semua Format</option>
-              <option value="Tunggal">Tunggal (Single)</option>
-              <option value="Ganda">Ganda (Double)</option>
+              <option value="Tunggal">Single</option>
+              <option value="Ganda">Double</option>
             </select>
           </div>
 
@@ -753,7 +753,7 @@ function SkorPage() {
 
                   <button 
                     onClick={() => handleLihatLog(match)}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-900 hover:bg-amber-600 active:scale-95 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-xs"
                   >
                     <span>Detail Poin</span>
                     <ChevronRight size={13} />

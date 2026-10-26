@@ -454,41 +454,32 @@ export default function SertifikatPage() {
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-full sm:w-fit overflow-x-auto">
-            <button
-              onClick={() => setFilterBaganKategori("all")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-200 ${
-                filterBaganKategori === "all"
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Semua
-            </button>
-
-            <button
-              onClick={() => setFilterBaganKategori("single")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-200 ${
-                filterBaganKategori === "single"
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <User size={12} />
-              <span>Tunggal</span>
-            </button>
-
-            <button
-              onClick={() => setFilterBaganKategori("double")}
-              className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3.5 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider transition-all duration-200 ${
-                filterBaganKategori === "double"
-                  ? "bg-slate-900 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              <Users size={12} />
-              <span>Ganda</span>
-            </button>
+          <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 w-full sm:w-fit overflow-x-auto no-scrollbar">
+            {[
+              { key: "all", label: "Semua", icon: LayoutGrid },
+              { key: "single", label: "Single", icon: User },
+              { key: "double", label: "Double", icon: Users },
+            ].map(({ key, label, icon: Icon }) => {
+              const isActive = filterBaganKategori === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setFilterBaganKategori(key)}
+                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
+                    isActive
+                      ? "bg-white text-slate-900 shadow-xs border border-slate-200/70"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
+                  }`}
+                >
+                  <Icon
+                    size={14}
+                    className={isActive ? "text-amber-500" : "text-slate-400"}
+                  />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 

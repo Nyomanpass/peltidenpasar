@@ -3,7 +3,7 @@ import api from '../api';
 import { 
   Trophy, Award, Crown, 
   FileText, FileSpreadsheet, Users, User, Medal,
-  Clock, Download, ChevronDown, Loader2
+  Clock, Download, ChevronDown, Loader2, LayoutGrid
 } from "lucide-react"; 
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import JuaraPDF from './JuaraPDF'; 
@@ -46,9 +46,9 @@ const PODIUM = [
 
 /* ───────────────────────── Filter tabs config ───────────────────────── */
 const FILTERS = [
-  { value: "all",    label: "Semua",   Icon: null },
-  { value: "single", label: "Tunggal", Icon: User },
-  { value: "double", label: "Ganda",   Icon: Users },
+  { value: "all",    label: "Semua",  Icon: LayoutGrid },
+  { value: "single", label: "Single", Icon: User },
+  { value: "double", label: "Double", Icon: Users },
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════ */
@@ -197,21 +197,30 @@ const JuaraPage = () => {
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           
           {/* Filter Kategori Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 w-full sm:w-fit">
-            {FILTERS.map((f) => (
-              <button
-                key={f.value}
-                onClick={() => setFilterKategori(f.value)}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg font-bold text-xs transition-all duration-200 ${
-                  filterKategori === f.value
-                    ? "bg-slate-900 text-white shadow-xs"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-white/60"
-                }`}
-              >
-                {f.Icon && <f.Icon size={13} />}
-                <span>{f.label}</span>
-              </button>
-            ))}
+          <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 w-full sm:w-fit overflow-x-auto no-scrollbar">
+            {FILTERS.map((f) => {
+              const isActive = filterKategori === f.value;
+              const Icon = f.Icon;
+              return (
+                <button
+                  key={f.value}
+                  onClick={() => setFilterKategori(f.value)}
+                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
+                    isActive
+                      ? "bg-white text-slate-900 shadow-xs border border-slate-200/70"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
+                  }`}
+                >
+                  {Icon && (
+                    <Icon
+                      size={14}
+                      className={isActive ? "text-amber-500" : "text-slate-400"}
+                    />
+                  )}
+                  <span>{f.label}</span>
+                </button>
+              );
+            })}
           </div>
 
           {/* Action Buttons (Export PDF & Excel) */}

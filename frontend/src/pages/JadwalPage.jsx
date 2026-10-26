@@ -21,7 +21,10 @@ import {
   RotateCcw,
   FileDown,
   FileText,
-  Download
+  Download,
+  LayoutGrid,
+  User,
+  Users
 } from "lucide-react";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import JadwalPDF from './JadwalPDF';
@@ -517,7 +520,7 @@ const groupedJadwal = [...jadwal]
                   onClick={() => setSelectedTanggalFilter('')}
                   className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 transition-colors inline-flex items-center gap-1"
                 >
-                  <RotateCcw size={12} /> Tampilkan Semua
+                  <RotateCcw size={12} /> Reset
                 </button>
               )}
             </div>
@@ -791,22 +794,30 @@ const groupedJadwal = [...jadwal]
                   1. Pilih Kelompok Umur / Bagan
                 </label>
                 
-                {/* Filter Kategori: Semua, Tunggal, Ganda */}
-                <div className="flex gap-1.5 p-1 bg-slate-100 rounded-xl w-fit border border-slate-200/50 mb-3">
-                  {["all", "single", "double"].map((cat) => (
-                    <button
-                      key={cat}
-                      type="button"
-                      onClick={() => setFilterBaganKategori(cat)}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
-                        filterBaganKategori === cat 
-                          ? "bg-white text-slate-900 shadow-xs" 
-                          : "text-slate-400 hover:text-slate-600"
-                      }`}
-                    >
-                      {cat === "all" ? "Semua" : cat === "single" ? "Tunggal" : "Ganda"}
-                    </button>
-                  ))}
+                {/* Filter Kategori: Semua, Single, Double */}
+                <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 w-fit mb-3">
+                  {[
+                    { key: "all", label: "Semua", icon: LayoutGrid },
+                    { key: "single", label: "Single", icon: User },
+                    { key: "double", label: "Double", icon: Users },
+                  ].map(({ key, label, icon: Icon }) => {
+                    const isActive = filterBaganKategori === key;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setFilterBaganKategori(key)}
+                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
+                          isActive
+                            ? "bg-white text-slate-900 shadow-xs border border-slate-200/70"
+                            : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
+                        }`}
+                      >
+                        <Icon size={13} className={isActive ? "text-amber-500" : "text-slate-400"} />
+                        <span>{label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 {/* List Tombol Bagan */}

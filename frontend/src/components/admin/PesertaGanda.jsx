@@ -266,7 +266,7 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
+                  className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-amber-500 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
                 >
                   <UserPlus size={15} />
                   <span className="hidden sm:inline">Buat Tim</span>
@@ -296,28 +296,28 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
           {/* TAB SWITCHER: IDENTIK dengan Peserta.jsx — centered di antara header card dan list */}
           {isAdminOrWasit && (
             <div className="flex justify-center">
-              <div className="inline-flex p-1 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+              <div className="inline-flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 shadow-xs">
                 <Link
                   to={`${basePath}/peserta`}
-                  className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
                     isActive(`${basePath}/peserta`)
-                      ? "bg-amber-500 text-white shadow-xs"
-                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                      ? "bg-white text-slate-900 shadow-xs border border-slate-200/70"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
                   }`}
                 >
-                  <User size={14} />
+                  <User size={14} className={isActive(`${basePath}/peserta`) ? "text-amber-500" : "text-slate-400"} />
                   <span>Single</span>
                 </Link>
 
                 <Link
                   to={`${basePath}/peserta-ganda`}
-                  className={`inline-flex items-center justify-center gap-2 px-6 py-2 rounded-lg font-bold text-xs uppercase tracking-wider transition-all ${
+                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
                     isActive(`${basePath}/peserta-ganda`)
-                      ? "bg-amber-500 text-white shadow-xs"
-                      : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                      ? "bg-white text-slate-900 shadow-xs border border-slate-200/70"
+                      : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
                   }`}
                 >
-                  <Users2 size={14} />
+                  <Users2 size={14} className={isActive(`${basePath}/peserta-ganda`) ? "text-amber-500" : "text-slate-400"} />
                   <span>Double</span>
                 </Link>
               </div>
