@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Bracket, Seed, SeedItem, SeedTeam } from "react-brackets";
 import { exportBaganPdf } from "../utils/exportBaganPdf";
 import api from "../api"; // Mengimpor instans axios dari file api.js
-import { Info, Star, Users } from "lucide-react";
+import { Info, Star, Users, FileText, Loader2 } from "lucide-react";
 import AlertMessage from "../components/AlertMessage";
 
 // Modal
@@ -33,6 +33,7 @@ export default function BaganView({baganId}) {
   const [drawStage, setDrawStage] = useState("rolling"); 
   const [rollingName, setRollingName] = useState("");
   const [currentSlotInfo, setCurrentSlotInfo] = useState(null);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
 
 
 
@@ -529,6 +530,7 @@ if (isRoundRobin) {
 
   const handleExportPDF = async () => {
     try {
+      setIsExportingPDF(true);
       await exportBaganPdf({
         bagan,
         rounds,
@@ -542,6 +544,8 @@ if (isRoundRobin) {
     } catch (err) {
       console.error(err);
       alert("Export gagal. Coba reload halaman.");
+    } finally {
+      setIsExportingPDF(false);
     }
   };
 
@@ -605,9 +609,15 @@ if (isRoundRobin) {
               {/* Tombol Export PDF */}
               <button
                 onClick={handleExportPDF}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
+                disabled={isExportingPDF}
+                className="group inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-slate-700 hover:text-rose-700 font-bold text-xs rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95 disabled:opacity-75 disabled:cursor-wait"
               >
-                Export PDF
+                {isExportingPDF ? (
+                  <Loader2 size={15} className="text-rose-500 animate-spin" />
+                ) : (
+                  <FileText size={15} className="text-rose-500" />
+                )}
+                <span>{isExportingPDF ? "Menyusun PDF..." : "Export PDF"}</span>
               </button>
             </div>
           )}

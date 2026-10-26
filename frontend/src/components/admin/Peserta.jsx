@@ -17,6 +17,7 @@ import {
   Hash,
   X,
   Users,
+  Loader2,
 } from "lucide-react";
 import AlertMessage from "../AlertMessage";
 import { exportPesertaToExcel } from "../../utils/exportPesertaExcel";
@@ -216,13 +217,13 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                   type="button"
                   onClick={handleExport}
                   disabled={isExporting}
-                  className="inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-75 disabled:cursor-wait"
+                  className="group inline-flex items-center justify-center gap-2 shrink-0 px-4 py-2.5 bg-white hover:bg-emerald-50 border border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-700 font-bold text-xs rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95 disabled:opacity-75 disabled:cursor-wait"
                   title="Unduh seluruh data peserta ke Excel"
                 >
                   {isExporting ? (
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <Loader2 size={15} className="text-emerald-500 animate-spin" />
                   ) : (
-                    <FileSpreadsheet size={15} />
+                    <FileSpreadsheet size={15} className="text-emerald-500" />
                   )}
                   <span className="hidden sm:inline">{isExporting ? "Mengunduh..." : "Export Excel"}</span>
                 </button>

@@ -704,12 +704,12 @@ export default function SertifikatPage() {
                   <button
                     onClick={() => download(previewPlayer)}
                     disabled={downloadingId === getId(previewPlayer)}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl text-xs font-bold transition shadow-xs disabled:opacity-50"
+                    className="group inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-slate-700 hover:text-rose-700 rounded-xl text-xs font-bold transition-all shadow-xs hover:shadow-sm active:scale-95 disabled:opacity-50"
                   >
                     {downloadingId === getId(previewPlayer) ? (
-                      <Loader2 size={13} className="animate-spin" />
+                      <Loader2 size={14} className="text-rose-500 animate-spin" />
                     ) : (
-                      <Download size={13} />
+                      <FileText size={14} className="text-rose-500" />
                     )}
                     <span>Download PDF</span>
                   </button>
@@ -804,12 +804,12 @@ function SertifikatCard({ rank, nama, isDownloading, onPreview, onDownload }) {
         <button
           onClick={onDownload}
           disabled={isDownloading}
-          className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+          className="flex-1 sm:flex-none group inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-slate-700 hover:text-rose-700 active:scale-95 transition-all shadow-xs hover:shadow-sm disabled:opacity-50 cursor-pointer"
         >
           {isDownloading ? (
-            <Loader2 size={14} className="animate-spin" />
+            <Loader2 size={14} className="text-rose-500 animate-spin" />
           ) : (
-            <Download size={14} />
+            <FileText size={14} className="text-rose-500" />
           )}
           <span>{isDownloading ? "Mengunduh..." : "Download PDF"}</span>
         </button>

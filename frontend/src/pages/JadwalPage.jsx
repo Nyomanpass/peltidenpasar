@@ -19,7 +19,9 @@ import {
   MoreVertical,
   Play,
   RotateCcw,
-  FileDown
+  FileDown,
+  FileText,
+  Download
 } from "lucide-react";
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import JadwalPDF from './JadwalPDF';
@@ -438,9 +440,10 @@ const groupedJadwal = [...jadwal]
             {!readyToDownload ? (
               <button
                 onClick={() => setReadyToDownload(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
+                className="group inline-flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-slate-700 hover:text-rose-700 font-bold text-xs rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95"
               >
-                <FileDown size={16} /> Export PDF
+                <FileText size={15} className="text-rose-500" />
+                <span>Export PDF</span>
               </button>
             ) : (
               <PDFDownloadLink
@@ -456,16 +459,16 @@ const groupedJadwal = [...jadwal]
                   />
                 }
                 fileName={`Jadwal_${selectedTournamentName || 'Turnamen'}.pdf`}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white font-bold text-xs rounded-xl shadow-xs transition-all"
+                onClick={() => {
+                  setTimeout(() => setReadyToDownload(false), 2500);
+                }}
               >
                 {({ loading }) => (
-                  loading ? (
-                    <span className="flex items-center gap-2 animate-pulse">Memproses...</span>
-                  ) : (
-                    <span className="flex items-center gap-2" onClick={() => setTimeout(() => setReadyToDownload(false), 2000)}>
-                      <FileDown size={16} /> Unduh PDF
-                    </span>
-                  )
+                  <>
+                    <Download size={15} />
+                    <span>{loading ? "Menyusun PDF..." : "Unduh PDF Sekarang"}</span>
+                  </>
                 )}
               </PDFDownloadLink>
             )}

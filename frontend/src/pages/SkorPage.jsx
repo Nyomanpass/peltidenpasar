@@ -790,10 +790,10 @@ function SkorPage() {
                 {/* Tombol Export PDF */}
                 <button 
                   onClick={handleExportPDFLog}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white rounded-xl font-bold text-xs uppercase tracking-wider shadow-xs transition-all"
+                  className="group inline-flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-rose-50 border border-slate-200 hover:border-rose-300 text-slate-700 hover:text-rose-700 font-bold text-xs rounded-xl shadow-xs hover:shadow-sm transition-all active:scale-95"
                   title="Unduh laporan skor PDF"
                 >
-                  <FileText size={14} />
+                  <FileText size={14} className="text-rose-500" />
                   <span className="hidden sm:inline">Export PDF</span>
                 </button>
 
