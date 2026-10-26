@@ -1,17 +1,20 @@
 import { Menu, LogOut, Bell, User, Settings, Globe, ChevronDown } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 import VerificationDrawer from "./VerificationDrawer";
-import api from "../api"; // Pastikan Anda mengimpor API instance
+import api from "../api";
 
 function NavbarDashboard({ toggleSidebar, isCollapsed, onToggleCollapse }) {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext) || {};
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State untuk drawer verifikasi
   const [pendingUsers, setPendingUsers] = useState([]); // State untuk data pending
 
-  const userName = localStorage.getItem("role") || "admin";
-  const role = localStorage.getItem("role") || "Admin";
+  const displayName = user?.name || "Admin";
+  const displayEmail = user?.email || "";
+  const role = user?.role || localStorage.getItem("role") || "admin";
 
   const handleLogout = () => {
     localStorage.clear();
@@ -210,10 +213,10 @@ const handleReject = async (id, message) => {
               className="flex items-center gap-2 p-1.5 pl-3 pr-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200/60 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30 active:scale-95"
             >
               <span className="text-xs font-bold text-slate-700 hidden sm:inline capitalize">
-                {userName}
+                {displayName}
               </span>
               <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-black text-xs shadow-2xs">
-                {userName[0].toUpperCase()}
+                {displayName[0]?.toUpperCase() || "A"}
               </div>
               <ChevronDown
                 size={14}
@@ -225,44 +228,59 @@ const handleReject = async (id, message) => {
 
             {/* Dropdown Menu */}
             {isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-60 rounded-2xl shadow-xl bg-white border border-slate-200/80 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
-                {/* Info Pengguna di Dropdown */}
-                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/70">
-                  <p className="text-xs font-extrabold text-slate-800 capitalize leading-snug">
-                    {userName}
-                  </p>
-                  <p className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">
-                    Akun {role}
-                  </p>
+              <div className="absolute right-0 mt-2.5 w-64 rounded-2xl shadow-xl bg-white border border-slate-200/90 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                {/* Header Profil Dropdown */}
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-2xs">
+                    {displayName[0]?.toUpperCase() || "A"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-extrabold text-slate-800 truncate">
+                      {displayName}
+                    </p>
+                    <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                      {displayEmail || `Akun ${role}`}
+                    </p>
+                  </div>
                 </div>
 
+                {/* Menu Navigasi Dropdown */}
                 <div className="p-1.5 space-y-0.5">
                   {role === "admin" && (
                     <Link
                       to="/admin/profile"
-                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-bold text-slate-700 hover:text-amber-700 hover:bg-amber-50 rounded-xl transition-all"
+                      className="group flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
                       onClick={() => setIsProfileDropdownOpen(false)}
                     >
-                      <User size={15} className="text-amber-500" />
-                      Profil Admin
+                      <User
+                        size={15}
+                        className="text-slate-400 group-hover:text-amber-500 transition-colors"
+                      />
+                      Profil Saya
                     </Link>
                   )}
 
                   <button
                     onClick={handleGoToWebsite}
-                    className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-bold text-slate-700 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all"
+                    className="group flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
                   >
-                    <Globe size={15} className="text-blue-500" />
+                    <Globe
+                      size={15}
+                      className="text-slate-400 group-hover:text-blue-500 transition-colors"
+                    />
                     Kembali ke Website
                   </button>
 
                   <div className="pt-1 mt-1 border-t border-slate-100">
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-2.5 w-full px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                      className="group flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                     >
-                      <LogOut size={15} />
-                      Logout
+                      <LogOut
+                        size={15}
+                        className="text-rose-500 transition-transform group-hover:translate-x-0.5"
+                      />
+                      Keluar
                     </button>
                   </div>
                 </div>
