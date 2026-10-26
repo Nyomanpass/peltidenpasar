@@ -137,17 +137,27 @@ const handleReject = async (id, message) => {
         : "md:left-64 md:w-[calc(100%-16rem)]"}
     `}>
 
-        {/* KIRI: logo + nama brand + tombol toggle sidebar */}
-        <div className="flex min-w-0 items-center gap-2">
-          {/* Tombol buka sidebar (mobile) */}
+        {/* KIRI: Tombol hamburger + garis batas + Logo & Nama Brand */}
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Tombol hamburger untuk hide/toggle sidebar */}
           <button
             type="button"
-            className="md:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors focus-visible:outline-2 focus-visible:outline-primary"
-            onClick={toggleSidebar}
-            aria-label="Buka menu"
+            className="p-2 rounded-xl text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-primary"
+            onClick={() => {
+              if (window.matchMedia("(min-width: 768px)").matches) {
+                onToggleCollapse?.();
+              } else {
+                toggleSidebar?.();
+              }
+            }}
+            aria-label={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar"}
+            title={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar"}
           >
             <Menu size={22} />
           </button>
+
+          {/* Line batas */}
+          <div className="h-6 w-px bg-gray-200" aria-hidden="true" />
 
           {/* Logo + Nama Brand */}
           <div className="flex items-center gap-3">

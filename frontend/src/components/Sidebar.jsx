@@ -301,7 +301,7 @@ function Sidebar({ isOpen, isCollapsed, onClose, onExpand, onToggleCollapse }) {
         {/* Pemisah turnamen aktif dan menu: garis memudar di kedua ujung */}
         <div
           aria-hidden="true"
-          className="mx-1 mt-4 h-px bg-linear-to-r from-transparent via-white/25 to-transparent"
+          className="mx-1 mt-2.5 mb-0.5 h-px bg-linear-to-r from-transparent via-white/25 to-transparent"
         />
       </div>
 
@@ -346,7 +346,16 @@ function Sidebar({ isOpen, isCollapsed, onClose, onExpand, onToggleCollapse }) {
       >
        <div ref={navInnerRef}>
         {groups.map((group, gi) => (
-          <div key={group.label} className="mt-4">
+          <div
+            key={group.label}
+            className={
+              gi === 0
+                ? isCollapsed
+                  ? "pt-[34px]"
+                  : "pt-2"
+                : "mt-4"
+            }
+          >
             <p
               className={`px-3 pb-1.5 pr-6 text-xs font-medium text-ink-500 ${hideMini}`}
             >
