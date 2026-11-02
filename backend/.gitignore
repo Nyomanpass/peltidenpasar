@@ -21,3 +21,7 @@ uploads/**/*
 !uploads/**/.gitkeep
 !uploads/.gitkeep
 
+# Puppeteer cache
+.cache/
+
+

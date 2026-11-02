@@ -58,7 +58,7 @@ export async function exportPesertaToExcel(arg1, arg2) {
     if (idToUse) {
       try {
         const resDouble = await api.get(
-          `/double-teams?tournamentId=${idToUse}`
+          `/admin/double-teams?tournamentId=${idToUse}`
         );
         doubleTeamsList = resDouble.data || [];
       } catch {

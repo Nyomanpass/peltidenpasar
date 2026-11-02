@@ -230,7 +230,7 @@ export const verifyPeserta = async (req, res) => {
   }
 };
 
-// Get peserta per kelompok umur
+// Get peserta per kelompok umur (publik - tanpa NIK dan nomor WA)
 export const getPesertaByKelompokUmur = async (req, res) => {
   try {
     const { tournamentId } = req.query;
@@ -248,7 +248,7 @@ export const getPesertaByKelompokUmur = async (req, res) => {
         {
           model: Peserta,
           as: "peserta",
-          attributes: ["id", "namaLengkap", "status", "kelompokUmurId", "tournamentId", "asalSekolah", 'nomorWhatsapp', 'tanggalLahir'],
+          attributes: ["id", "namaLengkap", "status", "kelompokUmurId", "tournamentId", "asalSekolah", "tanggalLahir"],
           where: pesertaFilter,
           required: false, // supaya kelompok umur tetap muncul meskipun tidak ada peserta
         },
@@ -266,6 +266,7 @@ export const getPesertaByKelompokUmur = async (req, res) => {
 export const getPesertaAdminByKelompokUmur = async (req, res) => {
   try {
     const { tournamentId } = req.query;
+    const isWasit = req.user?.role === "wasit";
 
     const pesertaFilter = { status: "verified" };
 
@@ -273,13 +274,18 @@ export const getPesertaAdminByKelompokUmur = async (req, res) => {
       pesertaFilter.tournamentId = tournamentId;
     }
 
+    // Role wasit tetap melihat daftar peserta, tetapi NIK dan nomor kontak disembunyikan
+    const playerAttributes = isWasit
+      ? ["id", "namaLengkap", "status", "kelompokUmurId", "tournamentId", "asalSekolah", "tanggalLahir"]
+      : ["id", "namaLengkap", "nik", "status", "kelompokUmurId", "tournamentId", "asalSekolah", "nomorWhatsapp", "tanggalLahir"];
+
     const result = await KelompokUmur.findAll({
       attributes: ["id", "nama"],
       include: [
         {
           model: Peserta,
           as: "peserta",
-          attributes: ["id", "namaLengkap", "nik", "status", "kelompokUmurId", "tournamentId", "asalSekolah", 'nomorWhatsapp', 'tanggalLahir'],
+          attributes: playerAttributes,
           where: pesertaFilter,
           required: false,
         },
