@@ -1,9 +1,8 @@
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import News from "../components/News";
+import HomeNews from "../components/HomeNews"; // <-- Ganti News dengan HomeNews
 import Footer from "../components/Footer";
 import TournamentComming from "../components/TournamentComming";
-
 
 function Home(){
     return(
@@ -11,7 +10,7 @@ function Home(){
             <Navbar/>
             <Hero/>
             <TournamentComming/>
-            <News/>
+            <HomeNews/> {/* <-- Ubah dari <News/> ke <HomeNews/> */}
             <Footer/>
         </>
     )
