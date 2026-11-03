@@ -56,6 +56,23 @@ export default function News() {
     return div.textContent || div.innerText || "";
   };
 
+  // Helper untuk memproses URL Gambar (Mengonversi localhost ke domain produksi live)
+  const getImageUrl = (imgPath) => {
+    if (!imgPath) return "https://via.placeholder.com/600x400?text=PELTI+Denpasar";
+    
+    // Jika path diawali http://localhost:5004 atau http://localhost:xxxx
+    if (imgPath.includes("localhost:")) {
+      return imgPath.replace(/http:\/\/localhost:\d+/, "https://api.peltidenpasar.org");
+    }
+
+    // Jika path berupa URL luar lain
+    if (imgPath.startsWith("http")) return imgPath;
+
+    // Jika path relatif (/uploads/...)
+    const cleanPath = imgPath.startsWith('/') ? imgPath : `/${imgPath}`;
+    return `https://api.peltidenpasar.org${cleanPath}`;
+  };
+
   if (loading) {
     return (
       <div className="py-20 text-center text-gray-500 font-medium">
@@ -90,10 +107,14 @@ export default function News() {
               {/* Gambar */}
               <div className="relative w-full overflow-hidden aspect-[16/10] bg-gray-100">
                 <img
-                  src={b.image || "/placeholder.png"}
+                  src={getImageUrl(b.image)}
                   alt={b.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   loading="lazy"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://via.placeholder.com/600x400?text=PELTI+Denpasar";
+                  }}
                 />
               </div>
 
