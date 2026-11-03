@@ -4,7 +4,7 @@ import api from "../api";
 
 const TournamentComming = () => {
   const [tournaments, setTournaments] = useState([]);
-  const BASE_URL = import.meta.env.VITE_API_URL;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5004";
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
@@ -15,27 +15,28 @@ const TournamentComming = () => {
     });
   };
 
-  const isTournamentOpen = (t) => {
-    const deadline = new Date(t.start_date);
-    deadline.setDate(deadline.getDate() - 1);
-    deadline.setHours(23, 59, 59, 999);
-    return t.status === "aktif" && new Date() <= deadline;
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await api.get("/tournaments");
-        setTournaments(res.data.filter(isTournamentOpen));
+        const data = res.data || [];
+        
+        // Filter hanya turnamen yang berstatus 'aktif' (mengabaikan perbedaan huruf besar/kecil)
+        const activeTournaments = data.filter((t) => {
+          const status = (t.status || "").toLowerCase();
+          return status === "aktif";
+        });
+
+        setTournaments(activeTournaments);
       } catch (err) {
-        console.error(err);
+        console.error("Gagal mengambil data turnamen:", err);
       }
     };
     fetchData();
   }, []);
 
   // CONDITIONAL RENDERING:
-  // Jika tidak ada data turnamen aktif, sembunyikan komponen secara total
+  // Jika tidak ada data turnamen yang aktif sama sekali, sembunyikan komponen secara total
   if (!tournaments || tournaments.length === 0) {
     return null;
   }
@@ -56,26 +57,38 @@ const TournamentComming = () => {
         </div>
 
         {/* GRID */}
-        <div className={`max-w-5xl mx-auto gap-6 sm:gap-8`}>
+        <div className="max-w-5xl mx-auto gap-6 sm:gap-8">
           {tournaments.map((t) => {
-            const deadline = new Date(t.start_date);
+            // Menghitung tanggal batas pendaftaran (1 hari sebelum tanggal mulai)
+            const startDate = t.start_date ? new Date(t.start_date) : new Date();
+            const deadline = new Date(startDate);
             deadline.setDate(deadline.getDate() - 1);
-            deadline.setHours(15, 0, 0, 0);
+            deadline.setHours(23, 59, 59, 999);
+
+            // Cek apakah pendaftaran sudah ditutup
             const isClosed = new Date() > deadline;
+
+            const posterUrl = t.poster 
+              ? (t.poster.startsWith('http') ? t.poster : `${BASE_URL}/${t.poster.replace(/^\/+/, '')}`)
+              : 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&q=80&w=800';
 
             return (
               <div
-                key={t.id}
+                key={t.id || t.idTournament}
                 className="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden mt-10"
               >
                 <div className="flex flex-col md:flex-row h-full">
                   
                   {/* LEFT SIDE: IMAGE SECTION */}
-                  <div className="relative w-full md:w-[350px] lg:w-[400px] shrink-0 bg-gray-200 overflow-hidden">
+                  <div className="relative w-full md:w-[350px] lg:w-[400px] shrink-0 bg-gray-200 overflow-hidden min-h-[220px]">
                     <img
-                      src={t.poster ? `${BASE_URL}/${t.poster}` : "/default-tournament.jpg"}
+                      src={posterUrl}
                       alt={t.name}
                       className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&q=80&w=800';
+                      }}
                     />
 
                     {/* Status Badge */}
@@ -100,7 +113,7 @@ const TournamentComming = () => {
                       </div>
 
                       <p className="text-sm text-gray-500 mb-6 line-clamp-3 leading-relaxed max-w-2xl">
-                        {t.description}
+                        {t.description || t.desc}
                       </p>
 
                       {/* INFO GRID */}
@@ -113,14 +126,14 @@ const TournamentComming = () => {
                         <InfoItem
                           icon={<MapPin size={18} className="text-red-500" />}
                           label="Lokasi"
-                          value={t.location}
+                          value={t.location || "-"}
                         />
                         <InfoItem
                           icon={<Zap size={18} className="text-emerald-600" />}
                           label="Biaya"
                           value={
-                            t.type === "berbayar"
-                              ? `Rp ${Number(t.nominal).toLocaleString("id-ID")}`
+                            t.type === "berbayar" || t.nominal > 0
+                              ? `Rp ${Number(t.nominal || 0).toLocaleString("id-ID")}`
                               : "GRATIS"
                           }
                         />
