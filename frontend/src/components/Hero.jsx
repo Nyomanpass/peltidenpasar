@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from "react";
-import api from "../api"; // axios instance
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import api from "../api";
 
-const AUTO_SLIDE_INTERVAL = 5000;
-
-function Hero() {
+export default function Hero() {
   const [slides, setSlides] = useState([]);
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [isPaused, setIsPaused] = useState(false);
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5004";
 
-  // ===============================
-  // FETCH SLIDER
-  // ===============================
   useEffect(() => {
     const fetchSlider = async () => {
       try {
@@ -23,41 +19,25 @@ function Hero() {
         setLoading(false);
       }
     };
-
     fetchSlider();
   }, []);
 
-  // ===============================
-  // AUTO SLIDE WITH PAUSE ON HOVER
-  // ===============================
+  // Auto-slide setiap 6 detik
   useEffect(() => {
-    if (slides.length === 0 || isPaused) return;
-
+    if (slides.length <= 1) return;
     const interval = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, AUTO_SLIDE_INTERVAL);
-
+      setCurrent((prev) => (prev + 1) % slides.length);
+    }, 6000);
     return () => clearInterval(interval);
-  }, [slides, isPaused]);
+  }, [slides.length]);
 
-  const handleNext = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
-
-  const handlePrev = () => {
-    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length);
-  };
-
-  // ===============================
-  // LOADING SKELETON
-  // ===============================
   if (loading) {
     return (
-      <section className="w-full mt-[65px] sm:mt-[75px] h-[450px] md:h-[500px] lg:h-[550px] bg-gray-900 animate-pulse relative overflow-hidden flex items-center px-4 sm:px-10 lg:px-20">
-        <div className="max-w-3xl w-full space-y-4">
-          <div className="h-8 md:h-12 bg-gray-800 rounded-md w-3/4"></div>
-          <div className="h-4 md:h-6 bg-gray-800 rounded-md w-1/2"></div>
-          <div className="h-10 bg-gray-800 rounded-lg w-36 mt-6"></div>
+      <section className="w-full mt-[65px] sm:mt-[75px] h-[500px] md:h-[600px] bg-gray-900 animate-pulse relative overflow-hidden flex items-center px-6 lg:px-20">
+        <div className="max-w-2xl w-full space-y-6">
+          <div className="h-6 bg-gray-800 rounded-full w-32"></div>
+          <div className="h-12 bg-gray-800 rounded-xl w-full"></div>
+          <div className="h-6 bg-gray-800 rounded-lg w-3/4"></div>
         </div>
       </section>
     );
@@ -66,90 +46,96 @@ function Hero() {
   if (slides.length === 0) return null;
 
   return (
-    <section 
-      className="w-full mt-[65px] sm:mt-[75px] h-[450px] md:h-[500px] lg:h-[550px] relative overflow-hidden group"
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-    >
-      {slides.map((slide, index) => {
+    <section className="relative w-full h-[520px] sm:h-[580px] md:h-[640px] mt-[65px] sm:mt-[75px] overflow-hidden bg-black group">
+      {slides.map((slide, idx) => {
         const imageUrl = slide.image 
-          ? (slide.image.startsWith('http') ? slide.image : `http://localhost:5004${slide.image}`)
+          ? (slide.image.startsWith('http') ? slide.image : `${BASE_URL}${slide.image}`)
           : '/placeholder-hero.jpg';
 
         return (
           <div
-            key={slide.idSlider || index}
-            className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out bg-cover bg-center ${
-              index === currentSlide ? "opacity-100 z-10" : "opacity-0 z-0"
+            key={slide.idSlider || idx}
+            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+              idx === current ? "opacity-100 z-10" : "opacity-0 z-0"
             }`}
-            style={{
-              backgroundImage: `url(${imageUrl})`,
-            }}
           >
-            {/* Overlay Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
-            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent"></div>
+            {/* Background Image dengan efek zoom halus */}
+            <div
+              className="absolute inset-0 bg-cover bg-center transform scale-105 transition-transform duration-1000"
+              style={{ backgroundImage: `url(${imageUrl})` }}
+            />
+            
+            {/* Overlay Gradient Modern */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
+            
+            {/* Content Container */}
+            <div className="absolute inset-0 flex flex-col justify-center px-6 sm:px-12 lg:px-20 max-w-5xl z-20 space-y-3">
+              
+              {/* Badge dengan Titik Bundar & Posisi Lebih Naik */}
+              <div className="mb-1">
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-xs font-bold tracking-widest uppercase backdrop-blur-md w-fit">
+                  <span className="w-2 h-2 rounded-full bg-yellow-400 inline-block animate-pulse"></span>
+                  PELTI Kota Denpasar
+                </span>
+              </div>
 
-            {/* Content */}
-            <div className="absolute inset-0 flex items-center justify-start px-4 sm:px-10 lg:px-20">
-              <div className="max-w-3xl text-left">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-white leading-snug drop-shadow-lg">
-                  {slide.title}
-                </h1>
+              <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white leading-tight tracking-tight drop-shadow-lg">
+                {slide.title}
+              </h1>
 
-                {slide.description && (
-                  <p className="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base lg:text-lg text-gray-200 font-light leading-relaxed drop-shadow-md max-w-2xl line-clamp-2">
-                    {slide.description}
-                  </p>
-                )}
+              {slide.description && (
+                <p className="text-gray-300 text-sm sm:text-base md:text-lg max-w-2xl line-clamp-2 font-normal leading-relaxed">
+                  {slide.description}
+                </p>
+              )}
 
-                {slide.ctaLink && (
+              {slide.ctaLink && (
+                <div className="pt-2">
                   <a
                     href={slide.ctaLink}
-                    className="group/btn mt-5 inline-flex items-center gap-2 bg-red-700 hover:bg-red-800 text-white font-semibold text-xs sm:text-sm md:text-base px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg transition-all duration-300 shadow-md hover:shadow-xl transform hover:-translate-y-0.5"
+                    className="inline-flex items-center gap-2 px-8 py-3.5 bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold rounded-2xl text-sm uppercase tracking-wider transition-all shadow-xl hover:scale-105 group/btn"
                   >
-                    <span>{slide.ctaText || "Lihat Selengkapnya"}</span>
-                    <span className="transition-transform duration-300 group-hover/btn:translate-x-1">→</span>
+                    <span>{slide.ctaText || "Jelajahi Sekarang"}</span>
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
                   </a>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           </div>
         );
       })}
 
-      {/* TOMBOL NAVIGASI KIRI & KANAN (Tampil saat hover di Desktop) */}
+      {/* Tombol Navigasi Kiri & Kanan */}
       {slides.length > 1 && (
         <>
-          <button
-            onClick={handlePrev}
+          <button 
+            onClick={() => setCurrent((prev) => (prev - 1 + slides.length) % slides.length)}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md transition-all hidden md:flex items-center justify-center border border-white/10"
             aria-label="Previous slide"
-            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/70 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
           >
-            ❮
+            <ChevronLeft className="w-6 h-6" />
           </button>
-          <button
-            onClick={handleNext}
+          <button 
+            onClick={() => setCurrent((prev) => (prev + 1) % slides.length)}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-3 rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-md transition-all hidden md:flex items-center justify-center border border-white/10"
             aria-label="Next slide"
-            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 items-center justify-center rounded-full bg-black/40 text-white hover:bg-black/70 backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100"
           >
-            ❯
+            <ChevronRight className="w-6 h-6" />
           </button>
         </>
       )}
 
-      {/* DOT NAVIGATION */}
+      {/* Dot Indicators */}
       {slides.length > 1 && (
-        <div className="absolute bottom-5 left-1/2 -translate-x-1/2 flex items-center space-x-2 sm:space-x-3 z-20 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 shadow-lg">
-          {slides.map((_, index) => (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 z-30 bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+          {slides.map((_, idx) => (
             <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              aria-label={`Go to slide ${index + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentSlide
-                  ? "bg-white w-7 sm:w-8"
-                  : "bg-white/40 w-2 hover:bg-white/70"
+              key={idx}
+              onClick={() => setCurrent(idx)}
+              aria-label={`Go to slide ${idx + 1}`}
+              className={`h-2 transition-all duration-300 rounded-full ${
+                idx === current ? "w-8 bg-yellow-400" : "w-2 bg-white/40 hover:bg-white"
               }`}
             />
           ))}
@@ -158,5 +144,3 @@ function Hero() {
     </section>
   );
 }
-
-export default Hero;
