@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Calendar, ArrowRight, Newspaper } from "lucide-react";
 import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import api from "../../api";
@@ -8,6 +9,7 @@ export default function News() {
   const [newsList, setNewsList] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5004";
 
   useEffect(() => {
     fetchNews();
@@ -16,7 +18,7 @@ export default function News() {
   const fetchNews = async () => {
     try {
       const res = await api.get("/news/get");
-      setNewsList(res.data);
+      setNewsList(res.data || []);
     } catch (err) {
       console.error("Gagal fetch news:", err);
     }
@@ -63,102 +65,130 @@ export default function News() {
             Berita Terbaru
           </h1>
           <p className="text-gray-200 text-xs sm:text-sm max-w-md mt-1.5 opacity-90 hidden sm:block">
-            Ikuti perkembangan PELTI Denpasar terbaru melalui berita pilihan kami.
+            Ikuti perkembangan dan informasi resmi PELTI Denpasar melalui warta pilihan kami.
           </p>
           <div className="w-12 h-1 bg-yellow-500 rounded-full mt-2 sm:mt-3"></div>
         </div>
       </div>
 
       {/* CONTENT SECTION */}
-      <section className="bg-gray-50 py-12 sm:py-16 min-h-[50vh]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="bg-gradient-to-b from-white via-gray-50 to-white py-16 sm:py-24 min-h-[60vh]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Header Penjelas Kecil */}
+          <div className="flex items-center gap-2 mb-8">
+            <span className="p-2 bg-yellow-500/10 text-yellow-600 rounded-xl">
+              <Newspaper className="w-5 h-5" />
+            </span>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
+                Arsip Warta & Kegiatan
+              </h2>
+              <p className="text-xs sm:text-sm text-gray-500">
+                Menampilkan seluruh informasi terkini seputar dunia tenis Denpasar.
+              </p>
+            </div>
+          </div>
+
           {currentItems.length === 0 ? (
-            <p className="text-center text-gray-500 text-sm sm:text-base py-10">
-              Belum ada berita terbaru.
-            </p>
+            <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
+              <p className="text-gray-400 text-sm sm:text-base">
+                Belum ada berita terbaru yang dipublikasikan.
+              </p>
+            </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-              {currentItems.map((item) => (
-                <article
-                  key={item.idNews}
-                  className="bg-white rounded-2xl shadow-sm hover:shadow-md border border-gray-100 transition duration-300 flex flex-col overflow-hidden"
-                >
-                  {/* GAMBAR BERITA */}
-                  <div className="relative w-full overflow-hidden aspect-[16/10]">
-                    <img
-                      src={item.image || "/placeholder.png"}
-                      alt={item.title}
-                      className="absolute top-0 left-0 w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                      loading="lazy"
-                    />
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {currentItems.map((item) => {
+                const imageUrl = item.image 
+                  ? (item.image.startsWith('http') ? item.image : `${BASE_URL}/${item.image}`)
+                  : '/placeholder.png';
 
-                  {/* KONTEN BERITA */}
-                  <div className="p-5 sm:p-6 flex flex-col flex-1">
-                    <time className="text-[10px] sm:text-xs text-yellow-700 font-bold uppercase tracking-wider">
-                      {item.tanggalUpload
-                        ? new Date(item.tanggalUpload).toLocaleDateString("id-ID", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                          })
-                        : "-"}
-                    </time>
+                return (
+                  <article
+                    key={item.idNews}
+                    className="group bg-white rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 transition-all duration-300 flex flex-col overflow-hidden justify-between"
+                  >
+                    <div>
+                      {/* GAMBAR BERITA DENGAN ZOOM EFFECT */}
+                      <div className="relative w-full overflow-hidden aspect-[16/10] bg-gray-100">
+                        <img
+                          src={imageUrl}
+                          alt={item.title}
+                          className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      </div>
 
-                    <h3 className="text-base sm:text-lg font-bold text-gray-900 mt-2 line-clamp-2 leading-snug">
-                      {item.title}
-                    </h3>
+                      {/* KONTEN BERITA */}
+                      <div className="p-6 sm:p-7 flex flex-col">
+                        <div className="flex items-center gap-2 text-xs text-yellow-700 font-bold mb-3">
+                          <Calendar className="w-4 h-4 text-yellow-600" />
+                          <time>
+                            {item.tanggalUpload
+                              ? new Date(item.tanggalUpload).toLocaleDateString("id-ID", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : "-"}
+                          </time>
+                        </div>
 
-                    <p className="text-xs sm:text-sm text-gray-600 mt-2.5 flex-1 line-clamp-3 leading-relaxed">
-                      {stripHtml(item.desc).length > 120
-                        ? stripHtml(item.desc).slice(0, 120) + "..."
-                        : stripHtml(item.desc)}
-                    </p>
+                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 group-hover:text-yellow-600 transition-colors line-clamp-2 leading-snug">
+                          {item.title}
+                        </h3>
 
-                    <Link
-                      to={`/berita/${item.slug}`}
-                      className="mt-4 inline-flex items-center text-xs sm:text-sm font-bold text-yellow-700 hover:text-yellow-800 transition group"
-                    >
-                      Baca Selengkapnya
-                      <span className="ml-1 transform group-hover:translate-x-1 transition">
-                        →
-                      </span>
-                    </Link>
-                  </div>
-                </article>
-              ))}
+                        <p className="text-xs sm:text-sm text-gray-500 mt-3 line-clamp-3 leading-relaxed">
+                          {stripHtml(item.desc)}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="px-6 pb-7 pt-0">
+                      <Link
+                        to={`/berita/${item.slug}`}
+                        className="inline-flex items-center gap-2 text-xs sm:text-sm font-extrabold text-black group-hover:text-yellow-600 transition-colors bg-yellow-400/20 hover:bg-yellow-400/40 px-4 py-2.5 rounded-xl w-full justify-between"
+                      >
+                        <span>Baca Selengkapnya</span>
+                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })}
             </div>
           )}
 
           {/* PAGINATION */}
           {totalPages > 1 && (
-            <div className="flex flex-wrap justify-center items-center gap-3 mt-12">
+            <div className="flex flex-wrap justify-center items-center gap-4 mt-16 bg-white p-4 rounded-2xl shadow-sm border border-gray-100 max-w-md mx-auto">
               <button
                 onClick={handlePrev}
                 disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${
                   currentPage === 1
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-yellow-500 hover:bg-yellow-600 text-black shadow-sm"
+                    ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                    : "bg-yellow-500 hover:bg-yellow-400 text-black shadow-md hover:scale-105"
                 }`}
               >
-                Prev
+                ← Sebelumnya
               </button>
 
-              <span className="text-xs sm:text-sm text-gray-600 font-medium px-2">
-                Halaman {currentPage} dari {totalPages}
+              <span className="text-xs sm:text-sm text-gray-600 font-bold">
+                Hal {currentPage} / {totalPages}
               </span>
 
               <button
                 onClick={handleNext}
                 disabled={currentPage === totalPages}
-                className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition ${
+                className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-extrabold transition-all ${
                   currentPage === totalPages
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                    : "bg-yellow-500 hover:bg-yellow-600 text-black shadow-sm"
+                    ? "bg-gray-100 text-gray-300 cursor-not-allowed"
+                    : "bg-yellow-500 hover:bg-yellow-400 text-black shadow-md hover:scale-105"
                 }`}
               >
-                Next
+                Berikutnya →
               </button>
             </div>
           )}
