@@ -563,7 +563,7 @@ if (isRoundRobin) {
               </span>
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
                 isDouble
-                  ? "bg-sky-50 text-sky-700 border border-sky-200/60"
+                  ? "bg-amber-100 text-amber-800 border border-amber-300/70"
                   : "bg-amber-50 text-amber-700 border border-amber-200/60"
               }`}>
                 {isDouble ? "Ganda" : "Tunggal"}

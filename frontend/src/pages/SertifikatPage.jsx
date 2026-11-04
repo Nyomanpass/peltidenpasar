@@ -5,6 +5,7 @@ import {
   Trophy, Crown, Award, CheckCircle, Clock, AlertCircle, 
   X, User, Users, FileCheck, FileText, Loader2, Image as ImageIcon
 } from "lucide-react";
+import SlidingTabs from "../components/SlidingTabs";
 
 export default function SertifikatPage() {
   const [selectedTournament, setSelectedTournament] = useState(localStorage.getItem("selectedTournament") || "");
@@ -454,33 +455,16 @@ export default function SertifikatPage() {
           </div>
 
           {/* Filter Pills */}
-          <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 w-full sm:w-fit overflow-x-auto no-scrollbar">
-            {[
+          <SlidingTabs
+            className="w-full sm:w-fit"
+            tabs={[
               { key: "all", label: "Semua", icon: LayoutGrid },
               { key: "single", label: "Single", icon: User },
               { key: "double", label: "Double", icon: Users },
-            ].map(({ key, label, icon: Icon }) => {
-              const isActive = filterBaganKategori === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setFilterBaganKategori(key)}
-                  className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
-                    isActive
-                      ? "bg-white text-slate-900 shadow-xs border border-slate-200/70"
-                      : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
-                  }`}
-                >
-                  <Icon
-                    size={14}
-                    className={isActive ? "text-amber-500" : "text-slate-400"}
-                  />
-                  <span>{label}</span>
-                </button>
-              );
-            })}
-          </div>
+            ]}
+            value={filterBaganKategori}
+            onChange={setFilterBaganKategori}
+          />
         </div>
 
         {/* Grid Bagan List */}

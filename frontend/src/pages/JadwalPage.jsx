@@ -30,6 +30,7 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import JadwalPDF from './JadwalPDF';
 import RefereeForm from './RefereeForm';
 import AlertMessage from '../components/AlertMessage';
+import SlidingTabs from "../components/SlidingTabs";
 
 
 const getHasilMatch = (m) => {
@@ -795,30 +796,17 @@ const groupedJadwal = [...jadwal]
                 </label>
                 
                 {/* Filter Kategori: Semua, Single, Double */}
-                <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 w-fit mb-3">
-                  {[
+                <SlidingTabs
+                  size="sm"
+                  tabs={[
                     { key: "all", label: "Semua", icon: LayoutGrid },
                     { key: "single", label: "Single", icon: User },
                     { key: "double", label: "Double", icon: Users },
-                  ].map(({ key, label, icon: Icon }) => {
-                    const isActive = filterBaganKategori === key;
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setFilterBaganKategori(key)}
-                        className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
-                          isActive
-                            ? "bg-white text-slate-900 shadow-xs border border-slate-200/70"
-                            : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
-                        }`}
-                      >
-                        <Icon size={13} className={isActive ? "text-amber-500" : "text-slate-400"} />
-                        <span>{label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
+                  ]}
+                  value={filterBaganKategori}
+                  onChange={setFilterBaganKategori}
+                  className="mb-3"
+                />
 
                 {/* List Tombol Bagan */}
                 <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">

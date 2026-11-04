@@ -1,6 +1,6 @@
-// File: src/components/admin/Peserta.jsx
+﻿// File: src/components/admin/Peserta.jsx
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import api from "../../api";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -21,6 +21,47 @@ import {
 } from "lucide-react";
 import AlertMessage from "../AlertMessage";
 import { exportPesertaToExcel } from "../../utils/exportPesertaExcel";
+/** Sliding-pill tab switcher for router <Link> tabs */
+function LinkSlidingTabs({ tabs, location }) {
+  const tabRefs = useRef([]);
+  const [pillStyle, setPillStyle] = React.useState({ left: 0, width: 0 });
+  const activeIdx = tabs.findIndex((t) => location.pathname === t.to);
+  React.useEffect(() => {
+    const el = tabRefs.current[activeIdx];
+    if (!el) return;
+    const parentEl = el.closest("[data-sliding-container]");
+    if (!parentEl) return;
+    const parentRect = parentEl.getBoundingClientRect();
+    const rect = el.getBoundingClientRect();
+    setPillStyle({ left: rect.left - parentRect.left, width: rect.width });
+  }, [activeIdx, location.pathname]);
+  return (
+    <div className="relative inline-flex items-center gap-1 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 shadow-xs" data-sliding-container="">
+      <span
+        className="absolute top-1.5 bottom-1.5 bg-white rounded-xl border border-slate-200/70 shadow-xs transition-all duration-300 ease-in-out"
+        style={{ left: pillStyle.left, width: pillStyle.width }}
+        aria-hidden="true"
+      />
+      {tabs.map((tab, i) => {
+        const Icon = tab.icon;
+        const active = location.pathname === tab.to;
+        return (
+          <Link
+            key={tab.to}
+            to={tab.to}
+            ref={(el) => (tabRefs.current[i] = el)}
+            className={`relative z-10 flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-bold transition-colors whitespace-nowrap ${
+              active ? "text-slate-900" : "text-slate-500 hover:text-slate-800"
+            }`}
+          >
+            <Icon size={14} className={active ? "text-amber-500" : "text-slate-400"} />
+            <span>{tab.label}</span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
 
 function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
   const location = useLocation();
@@ -442,7 +483,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                                         <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500">
                                           <Hash size={12} className="text-slate-400" />
                                           <span>
-                                            {p.nik.substring(0, 4)}••••••••{p.nik.substring(12)}
+                                            {p.nik.substring(0, 4)}â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢{p.nik.substring(12)}
                                           </span>
                                         </div>
                                       )}
@@ -530,7 +571,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                                   <div className="flex items-center justify-between">
                                     <span className="text-slate-400 text-[11px]">NIK:</span>
                                     <span className="font-mono text-slate-700">
-                                      {p.nik.substring(0, 4)}••••••••{p.nik.substring(12)}
+                                      {p.nik.substring(0, 4)}â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢{p.nik.substring(12)}
                                     </span>
                                   </div>
                                 )}

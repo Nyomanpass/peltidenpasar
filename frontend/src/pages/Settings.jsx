@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import SettingScoreRule from "../components/admin/SettingScoreRule";
 import AlertMessage from "../components/AlertMessage";
+import SlidingTabs from "../components/SlidingTabs";
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("all");
@@ -408,40 +409,12 @@ export default function Settings() {
       </div>
 
       {/* ================= NAVIGATION TABS ================= */}
-      <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 overflow-x-auto no-scrollbar">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
-                isActive
-                  ? "bg-white text-slate-900 shadow-xs border border-slate-200/70"
-                  : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
-              }`}
-            >
-              <Icon
-                size={14}
-                className={isActive ? "text-amber-500" : "text-slate-400"}
-              />
-              <span>{tab.label}</span>
-              {tab.count !== undefined && (
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-md font-extrabold ${
-                    isActive
-                      ? "bg-amber-100/80 text-amber-800"
-                      : "bg-slate-200/70 text-slate-600"
-                  }`}
-                >
-                  {tab.count}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+      <SlidingTabs
+        tabs={tabs.map(t => ({ key: t.id, label: t.label, icon: t.icon, count: t.count }))}
+        value={activeTab}
+        onChange={setActiveTab}
+        className="overflow-x-auto no-scrollbar"
+      />
 
       {/* ================= MAIN CONTENT SECTIONS ================= */}
       <div className="space-y-6">

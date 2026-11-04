@@ -15,6 +15,7 @@ import {
   Filter,
 } from "lucide-react";
 import AlertMessage from "../components/AlertMessage";
+import SlidingTabs from "../components/SlidingTabs";
 import api from "../api";
 
 export default function BaganPage({ onSelectBagan }) {
@@ -179,33 +180,16 @@ export default function BaganPage({ onSelectBagan }) {
         </div>
 
         {/* Tab Filter Kanan */}
-        <div className="flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 self-start sm:self-auto overflow-x-auto no-scrollbar">
-          {[
-            { key: "all", label: "Semua", icon: LayoutGrid },
+        <SlidingTabs
+          className="self-start sm:self-auto"
+          tabs={[
+            { key: "all",    label: "Semua",  icon: LayoutGrid },
             { key: "single", label: "Single", icon: User },
             { key: "double", label: "Double", icon: Users2 },
-          ].map(({ key, label, icon: Icon }) => {
-            const isActive = filterKategori === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setFilterKategori(key)}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
-                  isActive
-                    ? "bg-white text-slate-900 shadow-xs border border-slate-200/70"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-white/50"
-                }`}
-              >
-                <Icon
-                  size={14}
-                  className={isActive ? "text-amber-500" : "text-slate-400"}
-                />
-                <span>{label}</span>
-              </button>
-            );
-          })}
-        </div>
+          ]}
+          value={filterKategori}
+          onChange={setFilterKategori}
+        />
       </div>
 
       {/* --- FORM BUAT BAGAN (Admin/Panitia) --- */}
@@ -252,8 +236,9 @@ export default function BaganPage({ onSelectBagan }) {
             type="button"
             onClick={handleCreateBagan}
             disabled={!selectedKelompok}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-amber-500 active:scale-95 text-white font-bold text-xs uppercase tracking-wider shadow-xs hover:shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
+            <PlusCircle size={15} />
             <span>Buat Bagan</span>
           </button>
         </div>
@@ -289,7 +274,7 @@ export default function BaganPage({ onSelectBagan }) {
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 shadow-xs border ${
                       bagan.kategori === "double"
-                        ? "bg-gradient-to-br from-sky-500 to-blue-600 border-sky-400/30"
+                        ? "bg-gradient-to-br from-amber-600 to-amber-800 border-amber-500/30"
                         : "bg-gradient-to-br from-amber-500 to-yellow-600 border-amber-400/30"
                     } text-white`}
                   >
