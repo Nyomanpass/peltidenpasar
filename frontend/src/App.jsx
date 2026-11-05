@@ -11,6 +11,7 @@ import "@fontsource/poppins/700.css"; // Bold
 
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import DashboardLayout from "./pages/DashboardLayout";
 
 
@@ -62,6 +63,7 @@ export default function App() {
           <Route index element={<Home />} />
         
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/daftar-peserta" element={<PesertaForm/>}/>
           <Route path="/tournament" element={<TournamentUser/>}/>
           <Route path="/contact" element={<ContactPage/>}/>

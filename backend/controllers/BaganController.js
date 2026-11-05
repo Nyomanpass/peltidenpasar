@@ -2,8 +2,8 @@ import { Bagan } from "../models/BaganModel.js";
 import { KelompokUmur } from "../models/KelompokUmurModel.js";
 import { Match } from "../models/MatchModel.js";
 import { Peserta } from "../models/PesertaModel.js";
-import { Tournament } from "../models/TournamentModel.js"; // Import model tournament
-import { DoubleTeam } from "../models/DoubleTeamModel.js"; // Pastikan diimport
+import { Tournament } from "../models/TournamentModel.js";
+import { DoubleTeam } from "../models/DoubleTeamModel.js";
 
 export const createBagan = async (req, res) => {
   try {
@@ -13,7 +13,7 @@ export const createBagan = async (req, res) => {
     const kelompokumur = await KelompokUmur.findByPk(kelompokUmurId);
     if (!kelompokumur) return res.status(404).json({ msg: "Kelompok umur tidak ditemukan." });
 
-    // 1. Ambil data peserta/tim berdasarkan kategori
+
     let listPeserta = [];
     if (isDouble) {
       listPeserta = await DoubleTeam.findAll({
@@ -28,9 +28,13 @@ export const createBagan = async (req, res) => {
     const jumlah = listPeserta.length;
     if (jumlah === 0) return res.status(400).json({ msg: "Tidak ada peserta terverifikasi." });
 
-    // 2. Tentukan tipe (Contoh: <= 4 orang maka Round Robin)
+
     let tipe = "roundrobin";
     if (jumlah > 4) tipe = "knockout";
+
+
+    const { bracketSize, preliminaryCount } = calculateBracketStructure(jumlah);
+    const hasPreliminary = tipe === "knockout" && preliminaryCount > 0;
 
     const bagan = await Bagan.create({
       nama: `${isDouble ? '(Ganda)' : '(Tunggal)'} ${kelompokumur.nama}`,
@@ -40,9 +44,10 @@ export const createBagan = async (req, res) => {
       tournamentId,
       kategori: kategori || "single",
       status: "draft",
+      hasPreliminary,
     });
 
-    // --- LOGIKA ROUND ROBIN ---
+
     if (tipe === "roundrobin") {
       for (let i = 0; i < jumlah; i++) {
         for (let j = i + 1; j < jumlah; j++) {
@@ -54,7 +59,7 @@ export const createBagan = async (req, res) => {
             status: "belum"
           };
 
-          // Masukkan ID ke kolom yang sesuai
+
           if (isDouble) {
             matchObj.doubleTeam1Id = listPeserta[i].id;
             matchObj.doubleTeam2Id = listPeserta[j].id;
@@ -68,15 +73,28 @@ export const createBagan = async (req, res) => {
       }
     }
 
-    // --- LOGIKA KNOCKOUT ---
+
     else {
-      let size = 2;
-      while (size < jumlah) size *= 2;
-      const totalRounds = Math.log2(size);
       const allMatches = [];
+      const totalRounds = Math.log2(bracketSize);
+
+
+      if (preliminaryCount > 0) {
+        for (let slot = 1; slot <= preliminaryCount; slot++) {
+          const match = await Match.create({
+            baganId: bagan.id,
+            round: 0,
+            slot,
+            tournamentId,
+            status: "belum"
+          });
+          allMatches.push(match);
+        }
+      }
+
 
       for (let round = 1; round <= totalRounds; round++) {
-        const numMatches = size / Math.pow(2, round);
+        const numMatches = bracketSize / Math.pow(2, round);
         for (let slot = 1; slot <= numMatches; slot++) {
           const match = await Match.create({
             baganId: bagan.id,
@@ -89,14 +107,32 @@ export const createBagan = async (req, res) => {
         }
       }
 
-      // Hubungkan Next Match
+
       for (let m of allMatches) {
-        if (m.round < totalRounds) {
+        if (m.round >= 1 && m.round < totalRounds) {
           const nextSlot = Math.ceil(m.slot / 2);
           const next = allMatches.find(nm => nm.round === m.round + 1 && nm.slot === nextSlot);
           if (next) {
             m.nextMatchId = next.id;
             await m.save();
+          }
+        }
+      }
+
+
+      if (preliminaryCount > 0) {
+        const round1Matches = allMatches
+          .filter(m => m.round === 1)
+          .sort((a, b) => a.slot - b.slot);
+
+
+        for (let i = 0; i < preliminaryCount; i++) {
+          const prelimMatch = allMatches.find(m => m.round === 0 && m.slot === i + 1);
+
+          const targetR1Index = round1Matches.length - 1 - i;
+          if (prelimMatch && targetR1Index >= 0) {
+            prelimMatch.nextMatchId = round1Matches[targetR1Index].id;
+            await prelimMatch.save();
           }
         }
       }
@@ -115,17 +151,17 @@ export const getBaganWithMatches = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 1. Ambil data dasar bagan dulu untuk cek kategori
+
     const checkBagan = await Bagan.findByPk(id);
     if (!checkBagan) return res.status(404).json({ msg: "Bagan tidak ditemukan" });
 
     const isDouble = checkBagan.kategori === "double";
 
-    // 2. Tentukan relasi Match yang akan di-include
+
     const matchInclude = isDouble ? [
       { 
         model: DoubleTeam, as: "doubleTeam1", 
-        attributes: ['id', 'namaTim', 'isSeeded'], // Ambil isSeeded dari tabel DoubleTeam
+        attributes: ['id', 'namaTim', 'isSeeded'],
         include: [
           { model: Peserta, as: "Player1", attributes: ['namaLengkap'] },
           { model: Peserta, as: "Player2", attributes: ['namaLengkap'] }
@@ -143,7 +179,7 @@ export const getBaganWithMatches = async (req, res) => {
     ] : [
       { 
         model: Peserta, as: "peserta1", 
-        attributes: ['id', 'namaLengkap', 'isSeeded'] // Ambil isSeeded dari tabel Peserta
+        attributes: ['id', 'namaLengkap', 'isSeeded']
       },
       { 
         model: Peserta, as: "peserta2", 
@@ -152,7 +188,7 @@ export const getBaganWithMatches = async (req, res) => {
       { model: Peserta, as: "winner" }
     ];
 
-    // 3. Eksekusi Query Utama
+
     const bagan = await Bagan.findByPk(id, {
       include: [
         { model: Tournament, attributes: ['name'] },
@@ -177,7 +213,7 @@ export const getAllBagan = async (req, res) => {
 
     let filter = {};
 
-    // Jika ada tournamenId → tambahkan filter
+
     if (tournamentId) {
       filter.tournamentId = tournamentId;
     }
@@ -199,16 +235,16 @@ export const deleteBagan = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // cek apakah bagan ada
+
     const bagan = await Bagan.findByPk(id);
     if (!bagan) {
       return res.status(404).json({ msg: "Bagan tidak ditemukan" });
     }
 
-    // hapus dulu semua match yang terkait
+
     await Match.destroy({ where: { baganId: id } });
 
-    // hapus bagan
+
     await bagan.destroy();
 
     res.json({ msg: "Bagan dan semua match terkait berhasil dihapus" });
@@ -226,7 +262,7 @@ export const lockBagan = async (req, res) => {
       return res.status(404).json({ message: "Bagan tidak ditemukan" });
     }
 
-    // Update isLocked menjadi true (1)
+
     await bagan.update({ isLocked: true });
 
     res.status(200).json({ message: "Bagan berhasil dikunci!" });
@@ -234,3 +270,21 @@ export const lockBagan = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
+export function calculateBracketStructure(n, maxBye = 4) {
+  if (n <= 1) return { bracketSize: 2, preliminaryCount: 0 };
+
+
+  const nextPow2 = Math.pow(2, Math.ceil(Math.log2(n)));
+  const byeCount = nextPow2 - n;
+
+
+  if (byeCount <= maxBye) {
+    return { bracketSize: nextPow2, preliminaryCount: 0 };
+  }
+
+  const prevPow2 = Math.pow(2, Math.floor(Math.log2(n)));
+  const extra = n - prevPow2;
+  return { bracketSize: prevPow2, preliminaryCount: extra };
+}

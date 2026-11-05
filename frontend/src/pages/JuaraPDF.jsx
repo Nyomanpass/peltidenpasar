@@ -1,5 +1,6 @@
 import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Font } from '@react-pdf/renderer';
+import { hitungSelisih } from "../utils/hitungSelisih";
 
 const styles = StyleSheet.create({
   page: { padding: 40, backgroundColor: '#ffffff' },
@@ -171,10 +172,10 @@ const JuaraPDF = ({ winnersData = [], tournamentName }) => {
                       <Text
                         style={[
                           styles.tableColDiff,
-                          { color: (p.selisih ?? 0) >= 0 ? '#16a34a' : '#dc2626' }
+                          { color: hitungSelisih(p) >= 0 ? '#16a34a' : '#dc2626' }
                         ]}
                       >
-                        {p.selisih ?? 0}
+                        {hitungSelisih(p)}
                       </Text>
                     </View>
                   ))}

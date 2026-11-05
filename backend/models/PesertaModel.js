@@ -6,6 +6,13 @@ import { sequelize } from "../config/Database.js";
 export const Peserta = sequelize.define("Peserta", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   namaLengkap: { type: DataTypes.STRING(100), allowNull: false },
+  nik: {
+    type: DataTypes.STRING(16),
+    allowNull: true,
+    validate: {
+      is: /^\d{16}$/,
+    }
+  },
   nomorWhatsapp: { type: DataTypes.STRING(20), allowNull: false },
   tanggalLahir: { type: DataTypes.DATEONLY, allowNull: false },
   kelompokUmurId: {

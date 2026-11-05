@@ -48,12 +48,15 @@ export const createDoubleTeam = async (req, res) => {
   }
 };
 
-// 2. FUNGSI GET (READ)
-export const getDoubleTeams = async (req, res) => {
+// Atribut pemain untuk endpoint publik/umum (tanpa NIK dan nomor WA)
+const PUBLIC_PLAYER_ATTRS = ["id", "namaLengkap", "tanggalLahir"];
+// Atribut pemain untuk endpoint terproteksi admin/panitia (lengkap dengan NIK dan nomor WA)
+const ADMIN_PLAYER_ATTRS = [...PUBLIC_PLAYER_ATTRS, "nik", "nomorWhatsapp"];
+
+const findDoubleTeams = async (req, res, playerAttributes) => {
   try {
     const { tournamentId, kelompokUmurId } = req.query;
 
-    // Filter dinamis
     const filter = { tournamentId };
     if (kelompokUmurId) {
       filter.kelompokUmurId = kelompokUmurId;
@@ -65,19 +68,19 @@ export const getDoubleTeams = async (req, res) => {
         { 
           model: Peserta, 
           as: "Player1", 
-          attributes: ["id", "namaLengkap", "tanggalLahir"] 
+          attributes: playerAttributes 
         },
         { 
           model: Peserta, 
           as: "Player2", 
-          attributes: ["id", "namaLengkap", "tanggalLahir"] 
+          attributes: playerAttributes 
         },
         { 
           model: KelompokUmur, 
           attributes: ["id", "nama", "umur"] 
         }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [["createdAt", "DESC"]]
     });
 
     res.json(teams);
@@ -86,6 +89,15 @@ export const getDoubleTeams = async (req, res) => {
     res.status(500).json({ msg: "Gagal mengambil data tim ganda." });
   }
 };
+
+// 2. FUNGSI GET (READ)
+// Publik/dashboard umum: tanpa data pribadi NIK & WhatsApp
+export const getDoubleTeams = (req, res) =>
+  findDoubleTeams(req, res, PUBLIC_PLAYER_ATTRS);
+
+// Khusus admin/panitia: dengan NIK dan WhatsApp
+export const getDoubleTeamsAdmin = (req, res) =>
+  findDoubleTeams(req, res, ADMIN_PLAYER_ATTRS);
 
 
 export const deleteDoubleTeam = async (req, res) => {

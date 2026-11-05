@@ -1,17 +1,20 @@
-import { Menu, LogOut, Bell, User, Settings, Globe, Link } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { Menu, LogOut, Bell, User, Settings, Globe, ChevronDown } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef, useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 import VerificationDrawer from "./VerificationDrawer";
-import api from "../api"; // Pastikan Anda mengimpor API instance
+import api from "../api";
 
-function NavbarDashboard({ toggleSidebar, toggleCollapse, isCollapsed }) {
+function NavbarDashboard({ toggleSidebar, isCollapsed, onToggleCollapse }) {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext) || {};
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false); // State untuk drawer verifikasi
   const [pendingUsers, setPendingUsers] = useState([]); // State untuk data pending
 
-  const userName = localStorage.getItem("role");
-  const role = localStorage.getItem("role") || "Admin";
+  const displayName = user?.name || "Admin";
+  const displayEmail = user?.email || "";
+  const role = user?.role || localStorage.getItem("role") || "admin";
 
   const handleLogout = () => {
     localStorage.clear();
@@ -19,17 +22,34 @@ function NavbarDashboard({ toggleSidebar, toggleCollapse, isCollapsed }) {
   };
 
   const handleGoToWebsite = () => {
-    window.open("/",); 
+    setIsProfileDropdownOpen(false);
+    window.open("/");
   };
-  
-  const handleDropdownToggle = () => {
-    setIsProfileDropdownOpen(!isProfileDropdownOpen);
-  };
-  
-  // Menutup dropdown saat klik di luar
-  const handleBlur = () => {
-      setTimeout(() => setIsProfileDropdownOpen(false), 200);
-  }
+
+  const profileRef = useRef(null);
+
+  const handleDropdownToggle = () => setIsProfileDropdownOpen((v) => !v);
+
+  // Tutup dropdown saat klik di luar atau tekan Escape
+  useEffect(() => {
+    if (!isProfileDropdownOpen) return;
+
+    const handleClickOutside = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    const handleEscape = (e) => {
+      if (e.key === "Escape") setIsProfileDropdownOpen(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isProfileDropdownOpen]);
 
   // --- LOGIKA FETCH DAN HANDLER VERIFIKASI ---
   
@@ -109,46 +129,47 @@ const handleReject = async (id, message) => {
   return (
     <>
     <nav className={`
-      w-full bg-white shadow-sm px-4 py-3 flex items-center justify-between
-      fixed top-0 left-0 z-50
-      transition-all duration-300
+      fixed top-0 left-0 z-30 flex h-16 w-full items-center justify-between
+      border-b border-gray-200 bg-white/90 px-4 backdrop-blur
+      transition-[left,width] duration-300 motion-reduce:transition-none
       ${isCollapsed
         ? "md:left-20 md:w-[calc(100%-5rem)]"
-        : "md:left-72 md:w-[calc(100%-18rem)]"}
+        : "md:left-64 md:w-[calc(100%-16rem)]"}
     `}>
 
-
-
-        {/* KIRI: Logo, Toggle Menu, dan Judul */}
-        <div className="flex items-center gap-2">
-          {/* tombol buka sidebar (mobile) */}
+        {/* KIRI: Tombol hamburger + garis batas + Logo & Nama Brand */}
+        <div className="flex min-w-0 items-center gap-3">
+          {/* Tombol hamburger untuk hide/toggle sidebar */}
           <button
-            className="md:hidden p-2 rounded-full text-gray-700 hover:bg-gray-100 transition-colors"
-            onClick={toggleSidebar}
+            type="button"
+            className="p-2 rounded-xl text-gray-700 hover:text-gray-900 hover:bg-gray-100 active:scale-95 transition-all focus-visible:outline-2 focus-visible:outline-primary"
+            onClick={() => {
+              if (window.matchMedia("(min-width: 768px)").matches) {
+                onToggleCollapse?.();
+              } else {
+                toggleSidebar?.();
+              }
+            }}
+            aria-label={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar"}
+            title={isCollapsed ? "Tampilkan sidebar" : "Sembunyikan sidebar"}
           >
             <Menu size={22} />
           </button>
 
-          {/* tombol minimize sidebar (desktop) */}
-          <button
-            onClick={toggleCollapse}
-            className="hidden md:block p-2 rounded-full hover:bg-gray-100 text-gray-700"
-            title="Minimize Sidebar"
-          >
-            <Menu size={20} />
-          </button>
+          {/* Line batas */}
+          <div className="h-6 w-px bg-gray-200" aria-hidden="true" />
 
-          {/* Logo Pelatnas Denpasar */}
-          <div className="flex items-center gap-4">
-            <img 
-              src="/logo.png" 
-              alt="Logo Persatuan Tenis Seluruh Indonesia PELTI" 
-              className="w-10 md:w-12 h-auto" 
-              onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/80x80/000000/ffffff?text=PELTI" }} 
+          {/* Logo + Nama Brand */}
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo.png"
+              alt="Logo PELTI"
+              className="h-11 w-11 shrink-0 rounded-full object-contain ring-2 ring-gray-200"
+              onError={(e) => { e.currentTarget.style.visibility = "hidden"; }}
             />
-            <div className="hidden md:block">
-              <h1 className="font-bold text-lg text-black leading-none">PELTI DENPASAR</h1>
-              <p className="text-xs text-gray-600 font-semibold mt-1">Persatuan Tennis Seluruh Indonesia</p>
+            <div className="hidden sm:block leading-tight">
+              <p className="text-base font-bold text-gray-800 leading-none">PELTI Denpasar</p>
+              <p className="text-xs text-gray-400 mt-0.5">Persatuan Tennis Seluruh Indonesia</p>
             </div>
           </div>
         </div>
@@ -160,93 +181,119 @@ const handleReject = async (id, message) => {
           {(role === "admin" || role === "panitia") && (
             <button
               onClick={() => setIsDrawerOpen(true)}
-              className="p-3 rounded-full text-gray-600 hover:bg-gray-100 transition-colors relative"
+              className={`p-2.5 rounded-xl transition-all duration-200 relative border ${
+                pendingUsers.length > 0
+                  ? "bg-amber-50/80 text-amber-700 border-amber-200/80 hover:bg-amber-100 hover:border-amber-300 shadow-2xs"
+                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border-transparent"
+              } active:scale-95`}
               title="Notifikasi Verifikasi Peserta"
+              aria-label="Notifikasi Verifikasi Peserta"
             >
-              <Bell size={20} />
+              <Bell size={19} className={pendingUsers.length > 0 ? "text-amber-600" : ""} />
               {/* Badge Notifikasi Real-time */}
               {pendingUsers.length > 0 && (
-                  <span className="absolute top-2 right-2 flex items-center justify-center h-4 w-4 rounded-full bg-red-600 ring-2 ring-white text-xs text-white font-bold">
-                      {pendingUsers.length > 9 ? '9+' : pendingUsers.length}
+                <span className="absolute -top-1 -right-1 flex h-4.5 min-w-[18px] items-center justify-center">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex items-center justify-center h-4.5 min-w-[18px] px-1 rounded-full bg-rose-600 text-[10px] font-black text-white ring-2 ring-white shadow-xs">
+                    {pendingUsers.length > 9 ? "9+" : pendingUsers.length}
                   </span>
+                </span>
               )}
             </button>
           )}
 
+          {/* Tombol Pengaturan (di samping kanan lonceng) */}
+          {role === "admin" && (
+            <Link
+              to="/admin/settings"
+              className="p-2.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all border border-transparent active:scale-95"
+              title="Pengaturan"
+              aria-label="Pengaturan"
+            >
+              <Settings size={19} />
+            </Link>
+          )}
+
           {/* Menu Profil dengan Dropdown */}
-          <div 
-              className="relative" 
-              onBlur={handleBlur} 
-              tabIndex={0} 
-          >
+          <div ref={profileRef} className="relative">
             <button
               onClick={handleDropdownToggle}
-              className="flex items-center gap-2 p-2 pl-4 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500"
+              aria-haspopup="menu"
+              aria-expanded={isProfileDropdownOpen}
+              className="flex items-center gap-2 p-1.5 pl-3 pr-2.5 rounded-full bg-slate-100 hover:bg-slate-200/80 border border-slate-200/60 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500/30 active:scale-95"
             >
-              <span className="text-sm font-semibold text-gray-700 hidden sm:inline">
-                Halo, {userName}
+              <span className="text-xs font-bold text-slate-700 hidden sm:inline capitalize">
+                {displayName}
               </span>
-              <div className="w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-white font-bold">
-                {userName[0].toUpperCase()}
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-black text-xs shadow-2xs">
+                {displayName[0]?.toUpperCase() || "A"}
               </div>
+              <ChevronDown
+                size={14}
+                className={`text-slate-400 transition-transform duration-200 ${
+                  isProfileDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
             </button>
 
             {/* Dropdown Menu */}
             {isProfileDropdownOpen && (
-              <div className="absolute right-0 mt-3 w-56 rounded-lg shadow-2xl bg-white border border-gray-100 z-50 overflow-hidden">
-                
-                {/* Info Pengguna di Dropdown */}
-                <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="text-sm font-bold text-gray-800">
-                      Akun {role}
+              <div className="absolute right-0 mt-2.5 w-64 rounded-2xl shadow-xl bg-white border border-slate-200/90 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                {/* Header Profil Dropdown */}
+                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/60 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-white font-black text-sm shrink-0 shadow-2xs">
+                    {displayName[0]?.toUpperCase() || "A"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-extrabold text-slate-800 truncate">
+                      {displayName}
                     </p>
+                    <p className="text-[11px] text-slate-400 font-medium truncate mt-0.5">
+                      {displayEmail || `Akun ${role}`}
+                    </p>
+                  </div>
                 </div>
 
-                <ul className="py-1">
-                  <li>
-                    <button
-                      onClick={handleGoToWebsite}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                {/* Menu Navigasi Dropdown */}
+                <div className="p-1.5 space-y-0.5">
+                  {role === "admin" && (
+                    <Link
+                      to="/admin/profile"
+                      className="group flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
+                      onClick={() => setIsProfileDropdownOpen(false)}
                     >
-                      <Globe size={18} className="text-blue-500"/> Kembali ke Website
-                    </button>
-                  </li>
-                    {role === "admin" && (
-                      <>
-                        <li>
-                          <a
-                            href="/admin/profile"
-                            className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                            onClick={() => setIsProfileDropdownOpen(false)}
-                          >
-                            <User size={18} className="text-yellow-500"/>
-                            Profile
-                          </a>
-                        </li>
-                    
-                      
-                      <li>
-                        {/* Menggunakan elemen <a> atau Link dari React Router, bukan Link dari Lucide */}
-                        <a
-                          href="/admin/settings" 
-                          className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                          onClick={() => setIsProfileDropdownOpen(false)} 
-                        >
-                          <Settings size={18} className="text-gray-500"/> Pengaturan
-                        </a>
-                      </li>
-                      </>
-                    )}
+                      <User
+                        size={15}
+                        className="text-slate-400 group-hover:text-amber-500 transition-colors"
+                      />
+                      Profil Saya
+                    </Link>
+                  )}
 
-                  <li>
+                  <button
+                    onClick={handleGoToWebsite}
+                    className="group flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-all"
+                  >
+                    <Globe
+                      size={15}
+                      className="text-slate-400 group-hover:text-blue-500 transition-colors"
+                    />
+                    Kembali ke Website
+                  </button>
+
+                  <div className="pt-1 mt-1 border-t border-slate-100">
                     <button
                       onClick={handleLogout}
-                      className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50/50 border-t border-gray-100 mt-1"
+                      className="group flex items-center gap-2.5 w-full px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                     >
-                      <LogOut size={18} /> Logout
+                      <LogOut
+                        size={15}
+                        className="text-rose-500 transition-transform group-hover:translate-x-0.5"
+                      />
+                      Keluar
                     </button>
-                  </li>
-                </ul>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -261,7 +308,8 @@ const handleReject = async (id, message) => {
           pendingUsers={pendingUsers}
           onVerify={handleVerify}
           onReject={handleReject}
-          onViewDetail={handleViewDetail} // Menambahkan handler detail
+          onViewDetail={handleViewDetail}
+          role={role}
         />
       )}
     </>
