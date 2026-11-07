@@ -5,7 +5,7 @@ import { ChevronsRight } from 'lucide-react';
 import BaganPage from '../pages/BaganPage';
 import BaganView from '../pages/BaganView';
 
-export default function BaganSelectorParent({ tournamentId }) {
+export default function BaganSelectorParent({ tournamentId, readOnly = false }) {
     const [selectedBaganId, setSelectedBaganId] = useState(null);
 
     // Jika ID bagan sudah terpilih, tampilkan BaganView
@@ -14,15 +14,15 @@ export default function BaganSelectorParent({ tournamentId }) {
             <div className="space-y-6">
                 <button
                     onClick={() => setSelectedBaganId(null)}
-                    className="flex items-center text-yellow-600 hover:text-yellow-800 font-semibold mb-4 text-base sm:text-lg px-2 sm:px-4 py-2 rounded-lg transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-xs sm:text-sm border border-amber-200/80 shadow-xs transition-all mb-4 active:scale-95"
                 >
-                    <ChevronsRight size={18} className="rotate-180 mr-1 flex-shrink-0" />
-                Daftar Bagan
+                    <ChevronsRight size={16} className="rotate-180 flex-shrink-0 text-amber-600" />
+                    <span>Kembali ke Daftar Bagan</span>
                 </button>
 
                 {/* Konten bagan scrollable horizontal jika perlu */}
              
-                    <BaganView baganId={selectedBaganId} />
+                    <BaganView baganId={selectedBaganId} readOnly={readOnly} />
                
             </div>
         );
@@ -34,6 +34,7 @@ export default function BaganSelectorParent({ tournamentId }) {
             <BaganPage
                 onSelectBagan={setSelectedBaganId}
                 tournamentId={tournamentId}
+                readOnly={readOnly}
             />
         </div>
     );

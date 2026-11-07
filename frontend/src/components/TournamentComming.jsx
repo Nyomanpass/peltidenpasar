@@ -21,10 +21,17 @@ const TournamentComming = () => {
         const res = await api.get("/tournaments");
         const data = res.data || [];
         
-        // Filter hanya turnamen yang berstatus 'aktif' (mengabaikan perbedaan huruf besar/kecil)
+        // Filter hanya turnamen yang berstatus 'aktif' dan belum berakhir
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         const activeTournaments = data.filter((t) => {
           const status = (t.status || "").toLowerCase();
-          return status === "aktif";
+          if (status !== "aktif") return false;
+
+          const endDate = t.end_date ? new Date(t.end_date) : null;
+          const hasEnded = endDate && !isNaN(endDate) && endDate < today;
+          return !hasEnded;
         });
 
         setTournaments(activeTournaments);
@@ -42,22 +49,22 @@ const TournamentComming = () => {
   }
 
   return (
-    <section className="py-10 sm:py-16 bg-gray-50">
-      <div className="mx-auto px-4 sm:px-10 lg:px-20">
+    <section className="pt-20 sm:pt-24 pb-10 sm:pb-14 bg-white">
+      <div className="relative mx-auto px-4 sm:px-10 lg:px-20">
         
         {/* HEADER */}
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight text-balance">
+        <div className="text-center mb-8">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
             Turnamen Mendatang
           </h2>
-          <p className="text-sm sm:text-base text-gray-500 italic mt-2 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-500 mt-2 max-w-2xl mx-auto">
             Siapkan fisik dan mental, raih prestasi tertinggi di arena pertandingan.
           </p>
           <div className="w-12 h-1 bg-yellow-600 mx-auto mt-4 rounded-full"></div>
         </div>
 
         {/* GRID */}
-        <div className="max-w-5xl mx-auto gap-6 sm:gap-8">
+        <div className="max-w-5xl mx-auto space-y-6">
           {tournaments.map((t) => {
             // Menghitung tanggal batas pendaftaran (1 hari sebelum tanggal mulai)
             const startDate = t.start_date ? new Date(t.start_date) : new Date();
@@ -75,7 +82,7 @@ const TournamentComming = () => {
             return (
               <div
                 key={t.id || t.idTournament}
-                className="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden mt-10"
+                className="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden"
               >
                 <div className="flex flex-col md:flex-row h-full">
                   

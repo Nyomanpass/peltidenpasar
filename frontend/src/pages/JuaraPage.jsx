@@ -54,7 +54,7 @@ const FILTERS = [
 
 /* ═══════════════════════════════════════════════════════════════════════ */
 
-const JuaraPage = () => {
+const JuaraPage = ({ tournamentId: propTournamentId, readOnly = false }) => {
   const [winnersData, setWinnersData] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,11 +64,12 @@ const JuaraPage = () => {
 
   const [tName, setTName] = useState(localStorage.getItem("selectedTournamentName") || "TURNAMEN"); 
   const role = localStorage.getItem('role');
+  const canManage = !readOnly && (role === "admin" || role === "panitia");
 
   const fetchAllData = async () => {
     try {
       setIsLoading(true);
-      const selectedTournament = localStorage.getItem("selectedTournament");
+      const selectedTournament = propTournamentId || localStorage.getItem("selectedTournament");
       setTName(localStorage.getItem("selectedTournamentName") || "TURNAMEN");
 
       if (!selectedTournament) {
@@ -206,7 +207,7 @@ const JuaraPage = () => {
           />
 
           {/* Action Buttons (Export PDF & Excel) */}
-          {(role === "admin" || role === "panitia") && filteredWinners.length > 0 && (
+          {canManage && filteredWinners.length > 0 && (
             <div className="flex items-center gap-2.5 flex-wrap">
               {/* Tombol PDF */}
               {!readyPDF ? (

@@ -1,19 +1,33 @@
+import { useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import HomeNews from "../components/HomeNews"; // <-- Ganti News dengan HomeNews
-import Footer from "../components/Footer";
 import TournamentComming from "../components/TournamentComming";
+import AboutPreview from "../components/AboutPreview";
+import HomeNews from "../components/HomeNews";
+import CTASection from "../components/CTASection";
+import ContactPreview from "../components/ContactPreview";
+import Footer from "../components/Footer";
 
-function Home(){
-    return(
-        <>
-            <Navbar/>
-            <Hero/>
-            <TournamentComming/>
-            <HomeNews/> {/* <-- Ubah dari <News/> ke <HomeNews/> */}
-            <Footer/>
-        </>
-    )
+function Home() {
+  // Sembunyikan scrollbar hanya saat berada di landing page
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add("no-page-scrollbar");
+    return () => root.classList.remove("no-page-scrollbar");
+  }, []);
+
+  return (
+    <>
+      <Navbar variant="overlay" />
+      <Hero />
+      <TournamentComming />
+      <AboutPreview />
+      <HomeNews />
+      <CTASection />
+      <ContactPreview />
+      <Footer />
+    </>
+  );
 }
 
 export default Home;

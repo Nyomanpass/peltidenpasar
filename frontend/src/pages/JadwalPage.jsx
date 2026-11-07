@@ -46,11 +46,12 @@ const getHasilMatch = (m) => {
   return { p1Won, p2Won, winnerName: p1Won ? nama1 : p2Won ? nama2 : null };
 };
 
-const JadwalPage = ({ tournamentId: propTournamentId }) => {
+const JadwalPage = ({ tournamentId: propTournamentId, readOnly = false }) => {
   const [jadwal, setJadwal] = useState([]);
   const [matches, setMatches] = useState([]);
   const [lapangan, setLapangan] = useState([]);
   const role = localStorage.getItem('role');
+  const canManage = !readOnly && ["admin", "panitia", "wasit"].includes(role);
   const selectedTournamentName = localStorage.getItem("selectedTournamentName");
   const activeTournamentId = propTournamentId || localStorage.getItem("selectedTournament");
   const [isRefereeMode, setIsRefereeMode] = useState(false);
@@ -73,6 +74,7 @@ const JadwalPage = ({ tournamentId: propTournamentId }) => {
 
   // filter jadwal dengan tanggal
   const [selectedTanggalFilter, setSelectedTanggalFilter] = useState('');
+  const [selectedLapanganFilter, setSelectedLapanganFilter] = useState('');
   const [readyToDownload, setReadyToDownload] = useState(false);
 
   const [filterBaganKategori, setFilterBaganKategori] = useState("all");
@@ -372,6 +374,15 @@ const groupedJadwal = [...jadwal]
 
   const lapanganList = Object.keys(groupedJadwal);
 
+  const filteredJadwalMobile = jadwal
+    .filter(j => (!selectedTanggalFilter || j.tanggal === selectedTanggalFilter) &&
+                 (!selectedLapanganFilter || j.lapangan?.nama === selectedLapanganFilter))
+    .sort((a, b) => {
+      const timeComp = (a.waktuMulai || '').localeCompare(b.waktuMulai || '');
+      if (timeComp !== 0) return timeComp;
+      return (a.lapangan?.nama || '').localeCompare(b.lapangan?.nama || '');
+    });
+
   const openRefereePanel = (jadwal) => {
     setActiveMatchData(jadwal); // Menyimpan data match yang dipilih
     setIsRefereeMode(true);     // Pindah ke tampilan wasit
@@ -382,7 +393,7 @@ const groupedJadwal = [...jadwal]
     return (
       <RefereeForm 
         match={activeMatchData.match} 
-        onFinish={async (finalData) => {
+        onFinish={async () => {
           try {
             // 1. Update status JADWAL menjadi selesai
             await api.put(`/jadwal/${activeMatchData.id}/status`, { 
@@ -432,7 +443,7 @@ const groupedJadwal = [...jadwal]
         </div>
 
         {/* Action Buttons */}
-        {(role === "admin" || role === "panitia") && (
+        {canManage && (
           <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
             <button
               onClick={handleOpenCreateModal}
@@ -529,226 +540,463 @@ const groupedJadwal = [...jadwal]
         </div>
       )}
 
-      {/* ===== TAMPILAN JADWAL (TABLE GRID) ===== */}
+      {/* ===== TAMPILAN JADWAL (TABLE GRID DESKTOP) ===== */}
       {lapanganList.length > 0 ? (
-        <div className="w-full overflow-hidden rounded-2xl shadow-xs border border-slate-200/80 bg-white mb-8">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] md:min-w-full table-fixed border-separate border-spacing-x-1 md:border-spacing-x-2 border-spacing-y-2 p-2">
-              
-              <colgroup>
-                <col className="w-[70px] md:w-[90px]" />
-                {lapanganList.map((_, i) => (
-                  <col key={i} className="w-[240px] md:w-auto" />
-                ))}
-              </colgroup>
+        <>
+          <div className="hidden md:block w-full overflow-hidden rounded-2xl shadow-xs border border-slate-200/80 bg-white mb-8">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] md:min-w-full table-fixed border-separate border-spacing-x-1 md:border-spacing-x-2 border-spacing-y-2 p-2">
+                
+                <colgroup>
+                  <col className="w-[70px] md:w-[90px]" />
+                  {lapanganList.map((_, i) => (
+                    <col key={i} className="w-[240px] md:w-auto" />
+                  ))}
+                </colgroup>
 
-              <thead>
-                <tr>
-                  <th className="py-3 sticky left-0 z-40 bg-white/95 backdrop-blur-sm">
-                    <div className="flex flex-col items-center justify-center text-slate-400">
-                      <Clock size={15} className="text-slate-500 mb-1" />
-                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">JAM</span>
-                    </div>
-                  </th>
-                  {lapanganList.map((lap) => (
-                    <th key={lap} className="py-3 px-1">
-                      <div className="bg-slate-50 border border-slate-200/80 py-2.5 px-3 rounded-xl text-xs font-extrabold text-slate-800 uppercase tracking-wider shadow-xs flex items-center justify-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-amber-500 shadow-xs"></span>
-                        <span className="truncate">{lap}</span>
+                <thead>
+                  <tr>
+                    <th className="py-3 sticky left-0 z-40 bg-white/95 backdrop-blur-sm">
+                      <div className="flex flex-col items-center justify-center text-slate-400">
+                        <Clock size={15} className="text-slate-500 mb-1" />
+                        <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">JAM</span>
                       </div>
                     </th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-transparent">
-                {[...new Set(
-                  jadwal
-                    .filter(j => !selectedTanggalFilter || j.tanggal === selectedTanggalFilter)
-                    .map(j => j.waktuMulai.slice(11, 16))
-                )]
-                  .sort()
-                  .map((jam) => (
-                    <tr key={jam} className="group">
-                      {/* Sticky Kolom JAM */}
-                      <td className="py-3 sticky left-0 z-40 bg-white/95 backdrop-blur-sm group-hover:bg-amber-50/30 transition-colors rounded-xl border border-slate-100 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.05)]">
-                        <div className="text-center">
-                          <span className="block text-sm font-extrabold text-slate-900 leading-none">
-                            {jam}
-                          </span>
+                    {lapanganList.map((lap) => (
+                      <th key={lap} className="py-3 px-1">
+                        <div className="bg-slate-50 border border-slate-200/80 py-2.5 px-3 rounded-xl text-xs font-extrabold text-slate-800 uppercase tracking-wider shadow-xs flex items-center justify-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-amber-500 shadow-xs"></span>
+                          <span className="truncate">{lap}</span>
                         </div>
-                      </td>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
 
-                      {lapanganList.map((lap) => {
-                        const match = jadwal.find(j =>
-                          j.waktuMulai.slice(11, 16) === jam &&
-                          j.lapangan?.nama === lap &&
-                          (!selectedTanggalFilter || j.tanggal === selectedTanggalFilter)
-                        );
-                        const hasil = match?.status === "selesai" ? getHasilMatch(match.match) : null;
+                <tbody className="divide-y divide-transparent">
+                  {[...new Set(
+                    jadwal
+                      .filter(j => !selectedTanggalFilter || j.tanggal === selectedTanggalFilter)
+                      .map(j => j.waktuMulai.slice(11, 16))
+                  )]
+                    .sort()
+                    .map((jam) => (
+                      <tr key={jam} className="group">
+                        {/* Sticky Kolom JAM */}
+                        <td className="py-3 sticky left-0 z-40 bg-white/95 backdrop-blur-sm group-hover:bg-amber-50/30 transition-colors rounded-xl border border-slate-100 shadow-[2px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                          <div className="text-center">
+                            <span className="block text-sm font-extrabold text-slate-900 leading-none">
+                              {jam}
+                            </span>
+                          </div>
+                        </td>
 
-                        return (
-                          <td key={lap} className="py-2 align-top">
-                            {match ? (
-                              <div className="h-full bg-white border border-slate-200/80 hover:border-amber-400 hover:shadow-md rounded-2xl p-4 transition-all relative group/card flex flex-col justify-between">
-                                
-                                {/* Menu Admin (⋮) */}
-                                {["admin", "panitia", "wasit"].includes(role) && (
-                                  <div className="absolute top-3 right-3 z-30">
-                                    <button
-                                      onClick={() => setOpenMenuId(openMenuId === match.id ? null : match.id)}
-                                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 hover:text-slate-800 hover:bg-slate-200/80 transition-all shadow-xs"
-                                    >
-                                      <MoreVertical size={15} />
-                                    </button>
-                                    
-                                    {openMenuId === match.id && (
-                                      <div className="absolute right-0 mt-1 bg-white rounded-xl shadow-xl z-50 min-w-[140px] overflow-hidden border border-slate-100 py-1">
-                                        {(role === "admin" || role === "panitia") && (
-                                          <button 
-                                            onClick={() => { handleEditClick(match); setOpenMenuId(null); }} 
-                                            className="block w-full text-left px-3.5 py-2 hover:bg-amber-50 hover:text-amber-700 text-xs font-bold text-slate-700 border-b border-slate-50 transition-colors"
-                                          >
-                                            Edit Jadwal
-                                          </button>
-                                        )}
-                                        {match.status !== "selesai" && ["admin", "panitia", "wasit"].includes(role) && (
-                                          <button 
-                                            onClick={() => {
-                                              setPendingJadwal(match);
-                                              setRuleMode("manual");
+                        {lapanganList.map((lap) => {
+                          const match = jadwal.find(j =>
+                            j.waktuMulai.slice(11, 16) === jam &&
+                            j.lapangan?.nama === lap &&
+                            (!selectedTanggalFilter || j.tanggal === selectedTanggalFilter)
+                          );
+                          const hasil = match?.status === "selesai" ? getHasilMatch(match.match) : null;
 
-                                              if (!match.match.scoreRuleId) {
-                                                setShowRuleModal(true);
-                                              } else {
-                                                setManualWinnerMatch(match.match);
-                                              }
-
-                                              setOpenMenuId(null);
-                                            }}
-                                            className="block w-full text-left px-3.5 py-2 hover:bg-slate-50 hover:text-slate-900 text-xs font-bold text-slate-700 border-b border-slate-50 transition-colors"
-                                          >
-                                            Input Pemenang
-                                          </button>
-                                        )}
-                                        {(role === "admin" || role === "panitia") && (
-                                          <button 
-                                            onClick={() => { handleDeleteJadwal(match.id); setOpenMenuId(null); }} 
-                                            className="block w-full text-left px-3.5 py-2 hover:bg-rose-50 hover:text-rose-600 text-xs font-bold text-rose-600 transition-colors"
-                                          >
-                                            Hapus Jadwal
-                                          </button>
-                                        )}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                <div className="flex flex-col h-full">
-                                  {/* Bagan Name */}
-                                  <div className="inline-block self-start mb-2 pr-7">
-                                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60 truncate block max-w-[150px]">
-                                      {match.match?.bagan?.nama || 'Tournament'}
-                                    </span>
-                                  </div>
+                          return (
+                            <td key={lap} className="py-2 align-top">
+                              {match ? (
+                                <div className="h-full bg-white border border-slate-200/80 hover:border-amber-400 hover:shadow-md rounded-2xl p-4 transition-all relative group/card flex flex-col justify-between">
                                   
-                                  {/* Nama Tim / Peserta */}
-                                  <div className="space-y-1.5 mb-3">
-                                    <p className="font-extrabold text-slate-900 text-xs leading-snug line-clamp-2">
-                                      {match.match?.doubleTeam1?.namaTim || match.match?.peserta1?.namaLengkap || 'TBD'}
-                                    </p>
-                                    <div className="flex items-center gap-2">
-                                      <div className="h-[1px] flex-1 bg-slate-100"></div>
-                                      <span className="text-[9px] font-black text-slate-300 uppercase tracking-wider">VS</span>
-                                      <div className="h-[1px] flex-1 bg-slate-100"></div>
-                                    </div>
-                                    <p className="font-extrabold text-slate-900 text-xs leading-snug line-clamp-2">
-                                      {match.match?.doubleTeam2?.namaTim || match.match?.peserta2?.namaLengkap || 'TBD'}
-                                    </p>
-                                  </div>
+                                  {/* Menu Admin (⋮) */}
+                                  {canManage && (
+                                    <div className="absolute top-3 right-3 z-30">
+                                      <button
+                                        onClick={() => setOpenMenuId(openMenuId === match.id ? null : match.id)}
+                                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-slate-100 text-slate-400 hover:text-slate-800 hover:bg-slate-200/80 transition-all shadow-xs"
+                                      >
+                                        <MoreVertical size={15} />
+                                      </button>
+                                      
+                                      {openMenuId === match.id && (
+                                        <div className="absolute right-0 mt-1 bg-white rounded-xl shadow-xl z-50 min-w-[140px] overflow-hidden border border-slate-100 py-1">
+                                          {canManage && (
+                                            <button 
+                                              onClick={() => { handleEditClick(match); setOpenMenuId(null); }} 
+                                              className="block w-full text-left px-3.5 py-2 hover:bg-amber-50 hover:text-amber-700 text-xs font-bold text-slate-700 border-b border-slate-50 transition-colors"
+                                            >
+                                              Edit Jadwal
+                                            </button>
+                                          )}
+                                          {match.status !== "selesai" && canManage && (
+                                            <button 
+                                              onClick={() => {
+                                                setPendingJadwal(match);
+                                                setRuleMode("manual");
 
-                                  {/* Skor & Pemenang */}
-                                  {hasil && (
-                                    <div className="mt-1 mb-2 p-2 bg-slate-50/80 rounded-xl border border-slate-200/60">
-                                      <div className="flex items-center justify-center gap-2 text-xs font-extrabold">
-                                        <span className={hasil.p1Won ? "text-emerald-600 font-black" : "text-slate-400"}>
-                                          {match.match.score1 ?? 0}
-                                        </span>
-                                        <span className="text-[9px] text-slate-300 font-bold uppercase">SET</span>
-                                        <span className={hasil.p2Won ? "text-emerald-600 font-black" : "text-slate-400"}>
-                                          {match.match.score2 ?? 0}
-                                        </span>
-                                      </div>
-                                      {hasil.winnerName && (
-                                        <p className="text-center text-[10px] font-black text-amber-700 bg-amber-50/80 border border-amber-200/50 rounded-lg py-0.5 px-1.5 mt-1 truncate">
-                                          🏆 {hasil.winnerName}
-                                        </p>
+                                                if (!match.match.scoreRuleId) {
+                                                  setShowRuleModal(true);
+                                                } else {
+                                                  setManualWinnerMatch(match.match);
+                                                }
+
+                                                setOpenMenuId(null);
+                                              }} 
+                                              className="block w-full text-left px-3.5 py-2 hover:bg-slate-50 hover:text-slate-900 text-xs font-bold text-slate-700 border-b border-slate-50 transition-colors"
+                                            >
+                                              Input Pemenang
+                                            </button>
+                                          )}
+                                          {canManage && (
+                                            <button 
+                                              onClick={() => { handleDeleteJadwal(match.id); setOpenMenuId(null); }} 
+                                              className="block w-full text-left px-3.5 py-2 hover:bg-rose-50 hover:text-rose-600 text-xs font-bold text-rose-600 transition-colors"
+                                            >
+                                              Hapus Jadwal
+                                            </button>
+                                          )}
+                                        </div>
                                       )}
                                     </div>
                                   )}
 
-                                  {/* Card Footer: Status & Action Button */}
-                                  <div className="mt-auto pt-2.5 border-t border-slate-100 flex flex-col gap-2">
-                                    <div className="flex items-center justify-between">
-                                      <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
-                                        ${match.status === "selesai" ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" : 
-                                          match.status === "berlangsung" ? "bg-amber-50 text-amber-700 border border-amber-200/60 animate-pulse" : 
-                                          "bg-slate-100 text-slate-600 border border-slate-200/60"}`}
-                                      >
-                                        {match.status}
+                                  <div className="flex flex-col h-full">
+                                    {/* Bagan Name */}
+                                    <div className="inline-block self-start mb-2 pr-7">
+                                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/60 truncate block max-w-[150px]">
+                                        {match.match?.bagan?.nama || 'Tournament'}
                                       </span>
                                     </div>
+                                    
+                                    {/* Nama Tim / Peserta */}
+                                    <div className="space-y-1.5 mb-3">
+                                      <p className="font-extrabold text-slate-900 text-xs leading-snug line-clamp-2">
+                                        {match.match?.doubleTeam1?.namaTim || match.match?.peserta1?.namaLengkap || 'TBD'}
+                                      </p>
+                                      <div className="flex items-center gap-2">
+                                        <div className="h-[1px] flex-1 bg-slate-100"></div>
+                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-wider">VS</span>
+                                        <div className="h-[1px] flex-1 bg-slate-100"></div>
+                                      </div>
+                                      <p className="font-extrabold text-slate-900 text-xs leading-snug line-clamp-2">
+                                        {match.match?.doubleTeam2?.namaTim || match.match?.peserta2?.namaLengkap || 'TBD'}
+                                      </p>
+                                    </div>
 
-                                    {/* Action Buttons */}
-                                    {["admin", "panitia", "wasit"].includes(role) && (
-                                      <div>
-                                        {(match.status === "terjadwal" || match.status === "belum" || match.status === "aktif") && (
-                                          <button
-                                            onClick={() => handleUpdateStatus(match.id, "berlangsung")}
-                                            className="w-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[10px] font-bold rounded-lg py-1.5 transition-all flex items-center justify-center gap-1.5 shadow-xs"
-                                          >
-                                            <Play size={12} className="fill-white" />
-                                            <span>MULAI</span>
-                                          </button>
-                                        )}
-
-                                        {match.status === "berlangsung" && (
-                                          <button
-                                            onClick={() => {
-                                              setPendingJadwal(match);
-                                              setRuleMode("wasit");
-
-                                              if (!match.match.scoreRuleId) {
-                                                setShowRuleModal(true);
-                                              } else {
-                                                openRefereePanel(match);
-                                              }
-                                            }}
-                                            className="w-full bg-slate-800 hover:bg-slate-900 active:scale-95 text-white text-[10px] font-bold rounded-lg py-1.5 transition-all flex items-center justify-center gap-1.5 shadow-xs"
-                                          >
-                                            <span>PANEL WASIT</span>
-                                          </button>
+                                    {/* Skor & Pemenang */}
+                                    {hasil && (
+                                      <div className="mt-1 mb-2 p-2 bg-slate-50/80 rounded-xl border border-slate-200/60">
+                                        <div className="flex items-center justify-center gap-2 text-xs font-extrabold">
+                                          <span className={hasil.p1Won ? "text-emerald-600 font-black" : "text-slate-400"}>
+                                            {match.match.score1 ?? 0}
+                                          </span>
+                                          <span className="text-[9px] text-slate-300 font-bold uppercase">SET</span>
+                                          <span className={hasil.p2Won ? "text-emerald-600 font-black" : "text-slate-400"}>
+                                            {match.match.score2 ?? 0}
+                                          </span>
+                                        </div>
+                                        {hasil.winnerName && (
+                                          <p className="text-center text-[10px] font-black text-amber-700 bg-amber-50/80 border border-amber-200/50 rounded-lg py-0.5 px-1.5 mt-1 truncate">
+                                            🏆 {hasil.winnerName}
+                                          </p>
                                         )}
                                       </div>
                                     )}
+
+                                    {/* Card Footer: Status & Action Button */}
+                                    <div className="mt-auto pt-2.5 border-t border-slate-100 flex flex-col gap-2">
+                                      <div className="flex items-center justify-between">
+                                        <span className={`px-2.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider
+                                          ${match.status === "selesai" ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" : 
+                                            match.status === "berlangsung" ? "bg-amber-50 text-amber-700 border border-amber-200/60 animate-pulse" : 
+                                            "bg-slate-100 text-slate-600 border border-slate-200/60"}`}
+                                        >
+                                          {match.status}
+                                        </span>
+                                      </div>
+
+                                      {/* Action Buttons */}
+                                      {canManage && (
+                                        <div>
+                                          {(match.status === "terjadwal" || match.status === "belum" || match.status === "aktif") && (
+                                            <button
+                                              onClick={() => handleUpdateStatus(match.id, "berlangsung")}
+                                              className="w-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-[10px] font-bold rounded-lg py-1.5 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                                            >
+                                              <Play size={12} className="fill-white" />
+                                              <span>MULAI</span>
+                                            </button>
+                                          )}
+
+                                          {match.status === "berlangsung" && (
+                                            <button
+                                              onClick={() => {
+                                                setPendingJadwal(match);
+                                                setRuleMode("wasit");
+
+                                                if (!match.match.scoreRuleId) {
+                                                  setShowRuleModal(true);
+                                                } else {
+                                                  openRefereePanel(match);
+                                                }
+                                              }}
+                                              className="w-full bg-slate-800 hover:bg-slate-900 active:scale-95 text-white text-[10px] font-bold rounded-lg py-1.5 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                                            >
+                                              <span>PANEL WASIT</span>
+                                            </button>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ) : (
-                              /* Slot Kosong */
-                              <div className="h-full flex items-center justify-center py-8 opacity-20">
-                                <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                              </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+                              ) : (
+                                /* Slot Kosong */
+                                <div className="h-full flex items-center justify-center py-8 opacity-20">
+                                  <div className="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+
+          {/* ===== TAMPILAN JADWAL (CARD FEED MOBILE) ===== */}
+          <div className="block md:hidden space-y-4 mb-8">
+            {/* Filter Lapangan Chips (Mobile) */}
+            {lapanganList.length > 1 && (
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedLapanganFilter('')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                    !selectedLapanganFilter
+                      ? 'bg-amber-500 text-white shadow-2xs'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80'
+                  }`}
+                >
+                  Semua Lapangan
+                </button>
+                {lapanganList.map((lap) => (
+                  <button
+                    key={lap}
+                    type="button"
+                    onClick={() => setSelectedLapanganFilter(lap)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                      selectedLapanganFilter === lap
+                        ? 'bg-amber-500 text-white shadow-2xs'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/80'
+                    }`}
+                  >
+                    {lap}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* List Pertandingan Mobile */}
+            {filteredJadwalMobile.length === 0 ? (
+              <div className="py-12 px-4 text-center bg-white rounded-2xl border border-dashed border-slate-200">
+                <Calendar size={32} className="text-slate-300 mx-auto mb-2.5" />
+                <h4 className="text-sm font-bold text-slate-700">Tidak Ada Jadwal</h4>
+                <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
+                  {selectedLapanganFilter || selectedTanggalFilter
+                    ? "Tidak ada pertandingan yang cocok dengan filter yang dipilih."
+                    : "Belum ada jadwal pertandingan yang ditambahkan."}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredJadwalMobile.map((item) => {
+                  const hasil = item.status === "selesai" ? getHasilMatch(item.match) : null;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition-all p-4 relative"
+                    >
+                      {/* Menu Admin (⋮) */}
+                      {canManage && (
+                        <div className="absolute top-3.5 right-3.5 z-30">
+                          <button
+                            type="button"
+                            onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200/80 transition-all shadow-2xs"
+                          >
+                            <MoreVertical size={16} />
+                          </button>
+
+                          {openMenuId === item.id && (
+                            <div className="absolute right-0 mt-1 bg-white rounded-xl shadow-xl z-50 min-w-[150px] overflow-hidden border border-slate-100 py-1">
+                              {canManage && (
+                                <button 
+                                  type="button"
+                                  onClick={() => { handleEditClick(item); setOpenMenuId(null); }} 
+                                  className="block w-full text-left px-3.5 py-2 hover:bg-amber-50 hover:text-amber-700 text-xs font-bold text-slate-700 border-b border-slate-50 transition-colors"
+                                >
+                                  Edit Jadwal
+                                </button>
+                              )}
+                              {item.status !== "selesai" && canManage && (
+                                <button 
+                                  type="button"
+                                  onClick={() => {
+                                    setPendingJadwal(item);
+                                    setRuleMode("manual");
+                                    if (!item.match.scoreRuleId) {
+                                      setShowRuleModal(true);
+                                    } else {
+                                      setManualWinnerMatch(item.match);
+                                    }
+                                    setOpenMenuId(null);
+                                  }} 
+                                  className="block w-full text-left px-3.5 py-2 hover:bg-slate-50 hover:text-slate-900 text-xs font-bold text-slate-700 border-b border-slate-50 transition-colors"
+                                >
+                                  Input Pemenang
+                                </button>
+                              )}
+                              {canManage && (
+                                <button 
+                                  type="button"
+                                  onClick={() => { handleDeleteJadwal(item.id); setOpenMenuId(null); }} 
+                                  className="block w-full text-left px-3.5 py-2 hover:bg-rose-50 hover:text-rose-600 text-xs font-bold text-rose-600 transition-colors"
+                                >
+                                  Hapus Jadwal
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Header Info: Jam + Lapangan + Status */}
+                      <div className="flex flex-wrap items-center gap-2 mb-2.5 pr-10">
+                        {/* Jam Badge */}
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 text-white font-extrabold text-xs shadow-2xs">
+                          <Clock size={12} className="text-amber-400" />
+                          <span>{item.waktuMulai ? item.waktuMulai.slice(11, 16) : '-'}</span>
+                        </span>
+
+                        {/* Lapangan Badge */}
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-200/70 font-bold text-xs">
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                          <span>{item.lapangan?.nama || "Lapangan"}</span>
+                        </span>
+
+                        {/* Status Badge */}
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider
+                          ${item.status === "selesai" ? "bg-emerald-50 text-emerald-700 border border-emerald-200/60" : 
+                            item.status === "berlangsung" ? "bg-amber-50 text-amber-700 border border-amber-200/60 animate-pulse" : 
+                            "bg-slate-100 text-slate-600 border border-slate-200/60"}`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+
+                      {/* Bagan Category */}
+                      {item.match?.bagan?.nama && (
+                        <div className="mb-2.5">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                            {item.match.bagan.nama}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Opponents Matchup */}
+                      <div className="bg-slate-50/80 p-3 rounded-xl border border-slate-100 space-y-2 mb-2.5">
+                        {/* Side 1 */}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`font-bold text-xs sm:text-sm truncate ${hasil?.p1Won ? "text-emerald-700 font-extrabold" : "text-slate-800"}`}>
+                            {item.match?.doubleTeam1?.namaTim || item.match?.peserta1?.namaLengkap || 'TBD'}
+                          </p>
+                          {hasil?.p1Won && (
+                            <span className="shrink-0 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase">
+                              Menang
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <div className="h-[1px] flex-1 bg-slate-200/60"></div>
+                          <span className="text-[9px] font-black text-slate-400">VS</span>
+                          <div className="h-[1px] flex-1 bg-slate-200/60"></div>
+                        </div>
+
+                        {/* Side 2 */}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className={`font-bold text-xs sm:text-sm truncate ${hasil?.p2Won ? "text-emerald-700 font-extrabold" : "text-slate-800"}`}>
+                            {item.match?.doubleTeam2?.namaTim || item.match?.peserta2?.namaLengkap || 'TBD'}
+                          </p>
+                          {hasil?.p2Won && (
+                            <span className="shrink-0 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[9px] font-black uppercase">
+                              Menang
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Skor & Pemenang (jika ada) */}
+                      {hasil && (
+                        <div className="mb-2.5 p-2 bg-slate-100/70 rounded-xl border border-slate-200/60 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 text-xs font-black">
+                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">SKOR:</span>
+                            <span className={hasil.p1Won ? "text-emerald-600 font-black" : "text-slate-500"}>
+                              {item.match.score1 ?? 0}
+                            </span>
+                            <span className="text-slate-300">-</span>
+                            <span className={hasil.p2Won ? "text-emerald-600 font-black" : "text-slate-500"}>
+                              {item.match.score2 ?? 0}
+                            </span>
+                          </div>
+                          {hasil.winnerName && (
+                            <p className="text-[10px] font-black text-amber-700 bg-amber-50 border border-amber-200/50 rounded-lg py-0.5 px-2 truncate max-w-[170px]">
+                              🏆 {hasil.winnerName}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Admin/Wasit Action Buttons */}
+                      {canManage && (
+                        <div className="pt-2 border-t border-slate-100">
+                          {(item.status === "terjadwal" || item.status === "belum" || item.status === "aktif") && (
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateStatus(item.id, "berlangsung")}
+                              className="w-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white text-xs font-bold rounded-xl py-2.5 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                            >
+                              <Play size={13} className="fill-white" />
+                              <span>MULAI PERTANDINGAN</span>
+                            </button>
+                          )}
+
+                          {item.status === "berlangsung" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPendingJadwal(item);
+                                setRuleMode("wasit");
+                                if (!item.match.scoreRuleId) {
+                                  setShowRuleModal(true);
+                                } else {
+                                  openRefereePanel(item);
+                                }
+                              }}
+                              className="w-full bg-slate-800 hover:bg-slate-900 active:scale-95 text-white text-xs font-bold rounded-xl py-2.5 transition-all flex items-center justify-center gap-1.5 shadow-xs"
+                            >
+                              <span>PANEL WASIT</span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
       ) : (
         <div className="py-16 text-center bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 mb-8">
           <Calendar size={36} className="text-slate-300 mx-auto mb-3" />
@@ -760,7 +1008,7 @@ const groupedJadwal = [...jadwal]
       )}
 
       {/* ===== MODAL FORM BUAT / EDIT JADWAL ===== */}
-      {isFormModalOpen && (role === "admin" || role === "panitia") && (
+      {isFormModalOpen && canManage && (
         <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 animate-in fade-in duration-200">
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
             

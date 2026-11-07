@@ -18,7 +18,7 @@ import AlertMessage from "../components/AlertMessage";
 import SlidingTabs from "../components/SlidingTabs";
 import api from "../api";
 
-export default function BaganPage({ onSelectBagan }) {
+export default function BaganPage({ onSelectBagan, readOnly = false }) {
   const [kelompokUmurList, setKelompokUmurList] = useState([]);
   const [selectedKelompok, setSelectedKelompok] = useState("");
   const [selectedKategori, setSelectedKategori] = useState("single");
@@ -39,7 +39,7 @@ export default function BaganPage({ onSelectBagan }) {
   const navigate = useNavigate();
   const isSelectorMode = !!onSelectBagan;
 
-  const isAdmin = role === "admin" || role === "panitia";
+  const isAdmin = !readOnly && (role === "admin" || role === "panitia");
 
   const fetchBagan = async () => {
     try {
@@ -132,9 +132,6 @@ export default function BaganPage({ onSelectBagan }) {
   const filteredData = baganList
     .filter((b) => filterKategori === "all" || b.kategori === filterKategori)
     .sort((a, b) => a.kelompokUmurId - b.kelompokUmurId);
-
-  const singleCount = baganList.filter((b) => b.kategori === "single").length;
-  const doubleCount = baganList.filter((b) => b.kategori === "double").length;
 
   return (
     <div className="w-full space-y-4">
@@ -267,7 +264,7 @@ export default function BaganPage({ onSelectBagan }) {
               className="group bg-white rounded-2xl border border-slate-200/80 shadow-xs hover:border-amber-300/60 hover:shadow-sm transition-all duration-200 cursor-pointer"
               onClick={() => handleViewDetail(bagan.id)}
             >
-              <div className="flex items-center justify-between p-4 sm:p-5">
+              <div className="flex items-center justify-between p-3.5 sm:p-5">
                 {/* Kiri: Icon + Info */}
                 <div className="flex items-center gap-3.5 min-w-0">
                   {/* Avatar Bagan */}

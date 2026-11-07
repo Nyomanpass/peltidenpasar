@@ -10,7 +10,7 @@ function TournamentUser() {
       <Navbar />
 
       {/* HERO BANNER RESPONSIF (Persis seperti Halaman About Us) */}
-      <div className="relative w-full aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4] min-h-[220px] max-h-[450px] mt-[65px] sm:mt-[75px] overflow-hidden">
+      <div className="relative w-full aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4] min-h-[250px] sm:min-h-[280px] max-h-[450px] overflow-hidden">
         {/* Foto Hero */}
         <img
           src="/hero.jpg"
@@ -22,7 +22,7 @@ function TournamentUser() {
         <div className="absolute inset-0 bg-black/60"></div>
 
         {/* Konten Teks di Tengah */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center text-white">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pt-12 sm:pt-14 px-4 text-center text-white">
           {/* Sub-label Kuning Atas */}
           <span className="text-yellow-400 font-bold text-xs sm:text-sm tracking-widest uppercase mb-1 drop-shadow">
             PELTI Denpasar
@@ -34,7 +34,7 @@ function TournamentUser() {
           </h1>
 
           {/* Deskripsi Singkat */}
-          <p className="text-gray-200 text-xs sm:text-sm max-w-lg mt-1.5 opacity-90 hidden sm:block">
+          <p className="text-gray-200 text-xs sm:text-sm max-w-xs sm:max-w-lg mt-1.5 opacity-90 block">
             Panggung resmi untuk membuktikan kualitas atlet, meraih poin
             ranking kota, dan mengikuti seleksi menuju kejuaraan provinsi.
           </p>

@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { 
   MapPin, Phone, Mail, Facebook, Instagram 
 } from "lucide-react";
@@ -37,12 +38,20 @@ export default function Footer() {
             Navigasi
           </h2>
           <ul className="space-y-2 text-[11px] sm:text-sm">
-            {["Beranda", "Turnamen", "Bagan", "Jadwal", "Kontak"].map((item, i) => (
-              <li 
-                key={i} 
-                className="hover:text-yellow-400 transition cursor-pointer"
-              >
-                {item}
+            {[
+              { name: "Beranda", path: "/" },
+              { name: "Turnamen", path: "/tournament" },
+              { name: "Berita", path: "/berita" },
+              { name: "Atlet", path: "/atlet" },
+              { name: "Kontak", path: "/contact" },
+            ].map((item) => (
+              <li key={item.name}>
+                <Link
+                  to={item.path}
+                  className="hover:text-yellow-400 transition"
+                >
+                  {item.name}
+                </Link>
               </li>
             ))}
           </ul>

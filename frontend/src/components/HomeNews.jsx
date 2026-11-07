@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Calendar, Newspaper } from "lucide-react";
+import { Link } from "react-router-dom";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import api from "../api";
 
 export default function HomeNews() {
@@ -11,7 +12,6 @@ export default function HomeNews() {
     const fetchNews = async () => {
       try {
         const res = await api.get("/news/get");
-        console.log("Data berita dari backend:", res.data); // Cek data di Console browser (F12)
         setNews(res.data || []);
       } catch (err) {
         console.error("Gagal mengambil data berita:", err);
@@ -24,118 +24,184 @@ export default function HomeNews() {
 
   if (loading || news.length === 0) return null;
 
-  const displayedNews = news.slice(0, 3);
+  const [featured, ...rest] = news;
+  const sideNews = rest.slice(0, 3);
+  const moreNews = rest.slice(3, 6);
 
   const stripHtml = (html) => {
     if (!html) return "";
     const div = document.createElement("div");
     div.innerHTML = html;
-    return div.textContent || div.innerText || "";
+    return (div.textContent || div.innerText || "").trim();
   };
 
+  const getImageUrl = (rawImage) => {
+    const fallback =
+      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&q=80&w=1200";
+
+    if (!rawImage || rawImage.trim() === "") return fallback;
+    if (rawImage.startsWith("http://") || rawImage.startsWith("https://")) {
+      return rawImage;
+    }
+    const cleanPath = rawImage.startsWith("/") ? rawImage : `/${rawImage}`;
+    return `${BASE_URL}${cleanPath}`;
+  };
+
+  const formatDate = (value, withYear = true) => {
+    if (!value) return "Terbaru";
+    const date = new Date(value);
+    if (isNaN(date)) return "Terbaru";
+    return date.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      ...(withYear ? { year: "numeric" } : {}),
+    });
+  };
+
+  const articlePath = (item) => `/berita/${item.slug || item.idNews}`;
+
   return (
-    <section className="py-16 sm:py-24 bg-gradient-to-b from-white via-gray-50 to-white">
+    <section className="pt-2 sm:pt-4 pb-12 sm:pb-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-yellow-500/10 text-yellow-700 border border-yellow-500/20 text-xs font-bold uppercase tracking-widest mb-3">
-              <Newspaper className="w-4 h-4 text-yellow-600" />
-              Warta & Informasi Resmi
-            </div>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
-              Berita Terbaru
-            </h2>
-          </div>
-          <a
-            href="/berita"
-            className="mt-4 md:mt-0 inline-flex items-center gap-2 text-sm font-bold text-gray-900 hover:text-yellow-600 transition-colors group"
-          >
-            <span>Lihat Semua Berita</span>
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </a>
+        {/* MASTHEAD */}
+        <div className="text-center mb-8 sm:mb-10">
+          <p className="text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-yellow-600 mb-1.5 sm:mb-2">
+            PELTI DENPASAR
+          </p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 tracking-tight leading-tight">
+            Berita Terbaru
+          </h2>
         </div>
 
-        {/* Grid 3 Kolom */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {displayedNews.map((item, index) => {
-            const rawImage = item.image;
-            
-            // Log untuk melihat path gambar per item berita di Console
-            console.log(`Berita "${item.title}" - image field:`, rawImage);
+        {/* UTAMA: BERITA PILIHAN + DAFTAR */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+          {/* BERITA UTAMA */}
+          <article className="lg:col-span-7">
+            <Link to={articlePath(featured)} className="group block">
+              <div className="relative aspect-[16/10] overflow-hidden rounded-2xl bg-gray-100">
+                <img
+                  src={getImageUrl(featured.image)}
+                  alt={featured.title}
+                  className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                  loading="eager"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src =
+                      "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&q=80&w=1200";
+                  }}
+                />
+              </div>
 
-            let imageUrl = 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&q=80&w=600';
-            if (rawImage && rawImage.trim() !== "") {
-              if (rawImage.startsWith('http://') || rawImage.startsWith('https://')) {
-                imageUrl = rawImage;
-              } else {
-                const cleanPath = rawImage.startsWith('/') ? rawImage : `/${rawImage}`;
-                imageUrl = `${BASE_URL}${cleanPath}`;
-              }
-            }
+              <div className="pt-5">
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                  <time>{formatDate(featured.tanggalUpload || featured.createdAt)}</time>
+                </div>
 
-            return (
-              <article
-                key={item.idNews || index}
-                className="group bg-white rounded-3xl shadow-sm hover:shadow-2xl border border-gray-100 transition-all duration-300 flex flex-col overflow-hidden justify-between"
-              >
-                <div>
-                  {/* Gambar Berita */}
-                  <div className="relative w-full overflow-hidden aspect-[16/10] bg-gray-100">
-                    <img
-                      src={imageUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-                      onError={(e) => {
-                        console.error(`Gagal memuat gambar dari URL: ${imageUrl}`);
-                        e.target.src = 'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&q=80&w=600';
-                      }}
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                  </div>
+                <h3 className="mt-3 text-2xl sm:text-3xl lg:text-[2.15rem] font-black leading-[1.12] tracking-tight text-gray-900 transition-colors group-hover:text-yellow-600">
+                  {featured.title}
+                </h3>
 
-                  {/* Konten Berita */}
-                  <div className="p-6 sm:p-7 flex flex-col">
-                    <div className="flex items-center gap-2 text-xs text-yellow-700 font-bold mb-3 bg-yellow-50 px-3 py-1 rounded-full w-fit border border-yellow-200/60">
-                      <Calendar className="w-3.5 h-3.5 text-yellow-600" />
-                      <time>
-                        {item.tanggalUpload || item.createdAt
-                          ? new Date(item.tanggalUpload || item.createdAt).toLocaleDateString("id-ID", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                            })
-                          : "Terbaru"}
-                      </time>
+                <p className="mt-3 text-sm sm:text-base leading-relaxed text-gray-600 line-clamp-3">
+                  {stripHtml(featured.desc || featured.content)}
+                </p>
+
+                <span className="mt-5 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-gray-900 transition-colors group-hover:text-yellow-600">
+                  Baca Artikel
+                  <ArrowUpRight className="w-4 h-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                </span>
+              </div>
+            </Link>
+          </article>
+
+          {/* DAFTAR BERITA */}
+          {sideNews.length > 0 && (
+            <aside className="lg:col-span-5 lg:pl-6 xl:lg:pl-8">
+              <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-gray-400 mb-2">
+                Berita Lainnya
+              </p>
+
+              <div className="divide-y divide-gray-200">
+                {sideNews.map((item, index) => (
+                  <Link
+                    key={item.idNews || item.slug || index}
+                    to={articlePath(item)}
+                    className="group flex items-center gap-4 py-5 first:pt-4"
+                  >
+                    <div className="w-24 sm:w-28 shrink-0 aspect-[4/3] overflow-hidden rounded-xl bg-gray-100">
+                      <img
+                        src={getImageUrl(item.image)}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src =
+                            "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&q=80&w=600";
+                        }}
+                      />
                     </div>
 
-                    <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 group-hover:text-yellow-600 transition-colors line-clamp-2 leading-snug">
-                      {item.title}
-                    </h3>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                        <time>{formatDate(item.tanggalUpload || item.createdAt, false)}</time>
+                      </div>
 
-                    <p className="text-xs sm:text-sm text-gray-500 mt-3 line-clamp-3 leading-relaxed">
-                      {stripHtml(item.desc || item.content)}
-                    </p>
-                  </div>
-                </div>
+                      <h4 className="mt-1.5 text-[15px] sm:text-base font-bold leading-snug text-gray-900 line-clamp-3 transition-colors group-hover:text-yellow-600">
+                        {item.title}
+                      </h4>
+                    </div>
+                  </Link>
+                ))}
+              </div>
 
-                {/* Tombol Aksi */}
-                <div className="px-6 pb-7 pt-0">
-                  <a
-                    href={`/berita/${item.slug || item.idNews}`}
-                    className="inline-flex items-center justify-between text-xs sm:text-sm font-extrabold text-black group-hover:text-yellow-600 transition-colors bg-yellow-400/20 hover:bg-yellow-400/40 px-4 py-3 rounded-2xl w-full"
-                  >
-                    <span>Baca Selengkapnya</span>
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                  </a>
-                </div>
-              </article>
-            );
-          })}
+              <Link
+                to="/berita"
+                className="mt-6 inline-flex items-center gap-2 rounded-full border border-gray-900 px-6 py-2.5 text-xs font-bold uppercase tracking-[0.15em] text-gray-900 hover:bg-yellow-500 hover:border-yellow-500 hover:text-black transition-all duration-300 group"
+              >
+                Semua Berita
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Link>
+            </aside>
+          )}
         </div>
 
+        {/* BERITA TAMBAHAN */}
+        {moreNews.length > 0 && (
+          <div className="mt-10 sm:mt-12 pt-8 border-t border-gray-200">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-6">
+              {moreNews.map((item, index) => (
+                <Link
+                  key={item.idNews || item.slug || index}
+                  to={articlePath(item)}
+                  className="group flex items-start gap-4"
+                >
+                  <div className="w-20 sm:w-24 shrink-0 aspect-square overflow-hidden rounded-xl bg-gray-100">
+                    <img
+                      src={getImageUrl(item.image)}
+                      alt={item.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src =
+                          "https://images.unsplash.com/photo-1554068865-24cecd4e34b8?auto=format&fit=crop&q=80&w=400";
+                      }}
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <time className="text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400">
+                      {formatDate(item.tanggalUpload || item.createdAt, false)}
+                    </time>
+                    <h4 className="mt-1 text-sm font-bold leading-snug text-gray-900 line-clamp-2 transition-colors group-hover:text-yellow-600">
+                      {item.title}
+                    </h4>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

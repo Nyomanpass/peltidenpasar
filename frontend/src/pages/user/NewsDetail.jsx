@@ -78,7 +78,7 @@ export default function NewsDetail() {
       <Navbar />
 
       {/* HERO BANNER RESPONSIF */}
-      <div className="relative w-full aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4] min-h-[220px] max-h-[450px] mt-[65px] sm:mt-[75px] overflow-hidden">
+      <div className="relative w-full aspect-[16/6] sm:aspect-[16/5] md:aspect-[16/4] min-h-[250px] sm:min-h-[280px] max-h-[450px] overflow-hidden">
         <img
           src="/hero.jpg"
           alt="Berita PELTI Denpasar"
@@ -86,7 +86,7 @@ export default function NewsDetail() {
         />
         <div className="absolute inset-0 bg-black/60"></div>
 
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center text-white">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pt-12 sm:pt-14 px-4 text-center text-white">
           <span className="text-yellow-400 font-bold text-xs sm:text-sm tracking-widest uppercase mb-1 drop-shadow">
             PELTI Denpasar
           </span>
