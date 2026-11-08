@@ -258,10 +258,10 @@ export default function Navbar({ variant = "overlay" }) {
         id="mobile-drawer"
         aria-hidden={!menuOpen}
         inert={!menuOpen ? "" : undefined}
-        className={`lg:hidden fixed inset-y-0 right-0 z-[90] flex w-[84%] max-w-[340px] flex-col overflow-hidden border-l border-white/10 bg-white shadow-[-24px_0_60px_-20px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`lg:hidden fixed inset-y-0 right-0 z-[90] flex w-[84%] max-w-[340px] flex-col overflow-hidden border-l border-white/10 bg-white transition-[transform,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           menuOpen
-            ? "translate-x-0"
-            : "pointer-events-none translate-x-full"
+            ? "translate-x-0 shadow-[-24px_0_60px_-20px_rgba(0,0,0,0.45)]"
+            : "pointer-events-none translate-x-full shadow-none"
         }`}
       >
         {/* DRAWER HEADER */}
