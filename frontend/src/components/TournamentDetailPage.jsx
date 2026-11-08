@@ -1,9 +1,7 @@
 // File: src/components/TournamentDetailPage.jsx
 
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-// 💡 Tambahkan 'Search' di import lucide-react
-import { Trophy, Users, GitBranch, CalendarDays, BarChart, Medal, User, Users2, Search } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Trophy, Users, GitBranch, CalendarDays, BarChart, Medal, User, Users2, Search, ChevronRight } from 'lucide-react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
@@ -32,13 +30,49 @@ const TournamentDetailPage = () => {
     // --- STATE MANAGEMENT ---
     const [activeTab, setActiveTab] = useState(TABS.PESERTA);
     const [subTabPeserta, setSubTabPeserta] = useState('single');
-    const [tournamentData, setTournamentData] = useState(null);
     
     // 💡 Definisikan searchTerm agar tidak error ReferenceError
     const [searchTerm, setSearchTerm] = useState("");
 
+    // State untuk kontrol scroll tab navigasi di mobile
+    const tabNavRef = useRef(null);
+    const [canScrollRight, setCanScrollRight] = useState(true);
+
+    const checkTabScroll = () => {
+        if (tabNavRef.current) {
+            const { scrollLeft, scrollWidth, clientWidth } = tabNavRef.current;
+            setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 8);
+        }
+    };
+
+    useEffect(() => {
+        // Cek scroll awal setelah render
+        const timer = setTimeout(checkTabScroll, 100);
+        window.addEventListener('resize', checkTabScroll);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', checkTabScroll);
+        };
+    }, []);
+
+    const scrollTabs = (direction) => {
+        if (tabNavRef.current) {
+            const amount = direction === 'left' ? -150 : 150;
+            tabNavRef.current.scrollBy({ left: amount, behavior: 'smooth' });
+            setTimeout(checkTabScroll, 200);
+        }
+    };
+
+    const handleSelectTab = (tabId, e) => {
+        setActiveTab(tabId);
+        if (e?.currentTarget) {
+            e.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+        setTimeout(checkTabScroll, 200);
+    };
+
     // Nama tournament diambil dari data state atau localStorage
-    const currentTournamentName = tournamentData?.name || selectedTournamentName || "Tournament";
+    const currentTournamentName = selectedTournamentName || "Tournament";
 
     const renderContent = () => {
         if (!selectedTournamentId) {
@@ -140,26 +174,26 @@ const TournamentDetailPage = () => {
 
                         {/* --- ISI KONTEN (Tabel Peserta) --- */}
                         {subTabPeserta === 'single' ? (
-                            <PesertaView tournamentId={selectedTournamentId} searchTerm={searchTerm} />
+                            <PesertaView tournamentId={selectedTournamentId} searchTerm={searchTerm} readOnly />
                         ) : (
-                            <PesertaGanda tournamentId={selectedTournamentId} searchTerm={searchTerm} />
+                            <PesertaGanda tournamentId={selectedTournamentId} searchTerm={searchTerm} readOnly />
                         )}
                     </div>
                 );
                
             case TABS.BAGAN:
-                return <BaganSelectorParent tournamentId={selectedTournamentId} />;
+                return <BaganSelectorParent tournamentId={selectedTournamentId} readOnly />;
 
             case TABS.JADWAL:
-                return <JadwalPage tournamentId={selectedTournamentId} />;
+                return <JadwalPage tournamentId={selectedTournamentId} readOnly />;
 
             case TABS.SKOR:
-                return <SkorPage tournamentId={selectedTournamentId} />;
+                return <SkorPage tournamentId={selectedTournamentId} readOnly />;
 
             case TABS.HASIL:
-                return <JuaraPage tournamentId={selectedTournamentId} />;
+                return <JuaraPage tournamentId={selectedTournamentId} readOnly />;
             case TABS.SERTIFIKAT:
-                return <SertifikatPage tournamentId={selectedTournamentId} />;
+                return <SertifikatPage tournamentId={selectedTournamentId} readOnly />;
 
             default:
                 return null;
@@ -168,20 +202,20 @@ const TournamentDetailPage = () => {
 
     return (
         <>
-            <Navbar />
-            <div className="font-sans bg-gray-50 min-h-screen pt-24 pb-24 px-4 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto w-full">
+            <Navbar variant="solid" />
+            <div className="font-sans bg-gray-50 min-h-screen pt-20 sm:pt-24 pb-20 sm:pb-24 px-3 sm:px-6 lg:px-8 w-full max-w-full overflow-x-hidden">
+                <div className="max-w-7xl mx-auto w-full min-w-0">
                     {/* --- JUDUL UTAMA --- */}
-                    <header className="mb-4 mt-6 md:mt-16 sm:mb-8 px-4 py-4 sm:px-6 sm:py-6 bg-white rounded-xl shadow-lg border-t-4 border-yellow-500">
+                    <header className="mb-4 mt-4 sm:mt-6 md:mt-16 sm:mb-8 px-4 py-4 sm:px-6 sm:py-6 bg-white rounded-2xl shadow-sm sm:shadow-lg border-t-4 border-yellow-500">
                         <div className="flex items-center gap-3 sm:gap-5">
-                            <div className="bg-yellow-100 p-2 sm:p-3 rounded-lg">
+                            <div className="bg-yellow-100 p-2 sm:p-3 rounded-xl shrink-0">
                                 <Trophy className="text-yellow-600 w-5 h-5 sm:w-7 sm:h-7" />
                             </div>
-                            <div className="flex-1">
-                                <p className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase">
+                            <div className="flex-1 min-w-0">
+                                <p className="text-[10px] sm:text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                     Detail Turnamen
                                 </p>
-                                <h1 className="text-sm sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-gray-900 leading-tight">
+                                <h1 className="text-base sm:text-2xl md:text-3xl lg:text-4xl font-extrabold text-gray-900 leading-tight truncate">
                                     {selectedTournamentName || "Memuat Detail Turnamen..."}
                                 </h1>
                             </div>
@@ -189,8 +223,29 @@ const TournamentDetailPage = () => {
                     </header>
 
                     {/* --- TAB NAVIGASI --- */}
-                    <div className="mb-4 sm:mb-6">
-                        <nav className="flex flex-wrap justify-center gap-2 sm:gap-4" aria-label="Tabs">
+                    <div className="relative w-full max-w-full mb-4 sm:mb-6 overflow-hidden">
+                        {/* Icon Panah Fixed di Kanan Tab Navigasi Khusus Mobile */}
+                        <div
+                            className={`sm:hidden absolute right-0 top-0 bottom-1 flex items-center pr-1 pl-6 bg-gradient-to-l from-gray-50 via-gray-50/95 to-transparent z-20 transition-opacity duration-200 pointer-events-none ${
+                                canScrollRight ? "opacity-100" : "opacity-0"
+                            }`}
+                        >
+                            <button
+                                type="button"
+                                onClick={() => scrollTabs('right')}
+                                className="w-7 h-7 rounded-full bg-white shadow-md border border-gray-200/90 flex items-center justify-center text-yellow-600 pointer-events-auto active:scale-90 transition-transform"
+                                aria-label="Geser tab ke kanan"
+                            >
+                                <ChevronRight size={15} />
+                            </button>
+                        </div>
+
+                        <nav
+                            ref={tabNavRef}
+                            onScroll={checkTabScroll}
+                            className="w-full max-w-full overflow-x-auto no-scrollbar scroll-smooth flex sm:flex-wrap sm:justify-center items-center gap-1.5 sm:gap-4 pb-1 pr-10 sm:pr-0"
+                            aria-label="Tabs"
+                        >
                             {[
                                 { id: TABS.PESERTA, name: "Peserta", icon: Users },
                                 { id: TABS.BAGAN, name: "Bagan", icon: GitBranch },
@@ -201,19 +256,19 @@ const TournamentDetailPage = () => {
                             ].map((tab) => (
                                 <button
                                     key={tab.id}
-                                    onClick={() => setActiveTab(tab.id)}
+                                    onClick={(e) => handleSelectTab(tab.id, e)}
                                     className={`
                                         ${tab.id === activeTab
-                                            ? "border-yellow-500 text-yellow-600 bg-yellow-50 shadow-sm"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                                            ? "border-yellow-500 text-yellow-600 bg-yellow-50 shadow-xs font-black"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50 font-bold"
                                         }
-                                        w-[calc(33.333%-8px)] sm:w-auto
-                                        min-w-[90px] sm:min-w-[120px] lg:min-w-[150px]
+                                        shrink-0 sm:shrink sm:w-auto
+                                        min-w-[85px] sm:min-w-[120px] lg:min-w-[150px]
                                         flex items-center justify-center gap-1.5 sm:gap-2
-                                        px-3 sm:px-6 py-2.5 sm:py-3
+                                        px-3.5 sm:px-6 py-2.5 sm:py-3
                                         border-b-2
-                                        text-[11px] sm:text-sm lg:text-base font-bold
-                                        rounded-t-lg transition-all duration-200
+                                        text-xs sm:text-sm lg:text-base
+                                        rounded-t-xl transition-all duration-200 whitespace-nowrap
                                     `}
                                 >
                                     <tab.icon
@@ -228,7 +283,7 @@ const TournamentDetailPage = () => {
                     </div>
 
                     {/* --- KONTEN AKTIF --- */}
-                    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-lg border border-gray-100">
+                    <div className="bg-white p-3.5 sm:p-6 rounded-2xl shadow-sm sm:shadow-lg border border-gray-100">
                         {renderContent()}
                     </div>
                 </div>

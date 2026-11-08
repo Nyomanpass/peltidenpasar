@@ -65,7 +65,7 @@ function TournamentArchive() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 lg:py-24 px-4 sm:px-8 lg:px-16">
+        <div className="min-h-screen bg-gray-50 py-10 sm:py-12 lg:py-24 px-4 sm:px-8 lg:px-16">
             <div className="text-center mb-10">
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight text-balance">
                 Rekam Jejak & Jadwal
@@ -90,7 +90,7 @@ function TournamentArchive() {
                  transform hover:-translate-y-1 transition-all duration-300 flex flex-col overflow-hidden"
     >
       {/* POSTER - Dibuat lebih pendek (slim) */}
-      <div className="relative h-48 lg:h-56 w-full overflow-hidden">
+      <div className="relative h-44 sm:h-48 lg:h-56 w-full overflow-hidden">
         {t.poster ? (
           <img
             src={`${BASE_URL}/${t.poster}`} 
@@ -106,30 +106,30 @@ function TournamentArchive() {
       </div>
 
       {/* CONTENT - Padding dikurangi agar slim */}
-      <div className="p-5 lg:p-6 flex-grow flex flex-col">
+      <div className="p-4 sm:p-5 lg:p-6 flex-grow flex flex-col">
         {/* Nama Turnamen - Ukuran disesuaikan */}
-        <h3 className="text-lg lg:text-xl font-bold text-gray-900 mb-3 line-clamp-1 group-hover:text-yellow-600 transition-colors">
+        <h3 className="text-base sm:text-lg lg:text-xl font-bold text-gray-900 mb-3 line-clamp-1 group-hover:text-yellow-600 transition-colors">
           {t.name}
         </h3>
 
-        <div className="space-y-3 mb-5 flex-grow">
+        <div className="space-y-2.5 sm:space-y-3 mb-4 sm:mb-5 flex-grow">
           {/* Tanggal & Lokasi dalam baris yang lebih rapat */}
           <div className="flex items-center text-gray-700">
-            <Calendar className="w-4 h-4 text-yellow-600 mr-3 flex-shrink-0" />
+            <Calendar className="w-4 h-4 text-yellow-600 mr-2.5 sm:mr-3 flex-shrink-0" />
             <span className="font-semibold text-xs lg:text-sm">
               {formatDateRange(t.start_date, t.end_date)}
             </span>
           </div>
 
           <div className="flex items-center text-gray-700">
-            <MapPin className="w-4 h-4 text-yellow-600 mr-3 flex-shrink-0" />
+            <MapPin className="w-4 h-4 text-yellow-600 mr-2.5 sm:mr-3 flex-shrink-0" />
             <span className="font-semibold text-xs lg:text-sm truncate">
               {t.location || "Lokasi Belum Ditentukan"}
             </span>
           </div>
 
           {/* Deskripsi - Dibuat lebih ringkas */}
-          <div className="pt-3 border-t border-gray-100">
+          <div className="pt-2.5 sm:pt-3 border-t border-gray-100">
             <p className="text-[11px] lg:text-xs text-gray-500 line-clamp-2 leading-relaxed italic">
               {t.description || "Tidak ada deskripsi singkat."}
             </p>
@@ -141,7 +141,7 @@ function TournamentArchive() {
           onClick={() => handleViewDetail(t)}
           className="w-full flex items-center justify-center
                      bg-yellow-600 text-white font-bold
-                     py-2.5 lg:py-3 rounded-xl text-xs lg:text-sm
+                     py-3 sm:py-2.5 lg:py-3 rounded-xl text-xs lg:text-sm
                      hover:bg-gray-900 transition-all duration-300 shadow-md shadow-yellow-100"
         >
           Lihat Detail

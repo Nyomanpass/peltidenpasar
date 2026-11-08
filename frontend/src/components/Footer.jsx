@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { 
   MapPin, Phone, Mail, Facebook, Instagram 
 } from "lucide-react";
@@ -37,12 +38,20 @@ export default function Footer() {
             Navigasi
           </h2>
           <ul className="space-y-2 text-[11px] sm:text-sm">
-            {["Beranda", "Turnamen", "Bagan", "Jadwal", "Kontak"].map((item, i) => (
-              <li 
-                key={i} 
-                className="hover:text-yellow-400 transition cursor-pointer"
-              >
-                {item}
+            {[
+              { name: "Beranda", path: "/" },
+              { name: "Turnamen", path: "/tournament" },
+              { name: "Berita", path: "/berita" },
+              { name: "Atlet", path: "/atlet" },
+              { name: "Kontak", path: "/contact" },
+            ].map((item) => (
+              <li key={item.name}>
+                <Link
+                  to={item.path}
+                  className="hover:text-yellow-400 transition"
+                >
+                  {item.name}
+                </Link>
               </li>
             ))}
           </ul>
@@ -55,14 +64,20 @@ export default function Footer() {
           </h2>
           <div className="flex gap-3">
             <a
-              href="#"
+              href="https://www.facebook.com/share/1bsWifNPt3/?mibextid=wwXIfr"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook PELTI Denpasar"
               className="p-2 rounded-full bg-slate-800 hover:bg-yellow-400 
                          hover:text-black transition-all duration-300"
             >
               <Facebook size={16} />
             </a>
             <a
-              href="#"
+           href="https://www.instagram.com/peltidenpasar?stkn=OGUzMjZmZXgzODF2"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram PELTI Denpasar"
               className="p-2 rounded-full bg-slate-800 hover:bg-yellow-400 
                          hover:text-black transition-all duration-300"
             >
@@ -105,7 +120,7 @@ export default function Footer() {
       {/* Copyright */}
       <div className="border-t border-slate-800 text-center py-4 
                       text-[10px] sm:text-xs text-gray-500">
-        © 2025 
+        © {new Date().getFullYear()}
         <span className="text-yellow-400 font-semibold ml-1">
           PELTI Denpasar
         </span>. All Rights Reserved.

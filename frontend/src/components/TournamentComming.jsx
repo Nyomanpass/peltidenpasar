@@ -4,7 +4,7 @@ import api from "../api";
 
 const TournamentComming = () => {
   const [tournaments, setTournaments] = useState([]);
-  const BASE_URL = import.meta.env.VITE_API_URL;
+  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5004";
 
   const formatDate = (dateString) => {
     if (!dateString) return "-";
@@ -15,65 +15,90 @@ const TournamentComming = () => {
     });
   };
 
-  const isTournamentOpen = (t) => {
-    const deadline = new Date(t.start_date);
-    deadline.setDate(deadline.getDate() - 1);
-    deadline.setHours(23, 59, 59, 999);
-    return t.status === "aktif" && new Date() <= deadline;
-  };
-
   useEffect(() => {
     const fetchData = async () => {
       try {
         const res = await api.get("/tournaments");
-        setTournaments(res.data.filter(isTournamentOpen));
+        const data = res.data || [];
+        
+        // Filter hanya turnamen yang berstatus 'aktif' dan belum berakhir
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const activeTournaments = data.filter((t) => {
+          const status = (t.status || "").toLowerCase();
+          if (status !== "aktif") return false;
+
+          const endDate = t.end_date ? new Date(t.end_date) : null;
+          const hasEnded = endDate && !isNaN(endDate) && endDate < today;
+          return !hasEnded;
+        });
+
+        setTournaments(activeTournaments);
       } catch (err) {
-        console.error(err);
+        console.error("Gagal mengambil data turnamen:", err);
       }
     };
     fetchData();
   }, []);
 
-  
+  // CONDITIONAL RENDERING:
+  // Jika tidak ada data turnamen yang aktif sama sekali, sembunyikan komponen secara total
+  if (!tournaments || tournaments.length === 0) {
+    return null;
+  }
+
   return (
-    <section className="py-10 sm:py-16 bg-gray-50">
-      <div className="mx-auto px-4 sm:px-10 lg:px-20">
+    <section className="pt-20 sm:pt-24 pb-10 sm:pb-14 bg-white">
+      <div className="relative mx-auto px-4 sm:px-10 lg:px-20">
         
-        {/* HEADER - Menggunakan text-balance agar baris teks lebih rapi */}
-        <div className="text-center mb-10">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight text-balance">
+        {/* HEADER */}
+        <div className="text-center mb-8">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-gray-900 tracking-tight">
             Turnamen Mendatang
           </h2>
-          <p className="text-sm sm:text-base text-gray-500 italic mt-2 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-base text-gray-500 mt-2 max-w-2xl mx-auto">
             Siapkan fisik dan mental, raih prestasi tertinggi di arena pertandingan.
           </p>
           <div className="w-12 h-1 bg-yellow-600 mx-auto mt-4 rounded-full"></div>
         </div>
 
         {/* GRID */}
-        <div className={`max-w-5xl mx-auto gap-6 sm:gap-8`}>
+        <div className="max-w-5xl mx-auto space-y-6">
           {tournaments.map((t) => {
-            const deadline = new Date(t.start_date);
+            // Menghitung tanggal batas pendaftaran (1 hari sebelum tanggal mulai)
+            const startDate = t.start_date ? new Date(t.start_date) : new Date();
+            const deadline = new Date(startDate);
             deadline.setDate(deadline.getDate() - 1);
-            deadline.setHours(15, 0, 0, 0);
+            deadline.setHours(23, 59, 59, 999);
+
+            // Cek apakah pendaftaran sudah ditutup
             const isClosed = new Date() > deadline;
+
+            const posterUrl = t.poster 
+              ? (t.poster.startsWith('http') ? t.poster : `${BASE_URL}/${t.poster.replace(/^\/+/, '')}`)
+              : 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&q=80&w=800';
 
             return (
               <div
-                key={t.id}
-                className="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden mt-10"
+                key={t.id || t.idTournament}
+                className="group bg-white rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden"
               >
                 <div className="flex flex-col md:flex-row h-full">
                   
                   {/* LEFT SIDE: IMAGE SECTION */}
-                  <div className="relative w-full md:w-[350px] lg:w-[400px] shrink-0 bg-gray-200 overflow-hidden">
+                  <div className="relative w-full md:w-[350px] lg:w-[400px] shrink-0 bg-gray-200 overflow-hidden min-h-[220px]">
                     <img
-                      src={t.poster ? `${BASE_URL}/${t.poster}` : "/default-tournament.jpg"}
+                      src={posterUrl}
                       alt={t.name}
                       className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?auto=format&fit=crop&q=80&w=800';
+                      }}
                     />
 
-                    {/* Status Badge di atas Gambar */}
+                    {/* Status Badge */}
                     <span
                       className={`absolute top-4 left-4 text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-full shadow-sm backdrop-blur-md z-10 ${
                         isClosed ? "bg-red-500/90 text-white" : "bg-yellow-400 text-gray-900"
@@ -82,7 +107,6 @@ const TournamentComming = () => {
                       {isClosed ? "Pendaftaran Ditutup" : "Pendaftaran Dibuka"}
                     </span>
 
-                    {/* Overlay tipis agar transisi ke konten lebih smooth */}
                     <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent md:block hidden"></div>
                   </div>
 
@@ -96,10 +120,10 @@ const TournamentComming = () => {
                       </div>
 
                       <p className="text-sm text-gray-500 mb-6 line-clamp-3 leading-relaxed max-w-2xl">
-                        {t.description}
+                        {t.description || t.desc}
                       </p>
 
-                      {/* INFO GRID - 2 Kolom yang rapi */}
+                      {/* INFO GRID */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-8 mb-6">
                         <InfoItem
                           icon={<Calendar size={18} className="text-blue-600" />}
@@ -109,14 +133,14 @@ const TournamentComming = () => {
                         <InfoItem
                           icon={<MapPin size={18} className="text-red-500" />}
                           label="Lokasi"
-                          value={t.location}
+                          value={t.location || "-"}
                         />
                         <InfoItem
                           icon={<Zap size={18} className="text-emerald-600" />}
                           label="Biaya"
                           value={
-                            t.type === "berbayar"
-                              ? `Rp ${Number(t.nominal).toLocaleString("id-ID")}`
+                            t.type === "berbayar" || t.nominal > 0
+                              ? `Rp ${Number(t.nominal || 0).toLocaleString("id-ID")}`
                               : "GRATIS"
                           }
                         />
@@ -166,7 +190,6 @@ const TournamentComming = () => {
   );
 };
 
-// Komponen InfoItem yang sudah dioptimasi tulisannya
 const InfoItem = ({ icon, label, value, isDeadline }) => (
   <div className="flex items-start gap-3 min-w-0">
     <div className="p-2 bg-gray-50 rounded-lg flex-shrink-0 group-hover:bg-white transition-colors border border-transparent group-hover:border-gray-100">

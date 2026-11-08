@@ -63,7 +63,7 @@ function LinkSlidingTabs({ tabs, location }) {
   );
 }
 
-function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
+function Peserta({ tournamentId, searchTerm: searchTermFromProps, readOnly = false }) {
   const location = useLocation();
   const [kelompokUmur, setKelompokUmur] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,6 +75,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
   const [isExporting, setIsExporting] = useState(false);
 
   const role = localStorage.getItem("role");
+  const canManage = !readOnly && (role === "admin" || role === "panitia");
   const currentTournamentName = localStorage.getItem("selectedTournamentName");
 
   // Logika pencarian gabungan
@@ -96,14 +97,17 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
     }
     try {
       setLoading(true);
-      const res = await api.get(`/admin/peserta/kelompok-umur?tournamentId=${idToUse}`);
+      const endpoint = readOnly
+        ? `/peserta/kelompok-umur?tournamentId=${idToUse}`
+        : `/admin/peserta/kelompok-umur?tournamentId=${idToUse}`;
+      const res = await api.get(endpoint);
       setKelompokUmur(res.data);
     } catch (err) {
       setError("Gagal mengambil data peserta");
     } finally {
       setLoading(false);
     }
-  }, [tournamentId]);
+  }, [tournamentId, readOnly]);
 
   useEffect(() => {
     fetchPeserta();
@@ -253,7 +257,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                 )}
               </div>
 
-              {(role === "admin" || role === "panitia") && (
+              {canManage && (
                 <button
                   type="button"
                   onClick={handleExport}
@@ -273,7 +277,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
           </div>
 
           {/* TAB SWITCHER: centered */}
-          {(role === "admin" || role === "wasit" || role === "panitia") && (
+          {!readOnly && (role === "admin" || role === "wasit" || role === "panitia") && (
             <div className="flex justify-center">
               <div className="inline-flex items-center gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80 shadow-xs">
                 <Link
@@ -427,7 +431,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                               <th className="px-5 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                                 Profil Atlet
                               </th>
-                              {(role === "admin" || role === "panitia") && (
+                              {canManage && (
                                 <th className="px-5 py-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                                   Kontak & NIK
                                 </th>
@@ -461,7 +465,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                                       <span className="text-sm font-bold text-slate-900 group-hover:text-amber-600 transition-colors block">
                                         {p.namaLengkap}
                                       </span>
-                                      {(role === "admin" || role === "panitia") && (
+                                      {canManage && (
                                         <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-0.5 font-medium">
                                           <Calendar size={12} className="text-slate-400" />
                                           <span>{p.tanggalLahir || "Tgl Lahir -"}</span>
@@ -472,7 +476,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                                 </td>
 
                                 {/* Kontak & NIK (Admin/Panitia) */}
-                                {(role === "admin" || role === "panitia") && (
+                                {canManage && (
                                   <td className="px-5 py-3.5">
                                     <div className="space-y-0.5">
                                       <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
@@ -499,7 +503,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                                 {/* Aksi */}
                                 <td className="px-5 py-3.5 text-center">
                                   <div className="flex items-center justify-center gap-1.5">
-                                    {role === "admin" || role === "panitia" ? (
+                                    {canManage ? (
                                       <>
                                         <Link
                                           to={`/${role}/detail-peserta/${p.id}`}
@@ -547,7 +551,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                                   <span className="text-sm font-bold text-slate-900 block leading-tight">
                                     {p.namaLengkap}
                                   </span>
-                                  {(role === "admin" || role === "panitia") && (
+                                  {canManage && (
                                     <span className="text-[11px] text-slate-500 font-medium">
                                       {p.tanggalLahir || "Tgl Lahir -"}
                                     </span>
@@ -559,7 +563,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                             </div>
 
                             {/* Info Kontak & NIK di Mobile */}
-                            {(role === "admin" || role === "panitia") && (
+                            {canManage && (
                               <div className="bg-slate-50 rounded-xl p-2.5 text-xs text-slate-600 space-y-1">
                                 <div className="flex items-center justify-between">
                                   <span className="text-slate-400 text-[11px]">WhatsApp:</span>
@@ -579,7 +583,7 @@ function Peserta({ tournamentId, searchTerm: searchTermFromProps }) {
                             )}
 
                             {/* Tombol Aksi di Mobile (Sekarang Tersedia & Mudah Ditekan!) */}
-                            {(role === "admin" || role === "panitia") && (
+                            {canManage && (
                               <div className="flex items-center gap-2 pt-1">
                                 <Link
                                   to={`/${role}/detail-peserta/${p.id}`}

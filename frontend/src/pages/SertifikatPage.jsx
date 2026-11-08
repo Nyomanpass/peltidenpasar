@@ -7,8 +7,8 @@ import {
 } from "lucide-react";
 import SlidingTabs from "../components/SlidingTabs";
 
-export default function SertifikatPage() {
-  const [selectedTournament, setSelectedTournament] = useState(localStorage.getItem("selectedTournament") || "");
+export default function SertifikatPage({ tournamentId: propTournamentId, readOnly = false }) {
+  const [selectedTournament, setSelectedTournament] = useState(propTournamentId || localStorage.getItem("selectedTournament") || "");
   const [baganList, setBaganList] = useState([]);
   const [selectedBaganId, setSelectedBaganId] = useState(null);
   const [data, setData] = useState(null);
@@ -25,7 +25,7 @@ export default function SertifikatPage() {
   const fileInputRef = useRef(null);
 
   const role = localStorage.getItem('role');
-  const isAdmin = role === "admin";
+  const isAdmin = !readOnly && role === "admin";
 
   const [previewUrl, setPreviewUrl] = useState("");
   const [showPreview, setShowPreview] = useState(false);

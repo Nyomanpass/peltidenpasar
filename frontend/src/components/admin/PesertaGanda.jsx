@@ -19,7 +19,7 @@ import {
 import AlertMessage from "../AlertMessage";
 import { exportPesertaToExcel } from "../../utils/exportPesertaExcel";
 
-function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
+function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps, readOnly = false }) {
   const location = useLocation();
   const [kelompokUmur, setKelompokUmur] = useState([]);
   const [masterKU, setMasterKU] = useState([]);
@@ -44,8 +44,8 @@ function PesertaGanda({ tournamentId, searchTerm: searchTermFromProps }) {
   const [isExporting, setIsExporting] = useState(false);
 
   const role = localStorage.getItem("role");
-  const isAdmin = role === "admin" || role === "panitia";
-  const isAdminOrWasit = role === "admin" || role === "wasit" || role === "panitia";
+  const isAdmin = !readOnly && (role === "admin" || role === "panitia");
+  const isAdminOrWasit = !readOnly && (role === "admin" || role === "wasit" || role === "panitia");
   const basePath = `/${role}`;
 
   const totalTimGanda = doubleTeams.filter(
